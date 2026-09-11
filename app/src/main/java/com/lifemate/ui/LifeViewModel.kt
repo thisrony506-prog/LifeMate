@@ -16,6 +16,11 @@ import java.time.LocalDate
 data class LifeState(val loading: Boolean = true, val profile: Profile? = null, val items: List<LifeItem> = emptyList(),
     val completions: List<Completion> = emptyList(), val attachments: List<Attachment> = emptyList(), val preferences: Preferences = Preferences(), val error: String? = null) {
     fun done(item: LifeItem, day: LocalDate = LocalDate.now()) = completions.any { it.itemId == item.id && it.date == day.toString() }
+    fun completed(item: LifeItem, day: LocalDate = LocalDate.now()): Boolean = when {
+        item.kind in setOf(Kind.MISSION, Kind.GOAL) -> progress(item) >= 1f
+        item.repeat == Repeat.ONCE -> done(item, LocalDate.parse(item.date))
+        else -> done(item, day)
+    }
     fun dates(item: LifeItem) = completions.filter { it.itemId == item.id }.map { LocalDate.parse(it.date) }.toSet()
     fun progress(item: LifeItem): Float = if (item.kind == Kind.MISSION) (dates(item).count { item.occurs(it) }.toFloat() / item.duration).coerceIn(0f, 1f) else item.progress / 100f
     fun media(item: LifeItem) = attachments.filter { it.itemId == item.id }

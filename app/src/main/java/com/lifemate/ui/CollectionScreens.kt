@@ -31,8 +31,8 @@ import java.time.*
             when (filter) {
                 "Today" -> item.occurs(today)
                 "Upcoming" -> if (kind == Kind.BIRTHDAY) true else Schedule.next(item.spec(), Instant.now(), ZoneId.systemDefault()) != null
-                "Completed" -> if (kind in setOf(Kind.GOAL, Kind.MISSION)) state.progress(item) >= 1f else state.done(item)
-                "Pending" -> if (kind in setOf(Kind.GOAL, Kind.MISSION)) state.progress(item) < 1f else !state.done(item)
+                "Completed" -> state.completed(item)
+                "Pending" -> !state.completed(item)
                 "Pinned" -> item.pinned
                 else -> true
             }
@@ -54,7 +54,7 @@ import java.time.*
     LazyColumn(contentPadding = PaddingValues(22.dp, 16.dp, 22.dp, 110.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { PageHeading(kind.plural, subtitle) }
         item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), placeholder = { Text("Search names, tags, dates…") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }, shape = RoundedCornerShape(18.dp), singleLine = true) }
-        item { ChoiceChips(if (kind in setOf(Kind.NOTE, Kind.MEMORY)) listOf("All", "Pinned", "Archived") else listOf("All", "Today", "Upcoming", "Pending", "Completed", "Archived"), filter) { filter = it } }
+        item { ChoiceChips(if (kind in setOf(Kind.NOTE, Kind.MEMORY)) listOf("All", "Pinned", "Archived") else if (kind == Kind.BIRTHDAY) listOf("All", "Today", "Upcoming", "Archived") else listOf("All", "Today", "Upcoming", "Pending", "Completed", "Archived"), filter) { filter = it } }
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Eyebrow("${filtered.size} ${kind.plural}")
             var expanded by remember { mutableStateOf(false) }

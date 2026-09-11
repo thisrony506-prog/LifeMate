@@ -72,7 +72,7 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
     }
 }
 @Composable fun ItemRow(item: LifeItem, state: LifeState, onOpen: () -> Unit, onToggle: (() -> Unit)? = null, day: LocalDate = LocalDate.now()) {
-    val done = state.done(item, day)
+    val done = if (item.kind in setOf(Kind.MISSION, Kind.HABIT)) state.done(item, day) else state.completed(item, day)
     Surface(onClick = onOpen, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .6f))) {
         Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             KindBadge(item.kind)

@@ -1,0 +1,32 @@
+name: Inspect Android reports
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Workflow run with report artifacts
+        required: true
+permissions:
+  actions: read
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+          path: downloaded
+      - name: Report test failures and results
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          for file in Path('downloaded').rglob('*'):
+              if file.suffix == '.html' and ('class' in str(file) or 'package' in str(file)):
+                  text = re.sub('<[^>]+>', ' ', file.read_text(errors='replace'))
+                  if 'failed' in text.lower() or 'AssertionError' in text:
+                      text = text[-18000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+                      print(f'::notice title={file.name}::{text}')
+          PY
