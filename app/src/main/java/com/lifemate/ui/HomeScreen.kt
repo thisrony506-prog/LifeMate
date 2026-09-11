@@ -1,0 +1,110 @@
+package com.lifemate.ui
+
+import androidx.compose.foundation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.outlined.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.*
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.lifemate.domain.*
+import java.time.*
+import java.time.format.DateTimeFormatter
+
+val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
+@Composable fun HomeScreen(state: LifeState, vm: LifeViewModel, today: LocalDate, navigate: (String) -> Unit) {
+    val tasks = state.items.filter { it.kind in taskKinds && it.occurs(today) }.sortedBy { it.time }
+    val completed = tasks.count { state.done(it, today) }
+    val progress = if (tasks.isEmpty()) 0f else completed.toFloat() / tasks.size
+    val missions = state.items.filter { it.kind == Kind.MISSION && !it.archived && state.progress(it) < 1f }.take(2)
+    val birthday = state.items.filter { it.kind == Kind.BIRTHDAY && !it.archived }.minByOrNull { Schedule.nextBirthday(LocalDate.parse(it.date), today) }
+    val greeting = when (LocalTime.now().hour) { in 5..11 -> "Good morning"; in 12..17 -> "Good afternoon"; else -> "Good evening" }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+        item {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.clip(CircleShape).clickable { navigate("profile") }) { Avatar(state.profile) }
+                Column(Modifier.weight(1f)) { Text("LifeMate", style = MaterialTheme.typography.titleLarge); Text("YOUR PERSONAL LIFE ASSISTANT", fontSize = 8.sp, letterSpacing = 1.4.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                IconButton(onClick = { navigate("notifications") }) { Icon(Icons.Outlined.Notifications, "Notifications") }
+                IconButton(onClick = { navigate("settings") }, modifier = Modifier.size(40.dp)) { Icon(Icons.Outlined.Settings, "Settings") }
+            }
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Eyebrow(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")))
+                Text("$greeting,\n${state.profile?.displayName ?: "friend"}.", style = MaterialTheme.typography.displaySmall)
+                Text("A little intention. A little progress. A better you.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        item {
+            Surface(shape = RoundedCornerShape(28.dp), color = Jade, modifier = Modifier.fillMaxWidth()) {
+                Box {
+                    Canvas(Modifier.matchParentSize()) {
+                        drawCircle(Color.White.copy(alpha = .035f), size.width * .40f, androidx.compose.ui.geometry.Offset(size.width, 0f))
+                        drawCircle(Color.White.copy(alpha = .045f), size.width * .27f, androidx.compose.ui.geometry.Offset(size.width, 0f))
+                    }
+                    Row(Modifier.padding(24.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text("TODAY'S PROGRESS", fontSize = 10.sp, letterSpacing = 1.5.sp, color = Lime)
+                            Text(if (tasks.isNotEmpty() && completed == tasks.size) "You did it!" else if (completed == 0) "Make room\nfor a good day." else "Small steps,\nbig possibilities.", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+                            Text("$completed of ${tasks.size} tasks completed", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFD4E5D9))
+                        }
+                        Box(Modifier.size(104.dp).semantics { contentDescription = "Today's progress ${(progress * 100).toInt()} percent" }, contentAlignment = Alignment.Center) {
+                            Canvas(Modifier.fillMaxSize()) {
+                                drawArc(Color.White.copy(alpha = .14f), -90f, 360f, false, style = Stroke(9.dp.toPx(), cap = StrokeCap.Round))
+                                if (progress > 0) drawArc(Lime, -90f, 360 * progress, false, style = Stroke(9.dp.toPx(), cap = StrokeCap.Round))
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${(progress * 100).toInt()}%", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.SemiBold); Text("of today", color = Lime, fontSize = 11.sp) }
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SectionHeading("A little help to get started")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    listOf(Kind.ROUTINE, Kind.MISSION, Kind.REMINDER, Kind.NOTE).forEach { kind ->
+                        Surface(onClick = { navigate("edit/${kind.name}/new") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                            Column(Modifier.padding(vertical = 15.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                                Icon(kind.icon(), null, tint = kind.tint(), modifier = Modifier.size(24.dp)); Text(kind.label, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        item { SectionHeading("Your day, at a glance", "Calendar") { navigate("calendar") } }
+        if (tasks.isEmpty()) item { EmptyState(Kind.ROUTINE, "Create your first routine", "Give your day a little rhythm. Start with one thing that matters.", "Create routine") { navigate("edit/ROUTINE/new") } }
+        else {
+            if (completed == tasks.size) item { SoftCard(color = MaterialTheme.colorScheme.primaryContainer) { Text("Great job, ${state.profile?.displayName}! You completed everything for today.", style = MaterialTheme.typography.titleMedium) } }
+            items(tasks.take(5), key = { it.id }) { item -> ItemRow(item, state, { navigate("detail/${item.id}") }, { vm.toggle(item, today) }, today) }
+        }
+        if (birthday != null) item {
+            SoftCard(Modifier.fillMaxWidth().clickable { navigate("detail/${birthday.id}") }, color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    KindBadge(Kind.BIRTHDAY)
+                    Column(Modifier.weight(1f)) { Eyebrow("A day worth remembering"); Spacer(Modifier.height(5.dp)); Text("${birthday.title}'s birthday", style = MaterialTheme.typography.titleMedium); Text(Schedule.nextBirthday(LocalDate.parse(birthday.date), today).format(dateFormat), style = MaterialTheme.typography.bodyMedium) }
+                    Icon(Icons.AutoMirrored.Outlined.ArrowForward, "View birthday")
+                }
+            }
+        }
+        item { SectionHeading("Growing, one day at a time", "Missions") { navigate("list/MISSION") } }
+        if (missions.isEmpty()) item { EmptyState(Kind.MISSION, "Start your first mission", "Seven days or thirty. Your next chapter starts with a small commitment.", "Start a mission") { navigate("edit/MISSION/new") } }
+        else items(missions, key = { "mission-${it.id}" }) { item -> ItemRow(item, state, { navigate("detail/${item.id}") }) }
+        item {
+            TextButton(onClick = { navigate("menu") }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Outlined.GridView, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Explore your LifeMate") }
+            Text("A little better, every day.", Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
