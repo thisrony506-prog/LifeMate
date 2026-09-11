@@ -24,6 +24,9 @@ class ExternalAlarmTest {
         if (args.getString("verifyPrevious") == "true") {
             val previous = requireNotNull(app.db.dao().get("5f2e5e7a-73d7-4519-a0c0-cf999de4caa0"))
             val plan = requireNotNull(app.db.dao().getAlarm(previous.id))
+            val posted = app.getSystemService(android.app.NotificationManager::class.java).activeNotifications.firstOrNull { it.tag == previous.id }
+            assertNotNull("A real notification must still be present", posted)
+            assertEquals("New recurrences must be allowed to alert", 0, posted!!.notification.flags and android.app.Notification.FLAG_ONLY_ALERT_ONCE)
             val originalTime = LocalDate.parse(previous.date).atTime(LocalTime.parse(previous.time)).atZone(ZoneId.systemDefault()).toInstant()
             assertEquals(Schedule.next(previous.spec(), originalTime, ZoneId.systemDefault())!!.toEpochMilli(), plan.occurrence)
         }

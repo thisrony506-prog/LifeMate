@@ -111,7 +111,9 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
             val notification = NotificationCompat.Builder(context, channelId).setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(item.title).setContentText(message).setStyle(NotificationCompat.BigTextStyle().bigText(message))
                 .setContentIntent(open).setAutoCancel(true).setCategory(if (item.kind == Kind.BIRTHDAY) NotificationCompat.CATEGORY_EVENT else NotificationCompat.CATEGORY_REMINDER)
-                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setOnlyAlertOnce(true).build()
+                // Delivery receipts prevent duplicate occurrences. Each NEW recurrence must alert even
+                // when yesterday's notification has not been dismissed.
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setOnlyAlertOnce(false).build()
             if (dao.recordDelivery(Delivery(id, occurrence)) != -1L) {
                 try { NotificationManagerCompat.from(context).notify(id, 0, notification) } catch (_: SecurityException) { /* Revoked between check and delivery. */ }
             }

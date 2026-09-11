@@ -18,6 +18,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.luminance
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.*
@@ -110,7 +111,7 @@ import java.time.LocalDate
                                             val actualRoute = if (route == "list/{kind}") "list/${entry?.arguments?.getString("kind")}" else route
                                             NavigationBarItem(modifier = Modifier.testTag("nav-${destination.label}"), selected = actualRoute == destination.route, onClick = {
                                                 nav.navigate(destination.route) { popUpTo(nav.graph.findStartDestination().id) { saveState = true }; launchSingleTop = true; restoreState = true }
-                                            }, icon = { Icon(destination.icon, null) }, label = { Text(destination.label, maxLines = 1, style = MaterialTheme.typography.labelSmall.copy(letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified)) })
+                                            }, icon = { Icon(destination.icon, null) }, label = { Text(destination.label, maxLines = 1, style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.sp)) })
                                         }
                                     }
                                 }, floatingActionButton = { if (showBottom) FloatingActionButton({ adding = true }, shape = RoundedCornerShape(20.dp), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(Icons.Outlined.Add, "Create something new") } }
