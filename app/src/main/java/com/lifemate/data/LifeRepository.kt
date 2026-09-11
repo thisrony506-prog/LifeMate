@@ -27,12 +27,14 @@ class LifeRepository(val context: Context, val db: LifeDatabase, private val sch
         scheduler.schedule(saved)
     }
     suspend fun toggle(item: LifeItem, date: LocalDate = LocalDate.now()) {
-        require(item.occurs(date)) { "This item isn't scheduled for that day." }
         require(date <= LocalDate.now()) { "Future days can't be completed yet." }
-        db.withTransaction {
-            if (dao.isDone(item.id, date.toString())) dao.uncomplete(item.id, date.toString())
-            else dao.complete(Completion(item.id, date.toString()))
+        val completed = db.withTransaction {
+            val current = requireNotNull(dao.get(item.id)) { "This record has been deleted." }
+            require(current.occurs(date)) { "This item isn't scheduled for that day." }
+            if (dao.isDone(item.id, date.toString())) { dao.uncomplete(item.id, date.toString()); false }
+            else { dao.complete(Completion(item.id, date.toString())); true }
         }
+        if (completed && date == LocalDate.now()) scheduler.dismiss(item.id)
         scheduler.schedule(item)
     }
     suspend fun delete(item: LifeItem) = withContext(Dispatchers.IO) {

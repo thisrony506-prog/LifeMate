@@ -22,7 +22,7 @@ data class LifeState(val loading: Boolean = true, val profile: Profile? = null, 
         else -> done(item, day)
     }
     fun dates(item: LifeItem) = completions.filter { it.itemId == item.id }.map { LocalDate.parse(it.date) }.toSet()
-    fun progress(item: LifeItem): Float = if (item.kind == Kind.MISSION) (dates(item).count { item.occurs(it) }.toFloat() / item.duration).coerceIn(0f, 1f) else item.progress / 100f
+    fun progress(item: LifeItem): Float = if (item.kind == Kind.MISSION) (dates(item).count { Schedule.occurs(item.spec(), it) }.toFloat() / item.duration).coerceIn(0f, 1f) else item.progress / 100f
     fun media(item: LifeItem) = attachments.filter { it.itemId == item.id }
 }
 class LifeViewModel(application: Application) : AndroidViewModel(application) {

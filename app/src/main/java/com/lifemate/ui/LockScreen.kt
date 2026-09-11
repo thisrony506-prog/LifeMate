@@ -5,6 +5,8 @@ import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -31,14 +33,25 @@ fun authenticateBiometric(activity: FragmentActivity, onSuccess: () -> Unit, onE
 @Composable fun LockScreen(activity: FragmentActivity, secure: SecureStore, biometrics: Boolean, onUnlock: () -> Unit) {
     var pin by remember { mutableStateOf("") }; var error by remember { mutableStateOf("") }; var busy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-    Column(Modifier.fillMaxSize().padding(30.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(30.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(Icons.Outlined.Lock, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.height(24.dp)); Text("Your space, kept safe.", style = MaterialTheme.typography.headlineLarge)
         Spacer(Modifier.height(12.dp)); Text("Enter your PIN to unlock LifeMate.", color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(28.dp)); PinField(pin, { pin = it })
         if (error.isNotBlank()) Text(error, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(vertical = 12.dp))
         Spacer(Modifier.height(16.dp))
-        Button({ scope.launch { busy = true; val valid = withContext(Dispatchers.IO) { secure.verifyPin(pin) }; busy = false; if (valid) onUnlock() else { pin = ""; error = if (secure.retrySeconds() > 0) "Too many attempts. Try again in ${secure.retrySeconds()} seconds." else "That PIN doesn't match. Try again." } } }, enabled = !busy && pin.length >= 6, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)) { Text(if (busy) "Unlocking…" else "Unlock LifeMate") }
+        Button({ scope.launch {
+            busy = true
+            try {
+                val valid = withContext(Dispatchers.IO) { secure.verifyPin(pin) }
+                if (valid) onUnlock() else {
+                    pin = ""
+                    error = if (secure.retrySeconds() > 0) "Too many attempts. Try again in ${secure.retrySeconds()} seconds." else "That PIN doesn't match. Try again."
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (_: Exception) { error = "Secure storage is temporarily unavailable. Try again." }
+            finally { busy = false }
+        } }, enabled = !busy && pin.length >= 6, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)) { Text(if (busy) "Unlocking…" else "Unlock LifeMate") }
         if (biometrics && biometricAvailable(activity)) TextButton({ authenticateBiometric(activity, onUnlock) { error = it } }) { Icon(Icons.Outlined.Fingerprint, null); Text(" Use biometrics") }
         Spacer(Modifier.height(24.dp))
         Text("Forgot your PIN? There is no backdoor. Reinstalling clears local data; restore a previously exported backup after setup.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

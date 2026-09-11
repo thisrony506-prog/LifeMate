@@ -38,7 +38,7 @@ class BackupTest {
         val backup = File(app.cacheDir, "unsafe.zip")
         ZipOutputStream(backup.outputStream()).use { zip -> zip.putNextEntry(ZipEntry("../escaped.txt")); zip.write("bad".toByteArray()); zip.closeEntry() }
         var rejected = false
-        try { BackupManager(app.repository).restore(Uri.fromFile(backup)) } catch (_: IllegalArgumentException) { rejected = true }
+        try { BackupManager(app.repository).restore(Uri.fromFile(backup)) } catch (_: IllegalArgumentException) { rejected = true } catch (_: ZipException) { rejected = true }
         assertTrue(rejected); assertEquals("Keep me", app.db.dao().getProfile()?.fullName)
         assertFalse(File(app.cacheDir, "escaped.txt").exists()); backup.delete()
     }

@@ -33,12 +33,15 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
     private fun pending(id: String, occurrence: Long = 0): PendingIntent = PendingIntent.getBroadcast(context, 0,
         Intent(context, AlarmReceiver::class.java).setData(Uri.parse("lifemate://alarm/$id"))
             .putExtra("id", id).putExtra("occurrence", occurrence), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-    fun cancel(id: String) { alarms.cancel(pending(id)); NotificationManagerCompat.from(context).cancel(id, 0) }
+    fun dismiss(id: String) { NotificationManagerCompat.from(context).cancel(id, 0) }
+    fun cancel(id: String) { alarms.cancel(pending(id)); dismiss(id) }
     suspend fun schedule(item: LifeItem) = mutex.withLock { scheduleInternal(item, false) }
-    private suspend fun scheduleInternal(item: LifeItem, preservePending: Boolean) {
-        alarms.cancel(pending(item.id))
+    private suspend fun scheduleInternal(request: LifeItem, preservePending: Boolean) {
+        alarms.cancel(pending(request.id))
+        // UI snapshots and maintenance lists can be stale after another completed write.
+        val item = dao.get(request.id) ?: return
         val prefs = preferences.flow.first()
-        if (item.archived || !item.notifications || !prefs.notifications || item.kind == Kind.GOAL && item.progress >= 100) { dao.deleteAlarm(item.id); return }
+        if (item.archived || !item.notifications || !prefs.notifications || item.kind == Kind.GOAL && item.progress >= 100) { dao.deleteAlarm(item.id); dismiss(item.id); return }
         val zone = ZoneId.systemDefault()
         val now = Instant.now()
         val saved = dao.getAlarm(item.id)
@@ -68,6 +71,7 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
         val item = dao.get(id) ?: return@withLock
         val plan = dao.getAlarm(id) ?: return@withLock
         if (plan.occurrence != occurrence || plan.revision != item.updatedAt) return@withLock
+        if (occurrence > System.currentTimeMillis() + 1_000) return@withLock
         val prefs = preferences.flow.first()
         val day = Instant.ofEpochMilli(occurrence).atZone(ZoneId.systemDefault()).toLocalDate()
         // Ignore stale broadcasts (for example after a delayed restore) and completed records.
@@ -89,8 +93,14 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
                     Kind.ROUTINE -> "Hello, $name. It's time for your ${item.title}."
                     Kind.MISSION -> "Day ${(ChronoUnit.DAYS.between(LocalDate.parse(item.date), day) + 1).coerceIn(1, item.duration.toLong())} of ${item.title} is waiting."
                     Kind.BIRTHDAY -> {
-                        val away = ChronoUnit.DAYS.between(day, Schedule.nextBirthday(LocalDate.parse(item.date), day))
-                        if (away == 0L) "🎂 ${item.title}'s birthday is today." else "${item.title}'s birthday is in $away days."
+                        val actualDay = LocalDate.now()
+                        val birthday = Schedule.nextBirthday(LocalDate.parse(item.date), day)
+                        val away = ChronoUnit.DAYS.between(actualDay, birthday)
+                        when {
+                            away < 0 -> "🎂 ${item.title}'s birthday was $birthday. A belated wish still matters."
+                            away == 0L -> "🎂 ${item.title}'s birthday is today."
+                            else -> "${item.title}'s birthday is in $away days."
+                        }
                     }
                     else -> "${item.title} is waiting. A little progress goes a long way."
                 }

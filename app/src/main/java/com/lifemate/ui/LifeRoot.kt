@@ -13,10 +13,13 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.*
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.luminance
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.*
 import androidx.lifecycle.compose.*
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -34,6 +37,7 @@ import java.time.LocalDate
     val state by vm.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
     val nav = rememberNavController()
+    val unlockedContent = rememberSaveableStateHolder()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: "home"
     val snackbar = remember { SnackbarHostState() }
@@ -44,7 +48,10 @@ import java.time.LocalDate
     var today by remember { mutableStateOf(LocalDate.now()) }
     var discard by remember { mutableStateOf(false) }
     val lifecycle = LocalLifecycleOwner.current
-    fun navigate(path: String) { nav.navigate(path) { launchSingleTop = true } }
+    fun navigate(path: String) {
+        val destination = when (path) { "list/MISSION" -> "missions"; "list/MEMORY" -> "memories"; else -> path }
+        nav.navigate(destination) { launchSingleTop = true }
+    }
     fun back() { if (route.startsWith("edit")) discard = true else if (!nav.popBackStack()) navigate("home") }
     LaunchedEffect(Unit) { vm.events.collect { snackbar.showSnackbar(it) } }
     LaunchedEffect(Unit) { while (true) { today = LocalDate.now(); delay(30_000) } }
@@ -70,6 +77,13 @@ import java.time.LocalDate
     if (route.startsWith("edit") && !locked) BackHandler { discard = true }
     if (locked) BackHandler { activity.moveTaskToBack(true) }
     LifeTheme(state.preferences.theme) {
+        val lightSystemBars = MaterialTheme.colorScheme.background.luminance() > .5f
+        SideEffect {
+            WindowCompat.getInsetsController(activity.window, activity.window.decorView).apply {
+                isAppearanceLightStatusBars = lightSystemBars
+                isAppearanceLightNavigationBars = lightSystemBars
+            }
+        }
         Surface(Modifier.fillMaxSize().testTag("theme-${state.preferences.theme}"), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize().safeDrawingPadding()) {
                 when {
@@ -77,8 +91,10 @@ import java.time.LocalDate
                     state.error != null -> Column(Modifier.padding(26.dp).align(Alignment.Center)) { EmptyState(null, "Your data is still yours", state.error!!); Button({ activity.recreate() }) { Text("Try again") } }
                     state.profile == null -> Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding -> Box(Modifier.padding(padding)) { ProfileEditor(null, vm) { } } }
                     else -> {
-                        val showBottom = route in setOf("home", "list/{kind}", "calendar", "profile", "menu", "statistics")
-                        Box(if (locked) Modifier.clearAndSetSemantics { } else Modifier) {
+                        val showBottom = route in setOf("home", "missions", "memories", "list/{kind}", "calendar", "profile", "menu", "statistics")
+                        // Dialogs have their own Android windows; hiding semantics alone cannot lock them.
+                        // Remove private UI while locked, but retain form/navigation saveable state.
+                        if (!locked) unlockedContent.SaveableStateProvider("private-content") {
                             Scaffold(containerColor = MaterialTheme.colorScheme.background,
                                 snackbarHost = { SnackbarHost(snackbar) },
                                 topBar = {
@@ -92,7 +108,7 @@ import java.time.LocalDate
                                     if (showBottom) NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                                         destinations.forEach { destination ->
                                             val actualRoute = if (route == "list/{kind}") "list/${entry?.arguments?.getString("kind")}" else route
-                                            NavigationBarItem(selected = actualRoute == destination.route, onClick = {
+                                            NavigationBarItem(modifier = Modifier.testTag("nav-${destination.label}"), selected = actualRoute == destination.route, onClick = {
                                                 nav.navigate(destination.route) { popUpTo(nav.graph.findStartDestination().id) { saveState = true }; launchSingleTop = true; restoreState = true }
                                             }, icon = { Icon(destination.icon, null) }, label = { Text(destination.label, maxLines = 1, style = MaterialTheme.typography.labelSmall.copy(letterSpacing = androidx.compose.ui.unit.TextUnit.Unspecified)) })
                                         }
@@ -102,6 +118,8 @@ import java.time.LocalDate
                                 Box(Modifier.padding(padding).fillMaxSize()) {
                                     NavHost(navController = nav, startDestination = "home") {
                                         composable("home") { HomeScreen(state, vm, today, ::navigate) }
+                                        composable("missions") { CollectionScreen(Kind.MISSION, state, vm, ::navigate) }
+                                        composable("memories") { CollectionScreen(Kind.MEMORY, state, vm, ::navigate) }
                                         composable("list/{kind}") { backStack -> CollectionScreen(Kind.valueOf(backStack.arguments!!.getString("kind")!!), state, vm, ::navigate) }
                                         composable("calendar") { CalendarScreen(state, vm, ::navigate) }
                                         composable("profile") { ProfileScreen(state, ::navigate) }
@@ -118,7 +136,11 @@ import java.time.LocalDate
                                             if (item != null) DetailScreen(item, state, vm, ::navigate) { nav.popBackStack() }
                                             else EmptyState(null, "This record isn't here", "It may have been deleted or replaced by a backup.", "Go home") { navigate("home") }
                                         }
-                                        composable("wish/{id}") { backStack -> state.items.firstOrNull { it.id == backStack.arguments?.getString("id") }?.let { WishScreen(it, vm) } }
+                                        composable("wish/{id}") { backStack ->
+                                            val person = state.items.firstOrNull { it.id == backStack.arguments?.getString("id") }
+                                            if (person != null) WishScreen(person, vm)
+                                            else EmptyState(Kind.BIRTHDAY, "Birthday not found", "This person's record may have been deleted.", "Birthdays") { navigate("list/BIRTHDAY") }
+                                        }
                                         composable("edit/{kind}/{id}?date={date}", arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })) { backStack ->
                                             val kind = Kind.valueOf(backStack.arguments!!.getString("kind")!!)
                                             val id = backStack.arguments!!.getString("id")!!
@@ -141,7 +163,7 @@ import java.time.LocalDate
                         items(Kind.entries) { kind -> Surface(onClick = { adding = false; navigate("edit/${kind.name}/new") }, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) { Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) { KindBadge(kind); Text("New ${kind.label.lowercase()}", style = MaterialTheme.typography.titleMedium) } } }
                     }
                 }
-                if (discard) ConfirmDialog("Leave without saving?", "Unsaved edits on this screen will be discarded.", "Discard edits", { discard = false }) { discard = false; nav.popBackStack() }
+                if (discard && !locked) ConfirmDialog("Leave without saving?", "Unsaved edits on this screen will be discarded.", "Discard edits", { discard = false }) { discard = false; nav.popBackStack() }
             }
         }
     }

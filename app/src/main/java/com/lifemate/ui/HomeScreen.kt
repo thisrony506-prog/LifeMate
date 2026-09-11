@@ -29,6 +29,9 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
     val progress = if (tasks.isEmpty()) 0f else completed.toFloat() / tasks.size
     val missions = state.items.filter { it.kind == Kind.MISSION && !it.archived && state.progress(it) < 1f }.take(2)
     val birthday = state.items.filter { it.kind == Kind.BIRTHDAY && !it.archived }.minByOrNull { Schedule.nextBirthday(LocalDate.parse(it.date), today) }
+    val comingUp = state.items.filter { !it.archived && it.kind in setOf(Kind.REMINDER, Kind.GOAL) && !state.completed(it) }
+        .mapNotNull { item -> Schedule.next(item.spec(), Instant.now(), ZoneId.systemDefault())?.let { item to it } }
+        .filter { it.second.atZone(ZoneId.systemDefault()).toLocalDate() > today }.sortedBy { it.second }.take(3)
     val greeting = when (LocalTime.now().hour) { in 5..11 -> "Good morning"; in 12..17 -> "Good afternoon"; else -> "Good evening" }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
@@ -76,6 +79,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
         else {
             if (completed == tasks.size) item { SoftCard(color = MaterialTheme.colorScheme.primaryContainer) { Text("Great job, ${state.profile?.displayName}! You completed everything for today.", style = MaterialTheme.typography.titleMedium) } }
             items(tasks.take(5), key = { it.id }) { item -> ItemRow(item, state, { navigate("detail/${item.id}") }, { vm.toggle(item, today) }, today) }
+            if (tasks.size > 5) item { TextButton({ navigate("calendar") }, Modifier.fillMaxWidth()) { Text("View all ${tasks.size} tasks for today") } }
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -97,6 +101,15 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
                     KindBadge(Kind.BIRTHDAY)
                     Column(Modifier.weight(1f)) { Eyebrow("A day worth remembering"); Spacer(Modifier.height(5.dp)); Text("${birthday.title}'s birthday", style = MaterialTheme.typography.titleMedium); Text(Schedule.nextBirthday(LocalDate.parse(birthday.date), today).format(dateFormat), style = MaterialTheme.typography.bodyMedium) }
                     Icon(Icons.AutoMirrored.Outlined.ArrowForward, "View birthday")
+                }
+            }
+        }
+        if (comingUp.isNotEmpty()) {
+            item { SectionHeading("Coming up", "Reminders") { navigate("list/REMINDER") } }
+            items(comingUp, key = { "upcoming-${it.first.id}" }) { (item, next) ->
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Eyebrow(next.atZone(ZoneId.systemDefault()).toLocalDate().format(dateFormat))
+                    ItemRow(item, state, { navigate("detail/${item.id}") })
                 }
             }
         }

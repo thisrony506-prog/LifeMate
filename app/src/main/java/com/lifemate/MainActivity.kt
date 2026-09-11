@@ -12,8 +12,11 @@ class MainActivity : FragmentActivity() {
     val openItem = mutableStateOf<String?>(null)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState); enableEdgeToEdge()
-        openItem.value = intent.getStringExtra("itemId")
+        openItem.value = validItemId(intent)
         setContent { LifeRoot(this) }
     }
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); openItem.value = intent.getStringExtra("itemId") }
+    private fun validItemId(intent: Intent): String? = intent.getStringExtra("itemId")?.let {
+        runCatching { java.util.UUID.fromString(it).toString() }.getOrNull()
+    }
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); setIntent(intent); openItem.value = validItemId(intent) }
 }

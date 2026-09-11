@@ -129,6 +129,9 @@ fun checklistJson(lines: String, original: String): String {
             ToggleRow("Remind me", "A gentle nudge, right when you need it.", draft.notifications) { draft = draft.copy(notifications = it) }
             if (draft.notifications) {
                 TimeField(draft.time) { draft = draft.copy(time = it) }
+                if (kind !in setOf(Kind.MISSION, Kind.BIRTHDAY) && draft.repeat == Repeat.ONCE && LocalDateTime.of(LocalDate.parse(draft.date), LocalTime.parse(draft.time)) <= LocalDateTime.now()) {
+                    Text("This time has passed. You can save it for your records, but choose a future time to receive a notification.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 if (kind == Kind.BIRTHDAY) {
                     Text("Remind me before their birthday")
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {

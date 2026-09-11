@@ -46,7 +46,10 @@ import java.time.temporal.ChronoUnit
     var goalProgress by remember(item.progress) { mutableFloatStateOf(item.progress.toFloat()) }
     LazyColumn(contentPadding = PaddingValues(22.dp, 16.dp, 22.dp, 36.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            KindBadge(item.kind, 56.dp); Spacer(Modifier.weight(1f))
+            val portrait = if (item.kind == Kind.BIRTHDAY) state.media(item).firstOrNull { it.mime.startsWith("image/") } else null
+            if (portrait != null) AsyncImage(File(portrait.path), "${item.title}'s photo", Modifier.size(56.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+            else KindBadge(item.kind, 56.dp)
+            Spacer(Modifier.weight(1f))
             IconButton({ vm.save(item.copy(pinned = !item.pinned)) {} }) { Icon(Icons.Outlined.PushPin, if (item.pinned) "Unpin" else "Pin", tint = if (item.pinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }
             IconButton({ navigate("edit/${item.kind.name}/${item.id}") }) { Icon(Icons.Outlined.Edit, "Edit ${item.kind.label}") }
             IconButton({ delete = true }) { Icon(Icons.Outlined.DeleteOutline, "Delete ${item.kind.label}") }
@@ -59,10 +62,16 @@ import java.time.temporal.ChronoUnit
             if (item.tags.isNotBlank()) Text(item.tags.split(',').joinToString("   ") { "#${it.trim()}" }, color = MaterialTheme.colorScheme.primary)
             if (item.kind in taskKinds && item.occurs(today)) Button({ vm.toggle(item) }, Modifier.fillMaxWidth()) { Icon(if (state.done(item)) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked, null); Text(if (state.done(item)) "  Completed today · undo" else "  Mark today complete") }
             else if (item.kind in taskKinds) Text(if (LocalDate.parse(item.date) > today) "Starts ${LocalDate.parse(item.date).format(dateFormat)}" else "Not scheduled for today", style = MaterialTheme.typography.bodyMedium)
-            if (item.notifications && item.kind !in setOf(Kind.NOTE, Kind.MEMORY)) Text(if (vm.app.scheduler.permissionGranted()) "Reminders enabled · ${if (vm.app.scheduler.canBePrecise()) "precise" else "approximate"} timing" else "Reminders need notification permission in Settings", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (item.notifications && item.kind !in setOf(Kind.NOTE, Kind.MEMORY)) Text(when {
+                !state.preferences.notifications -> "Reminders are turned off in Settings"
+                !vm.app.scheduler.permissionGranted() -> "Reminders need notification permission in Settings"
+                item.archived || item.kind == Kind.GOAL && item.progress == 100 -> "No reminder scheduled for this completed or archived record"
+                Schedule.next(item.spec(), Instant.now(), ZoneId.systemDefault()) == null -> "No future reminder scheduled"
+                else -> "Reminders enabled · ${if (vm.app.scheduler.canBePrecise()) "precise" else "approximate"} timing"
+            }, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } }
         if (item.kind == Kind.MISSION) item {
-            val completed = state.dates(item).count { item.occurs(it) }
+            val completed = state.dates(item).count { Schedule.occurs(item.spec(), it) }
             val current = (ChronoUnit.DAYS.between(LocalDate.parse(item.date), today) + 1).coerceIn(0, item.duration.toLong())
             val remaining = (item.duration - current).coerceAtLeast(0)
             SoftCard(Modifier.fillMaxWidth(), MaterialTheme.colorScheme.primaryContainer) {
