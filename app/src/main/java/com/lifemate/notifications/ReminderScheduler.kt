@@ -13,6 +13,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.*
 import com.lifemate.*
+import com.lifemate.R
 import com.lifemate.data.PreferenceStore
 import com.lifemate.database.*
 import com.lifemate.domain.*
@@ -37,7 +38,7 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
     private suspend fun scheduleInternal(item: LifeItem, preservePending: Boolean) {
         alarms.cancel(pending(item.id))
         val prefs = preferences.flow.first()
-        if (item.archived || !item.notifications || !prefs.notifications) { dao.deleteAlarm(item.id); return }
+        if (item.archived || !item.notifications || !prefs.notifications || item.kind == Kind.GOAL && item.progress >= 100) { dao.deleteAlarm(item.id); return }
         val zone = ZoneId.systemDefault()
         val now = Instant.now()
         val saved = dao.getAlarm(item.id)
@@ -71,7 +72,7 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
         val day = Instant.ofEpochMilli(occurrence).atZone(ZoneId.systemDefault()).toLocalDate()
         // Ignore stale broadcasts (for example after a delayed restore) and completed records.
         val timely = occurrence > 0 && kotlin.math.abs(System.currentTimeMillis() - occurrence) < TimeUnit.HOURS.toMillis(12)
-        if (timely && prefs.notifications && item.notifications && !item.archived && permissionGranted() && !dao.isDone(id, day.toString())) {
+        if (timely && (item.kind != Kind.GOAL || item.progress < 100) && prefs.notifications && item.notifications && !item.archived && permissionGranted() && !dao.isDone(id, day.toString())) {
             val sound = if (item.sound == "default") prefs.sound else item.sound
             val vibration = prefs.vibration && item.vibration
             val channelId = "reminders_${sound.hashCode()}_${vibration}_${item.important}"

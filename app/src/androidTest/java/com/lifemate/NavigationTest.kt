@@ -24,6 +24,7 @@ class NavigationTest {
     }
     @Test fun noteCreationPersistsAcrossActivityRecreation() {
         compose.onNodeWithContentDescription("Create something new").performClick()
+        compose.onAllNodes(hasScrollToNodeAction()).onLast().performScrollToNode(hasText("New note"))
         compose.onNodeWithText("New note").performClick()
         compose.onNodeWithText("Note name *").performTextInput("A little clarity")
         compose.onNodeWithText("Your note").performTextInput("A real offline note")
@@ -51,7 +52,8 @@ class NavigationTest {
     @Test fun missionCheckinIsPersistedAndUnique() {
         val item = LifeItem(kind = Kind.MISSION, title = "Reading journey", date = LocalDate.now().toString(), duration = 7, notifications = false)
         runBlocking { app.db.dao().save(item) }
-        compose.waitUntil(10_000) { compose.onAllNodesWithText("Reading journey").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitForIdle()
+        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Reading journey"))
         compose.onNodeWithContentDescription("Complete Reading journey").performClick()
         compose.waitUntil(10_000) { runBlocking { app.db.dao().isDone(item.id, LocalDate.now().toString()) } }
         compose.onNodeWithContentDescription("Mark Reading journey incomplete").performClick()

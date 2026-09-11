@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatter
 
 fun Kind.icon(): ImageVector = when (this) {
     Kind.ROUTINE -> Icons.Outlined.WbSunny; Kind.MISSION -> Icons.Outlined.Flag; Kind.HABIT -> Icons.Outlined.Spa
-    Kind.REMINDER -> Icons.Outlined.Notifications; Kind.BIRTHDAY -> Icons.Outlined.Cake; Kind.NOTE -> Icons.AutoMirrored.Outlined.Note
+    Kind.REMINDER -> Icons.Outlined.Notifications; Kind.BIRTHDAY -> Icons.Outlined.Cake; Kind.NOTE -> Icons.Outlined.Description
     Kind.MEMORY -> Icons.Outlined.PhotoLibrary; Kind.GOAL -> Icons.Outlined.TrackChanges
 }
 fun Kind.tint() = when (this) { Kind.MISSION, Kind.GOAL -> Color(0xFFAA7A4B); Kind.BIRTHDAY -> Color(0xFFAE7186); Kind.NOTE -> Color(0xFF8175AC); Kind.MEMORY -> Color(0xFF628AAC); else -> Jade }

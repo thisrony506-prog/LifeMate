@@ -53,9 +53,7 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          script: |
-            set -o pipefail
-            ./gradlew connectedDebugAndroidTest --stacktrace 2>&1 | tee device.log
+          script: bash -o pipefail -c './gradlew connectedDebugAndroidTest --stacktrace 2>&1 | tee device.log' 
       - name: Publish device diagnostics
         if: always()
         run: python3 scripts/report-ci.py device.log

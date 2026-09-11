@@ -37,7 +37,13 @@ class BackupManager(private val repo: LifeRepository) {
         require(it.title.isNotBlank() && it.title.length <= 200 && it.duration in 1..36500 && it.interval in 1..1461 && it.progress in 0..100) { "Invalid backup record." }
         require(it.spec().days.all { d -> d in 1..7 } && it.spec().birthdayOffsets.all { d -> d in 0..366 })
         require(it.repeat != Repeat.SPECIFIC || it.spec().days.isNotEmpty())
-        JSONArray(it.checklist)
+        val checks = JSONArray(it.checklist)
+        require(checks.length() <= 10000)
+        (0 until checks.length()).forEach { index ->
+            val check = checks.getJSONObject(index)
+            require(check.getString("text").isNotBlank())
+            check.getBoolean("done")
+        }
     }
     suspend fun export(uri: Uri) = withContext(Dispatchers.IO) {
         val root = JSONObject().put("format", "LifeMate").put("version", 1).put("exportedAt", Instant.now().toString())

@@ -20,6 +20,7 @@ import androidx.lifecycle.*
 import androidx.lifecycle.compose.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.*
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
 import com.lifemate.*
 import com.lifemate.domain.*
@@ -73,7 +74,7 @@ import java.time.LocalDate
                 when {
                     state.loading -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) { Icon(Icons.Outlined.Spa, null, Modifier.size(54.dp), tint = MaterialTheme.colorScheme.primary); Text("LifeMate", style = MaterialTheme.typography.displaySmall); CircularProgressIndicator() }
                     state.error != null -> Column(Modifier.padding(26.dp).align(Alignment.Center)) { EmptyState(null, "Your data is still yours", state.error!!); Button({ activity.recreate() }) { Text("Try again") } }
-                    state.profile == null -> Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding -> Box(Modifier.padding(padding)) { ProfileEditor(null, vm) { navigate("home") } } }
+                    state.profile == null -> Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding -> Box(Modifier.padding(padding)) { ProfileEditor(null, vm) { } } }
                     else -> {
                         val showBottom = route in setOf("home", "list/{kind}", "calendar", "profile", "menu", "statistics")
                         Box(if (locked) Modifier.clearAndSetSemantics { } else Modifier) {

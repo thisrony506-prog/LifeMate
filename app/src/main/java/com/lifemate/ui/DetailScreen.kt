@@ -42,6 +42,7 @@ import java.time.temporal.ChronoUnit
     var removeAttachment by remember { mutableStateOf<Attachment?>(null) }
     var renameAttachment by remember { mutableStateOf<Attachment?>(null) }
     var rename by remember { mutableStateOf("") }
+    var video by remember { mutableStateOf<Attachment?>(null) }
     var goalProgress by remember(item.progress) { mutableFloatStateOf(item.progress.toFloat()) }
     LazyColumn(contentPadding = PaddingValues(22.dp, 16.dp, 22.dp, 36.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         item { Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -109,7 +110,7 @@ import java.time.temporal.ChronoUnit
                 }
                 if (attachment.mime.startsWith("audio/")) AudioPlayer(attachment.path, vm)
                 Row {
-                    if (attachment.mime.startsWith("video/")) TextButton({ try { shareFile(context, File(attachment.path), attachment.mime, true) } catch (_: Exception) { vm.message("Install a compatible video player to play this file.") } }) { Icon(Icons.Outlined.PlayCircle, null); Text(" Play video") }
+                    if (attachment.mime.startsWith("video/")) TextButton({ video = attachment }) { Icon(Icons.Outlined.PlayCircle, null); Text(" Play video") }
                     TextButton({ try { shareFile(context, File(attachment.path), attachment.mime) } catch (_: Exception) { vm.message("Unable to share this file.") } }) { Icon(Icons.Outlined.Share, null); Text(" Share") }
                 }
             }
@@ -117,6 +118,7 @@ import java.time.temporal.ChronoUnit
         item { VoiceNotePanel(item, vm) }
         item { OutlinedButton({ vm.save(item.copy(archived = !item.archived)) {} }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Archive, null); Text(if (item.archived) "  Restore from archive" else "  Archive ${item.kind.label.lowercase()}") } }
     }
+    video?.let { VideoDialog(it, vm) { video = null } }
     if (delete) ConfirmDialog("Delete ${item.kind.label.lowercase()}?", "“${item.title}”, its progress, and its attachments will be permanently deleted.", onDismiss = { delete = false }) { delete = false; vm.delete(item, onDeleted) }
     removeAttachment?.let { attachment -> ConfirmDialog("Delete attachment?", "This file will be removed from LifeMate. The original in your gallery isn't affected.", onDismiss = { removeAttachment = null }) { removeAttachment = null; vm.runAction("Attachment deleted") { vm.repo.deleteAttachment(attachment) } } }
     renameAttachment?.let { attachment -> AlertDialog(onDismissRequest = { renameAttachment = null }, title = { Text("Rename attachment") }, text = { Field(rename, { rename = it }, "Name") }, confirmButton = { TextButton({ if (rename.isNotBlank()) { vm.runAction { vm.repo.dao.saveAttachment(attachment.copy(name = rename.trim())) }; renameAttachment = null } }) { Text("Save") } }, dismissButton = { TextButton({ renameAttachment = null }) { Text("Cancel") } }) }
@@ -149,13 +151,13 @@ import java.time.temporal.ChronoUnit
     var playing by remember { mutableStateOf(false) }
     val lifecycle = LocalLifecycleOwner.current
     DisposableEffect(path, lifecycle) {
-        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) { player?.pause(); playing = false } }
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) { runCatching { player?.pause() }; playing = false } }
         lifecycle.lifecycle.addObserver(observer)
         onDispose { lifecycle.lifecycle.removeObserver(observer); player?.release(); player = null }
     }
     TextButton({
         try {
-            if (playing) { player?.pause(); playing = false }
+            if (playing) { runCatching { player?.pause() }; playing = false }
             else if (player != null) { player?.start(); playing = true }
             else {
                 val newPlayer = MediaPlayer(); player = newPlayer
@@ -182,7 +184,7 @@ import java.time.temporal.ChronoUnit
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP && recording) finish() }
         lifecycle.lifecycle.addObserver(observer)
-        onDispose { lifecycle.lifecycle.removeObserver(observer); recorder.stop(true) }
+        onDispose { lifecycle.lifecycle.removeObserver(observer); if (recording) finish() else recorder.stop(true) }
     }
     LaunchedEffect(recording, paused) { while (recording && !paused) { delay(1000); seconds++; if (seconds >= 590) finish() } }
     SoftCard(Modifier.fillMaxWidth()) {
@@ -197,4 +199,25 @@ import java.time.temporal.ChronoUnit
             }
         }
     }
+}
+
+@Composable fun VideoDialog(attachment: Attachment, vm: LifeViewModel, onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val video = remember(attachment.path) { android.widget.VideoView(context) }
+    val lifecycle = LocalLifecycleOwner.current
+    DisposableEffect(video, lifecycle) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) runCatching { video.pause() } }
+        lifecycle.lifecycle.addObserver(observer)
+        onDispose { lifecycle.lifecycle.removeObserver(observer); video.stopPlayback() }
+    }
+    AlertDialog(onDismissRequest = onDismiss, title = { Text(attachment.name) }, text = {
+        androidx.compose.ui.viewinterop.AndroidView(factory = {
+            video.apply {
+                setVideoPath(attachment.path)
+                setMediaController(android.widget.MediaController(context).apply { setAnchorView(video) })
+                setOnPreparedListener { start() }
+                setOnErrorListener { _, _, _ -> vm.message("This video format isn't supported by your device."); onDismiss(); true }
+            }
+        }, modifier = Modifier.fillMaxWidth().height(280.dp))
+    }, confirmButton = { TextButton(onDismiss) { Text("Close video") } })
 }

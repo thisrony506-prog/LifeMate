@@ -30,7 +30,7 @@ GitHub Actions runs compilation, lint, JVM tests, release/debug assembly, and An
 - **Birthdays:** names/nicknames, relationship, date, notes, optional photo attachment, upcoming ordering, configurable 7/3/1/day-of reminders.
 - **Wishes & cards:** seven offline tones, editable personalized messages, copy/share, three card backgrounds, serif/modern type, real rendered PNG preview, save/share image. Messages are never automatically sent.
 - **Notes:** text/checklists, important flag, tags, search, sorting, pin/unpin, archive/restore, edit/delete, and media/audio attachments.
-- **Memories:** system photo/video picker, private local copies, captions/dates/notes, image preview, system video playback, explicit sharing.
+- **Memories:** system photo/video picker, private local copies, captions/dates/notes, image preview, in-app system VideoView playback, explicit sharing.
 - **Voice:** microphone permission at point of use, record/pause/resume/save/play/pause/rename/delete, local AAC/M4A files. Recording stops and saves when backgrounded; there is no background recording service.
 - **Goals:** descriptions, target date/time reminder, short-/long-term category, manually adjustable progress, and checklist milestones.
 - **Calendar:** date navigation, type-colored indicators, details navigation, selected-day event creation and check-ins.
@@ -42,7 +42,7 @@ GitHub Actions runs compilation, lint, JVM tests, release/debug assembly, and An
 ```
 ui/             Compose screens, theme, state, ViewModel
 navigation/     Bottom destinations; NavHost lives in LifeRoot
- domain/        Recurrence/streak rules and future assistant-provider boundary
+domain/        Recurrence/streak rules and future assistant-provider boundary
  database/      Room entities, indexed DAO, encrypted database
  data/          Repository, Preferences DataStore, validated ZIP backups
  notifications/ AlarmManager, broadcast receivers, WorkManager reconciliation
@@ -78,4 +78,4 @@ A singleton profile owns typed `LifeItem` records through a Room foreign key. Co
 
 ## Release checklist
 
-Run the tests, complete the physical-device checklist, retain a production signing key, verify Android 15/16 KB native-library compatibility on your deployment targets, add explicit Room migrations for subsequent schema versions, and complete your store privacy disclosures. A successful compile alone is not a production certification.
+Run the tests, complete the physical-device checklist, retain a production signing key, verify native-library compatibility on your deployment targets (SQLCipher 4.9.0 is built with flexible page-size support), add explicit Room migrations for subsequent schema versions, and complete your store privacy disclosures. A successful compile alone is not a production certification.

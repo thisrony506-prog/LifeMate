@@ -48,7 +48,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.work:work-runtime-ktx:2.10.0")
     implementation("androidx.biometric:biometric:1.1.0")
-    implementation("net.zetetic:sqlcipher-android:4.6.1")
+    implementation("net.zetetic:sqlcipher-android:4.9.0")
     implementation("androidx.sqlite:sqlite-ktx:2.4.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
     testImplementation("junit:junit:4.13.2")
