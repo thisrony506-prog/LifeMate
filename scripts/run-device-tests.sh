@@ -8,8 +8,10 @@ if [[ -f app/build/outputs/apk/debug/app-debug.apk && -f app/build/outputs/apk/a
   adb shell am instrument -w -e class com.lifemate.ScreenshotTest com.lifemate.test/androidx.test.runner.AndroidJUnitRunner | tee screenshot-run.log
   adb pull /sdcard/Android/data/com.lifemate/files/screenshots screenshots || true
 fi
-if [ "$status" -eq 0 ]; then
+# Verify system delivery independently, even if a UI assertion failed.
+if [[ -f app/build/outputs/apk/debug/app-debug.apk ]]; then
   bash scripts/device-smoke.sh 2>&1 | tee -a device.log
-  status=${PIPESTATUS[0]}
+  smoke_status=${PIPESTATUS[0]}
+  if [ "$status" -eq 0 ]; then status=$smoke_status; fi
 fi
 exit "$status"

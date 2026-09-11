@@ -37,7 +37,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
         .mapNotNull { item -> Schedule.next(item.spec(), Instant.now(), ZoneId.systemDefault())?.let { item to it } }
         .filter { it.second.atZone(ZoneId.systemDefault()).toLocalDate() > today }.sortedBy { it.second }.take(3)
     val greeting = when (LocalTime.now().hour) { in 5..11 -> "Good morning"; in 12..17 -> "Good afternoon"; else -> "Good evening" }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 20.dp)) {
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Box(Modifier.clip(CircleShape).clickable { navigate("profile") }) { Avatar(state.profile) }
@@ -51,7 +51,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Eyebrow(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")))
                 Text("$greeting,\n${state.profile?.displayName ?: "friend"}.", style = if (compact) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge)
-                Text("A little intention. A little progress. A better you.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (!compact) Text("A little intention. A little progress. A better you.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         item {
@@ -78,7 +78,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
                 }
             }
         }
-        item { SectionHeading("Your day, at a glance", "Calendar") { navigate("calendar") } }
+        item { SectionHeading("Your day", "Calendar") { navigate("calendar") } }
         if (tasks.isEmpty()) item { EmptyState(Kind.ROUTINE, "Create your first routine", "Give your day a little rhythm. Start with one thing that matters.", "Create routine") { navigate("edit/ROUTINE/new") } }
         else {
             if (completed == tasks.size) item { SoftCard(color = MaterialTheme.colorScheme.primaryContainer) { Text("Great job, ${state.profile?.displayName}! You completed everything for today.", style = MaterialTheme.typography.titleMedium) } }

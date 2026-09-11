@@ -55,7 +55,9 @@ class NavigationTest {
         val item = LifeItem(kind = Kind.MISSION, title = "Reading journey", date = LocalDate.now().toString(), duration = 7, notifications = false)
         runBlocking { app.db.dao().save(item) }
         compose.waitForIdle()
-        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Reading journey"))
+        // Put the single task at the top, clear of the bottom-right floating add button.
+        // The feed has four introductory rows before its first scheduled task.
+        compose.onNode(hasScrollToNodeAction()).performScrollToIndex(4)
         compose.onNodeWithContentDescription("Complete Reading journey").performClick()
         compose.waitUntil(10_000) { runBlocking { app.db.dao().isDone(item.id, LocalDate.now().toString()) } }
         compose.onNodeWithContentDescription("Mark Reading journey incomplete").performClick()
