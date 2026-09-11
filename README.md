@@ -2,6 +2,16 @@
 
 **Your Personal Life Assistant.** A native, offline-first Android app built with Kotlin, Jetpack Compose, and Material 3. Calm jade-and-cream light styling, a coordinated dark theme, and real local data—no static screens or seeded production demo records.
 
+## APK downloads & verification
+
+[**Download the last verified build artifacts**](https://github.com/thisrony506-prog/LifeMate/actions/runs/34612828020) → **Artifacts → LifeMate-build-and-reports**.
+
+- `app-debug.apk`: installable testing build.
+- `app-release-unsigned.apk`: optimized release; requires your own signing key before installation/distribution.
+- That build (source commit `43c2f04`) passed Kotlin compilation, Android lint, all 18 JVM tests, and release/debug assembly. Its workflow is marked failed because two UI test selectors failed, not because APK assembly failed.
+- The current source also includes subsequent historical-completion filtering corrections, backup tests, and locally corrected UI test selectors. The final rerun and actual process-death/reboot notification smoke checks remain **unverified** after GitHub authentication expired. The user chose to hand off the current project rather than reconnect in this session.
+- APK binaries are hosted as GitHub Actions artifacts, not committed to source. Artifacts are subject to GitHub retention; rebuild with the commands below if they expire.
+
 ## Run it
 
 1. Open this repository in Android Studio Ladybug or newer.

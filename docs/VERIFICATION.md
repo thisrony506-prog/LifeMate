@@ -28,3 +28,13 @@
 - [ ] Upgrade an installed signed release without data loss; verify explicit migrations for any future schema version.
 
 See the repository's Android verification workflow for execution results. The checked-in tests do not prove OEM-specific scheduling or full production readiness.
+
+## Session results (11 September 2026)
+
+- **Passed**: debug and optimized unsigned release assembly, Kotlin compilation, Android lint, all 18 JVM recurrence/streak tests (GitHub Actions run 34612530827; subsequent build 34612828020 also passed).
+- **Passed on Android 15 emulator**: two encrypted Room persistence/uniqueness/cascade tests, two alarm registration/reconciliation/birthday tests, mission check-in/undo, real home capture in light and dark themes.
+- **UI test harness fixes pending rerun**: exact text selectors failed on duplicate subtitle labels and the leading spaces in icon-button labels; selectors have been corrected locally. These failures did not report app crashes.
+- **Pending**: newest backup round-trip/rejection tests, end-to-end process-death and reboot notification smoke script, final suite rerun after selector fixes, physical-device acceptance list above.
+- GitHub authentication expired during artifact retrieval. Reconnect GitHub in Arena to push the last selector fixes and complete verification. Existing APKs remain in the successful build job's artifacts.
+
+The user selected **hand off the current build** after the connection expired. No final rerun is claimed. Source changes are saved on the tracked Arena branch; the last local test-selector changes have not been pushed.

@@ -14,7 +14,7 @@ import java.util.zip.*
 class BackupTest {
     private val app get() = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as LifeMateApp
     @After fun cleanup() = runBlocking { app.repository.deleteAll() }
-    @Test fun portableBackupRoundTripsRecordsAndPrivateMedia() = runBlocking {
+    @Test fun portableBackupRoundTripsRecordsAndPrivateMedia(): Unit = runBlocking {
         app.repository.deleteAll()
         val dao = app.db.dao()
         dao.saveProfile(Profile(fullName = "Backup test", information = "Private information"))
@@ -33,7 +33,7 @@ class BackupTest {
         assertArrayEquals(byteArrayOf(1, 2, 3, 4), File(attachment.path).readBytes())
         backup.delete()
     }
-    @Test fun unsafeArchiveDoesNotReplaceCurrentData() = runBlocking {
+    @Test fun unsafeArchiveDoesNotReplaceCurrentData(): Unit = runBlocking {
         app.repository.deleteAll(); app.db.dao().saveProfile(Profile(fullName = "Keep me"))
         val backup = File(app.cacheDir, "unsafe.zip")
         ZipOutputStream(backup.outputStream()).use { zip -> zip.putNextEntry(ZipEntry("../escaped.txt")); zip.write("bad".toByteArray()); zip.closeEntry() }

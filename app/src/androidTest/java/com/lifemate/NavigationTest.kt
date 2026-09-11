@@ -28,7 +28,7 @@ class NavigationTest {
         compose.onNodeWithText("New note").performClick()
         compose.onNodeWithText("Note name *").performTextInput("A little clarity")
         compose.onNodeWithText("Your note").performTextInput("A real offline note")
-        compose.onNodeWithText("Save note").performScrollTo().performClick()
+        compose.onNodeWithText("Save note", substring = true).performScrollTo().performClick()
         compose.waitUntil(15_000) { compose.onAllNodesWithText("A little clarity").fetchSemanticsNodes().isNotEmpty() }
         assertEquals("A real offline note", runBlocking { app.db.dao().allItems().first { it.title == "A little clarity" }.description })
         compose.activityRule.scenario.recreate()
@@ -37,14 +37,14 @@ class NavigationTest {
     }
     @Test fun bottomNavigationAndThemeAreReal() {
         compose.onNodeWithText("Missions").performClick()
-        compose.onNodeWithText("Big changes begin with small commitments.").assertIsDisplayed()
+        compose.onAllNodesWithText("Big changes begin with small commitments.").onFirst().assertIsDisplayed()
         compose.onNodeWithText("Calendar").performClick()
         compose.onNodeWithText("A little perspective").assertIsDisplayed()
         compose.onNodeWithText("Memories").performClick()
-        compose.onNodeWithText("Keep the moments. Remember the feeling.").assertIsDisplayed()
+        compose.onAllNodesWithText("Keep the moments. Remember the feeling.").onFirst().assertIsDisplayed()
         compose.onNodeWithText("Profile").performClick()
         compose.onNodeWithText("Rony Test").assertIsDisplayed()
-        compose.onNodeWithText("Settings & privacy").performScrollTo().performClick()
+        compose.onNodeWithText("Settings & privacy", substring = true).performScrollTo().performClick()
         compose.onNodeWithText("Dark").performScrollTo().performClick()
         compose.waitUntil(10_000) { runBlocking { app.preferences.flow.first().theme == "Dark" } }
         compose.onNodeWithText("Light").performScrollTo().performClick()

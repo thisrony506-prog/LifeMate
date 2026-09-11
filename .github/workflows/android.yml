@@ -5,6 +5,9 @@ on:
     paths-ignore: ['.github/workflows/inspect-results.yml', 'docs/**', '**/*.md']
   pull_request:
   workflow_dispatch:
+concurrency:
+  group: lifemate-android-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -19,10 +22,34 @@ jobs:
           java-version: '17'
       - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
       - name: Compile, lint, unit tests, and APKs
         run: |
           set -o pipefail
           ./gradlew testDebugUnitTest lintDebug assembleDebug assembleRelease --stacktrace 2>&1 | tee compile.log
+      - name: Package release download
+        if: success()
+        run: |
+          mkdir -p release-download
+          cp app/build/outputs/apk/release/app-release-unsigned.apk release-download/LifeMate-release-unsigned.apk
+          cd release-download
+          sha256sum *.apk > SHA256SUMS.txt
+          echo 'Optimized unsigned release. Sign with your own retained key before installation. See docs/RELEASE.md.' > READ-ME.txt
+      - name: Upload Release APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LifeMate-Release-APK
+          path: release-download/
+          if-no-files-found: error
+      - name: Upload installable test APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LifeMate-Debug-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
       - name: Publish readable diagnostics
         if: always()
         run: python3 scripts/report-ci.py compile.log
@@ -45,6 +72,8 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
