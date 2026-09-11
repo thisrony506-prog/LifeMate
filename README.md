@@ -4,13 +4,24 @@
 
 ## APK downloads & verification
 
-[**Download the last verified build artifacts**](https://github.com/thisrony506-prog/LifeMate/actions/runs/34612828020) → **Artifacts → LifeMate-build-and-reports**.
+[**Open the verified GitHub Actions build**](https://github.com/thisrony506-prog/LifeMate/actions/runs/34618393752).
 
-- `app-debug.apk`: installable testing build.
-- `app-release-unsigned.apk`: optimized release; requires your own signing key before installation/distribution.
-- That build (source commit `43c2f04`) passed Kotlin compilation, Android lint, all 18 JVM tests, and release/debug assembly. Its workflow is marked failed because two UI test selectors failed, not because APK assembly failed.
-- The current source also includes subsequent historical-completion filtering corrections, backup tests, and locally corrected UI test selectors. The final rerun and actual process-death/reboot notification smoke checks remain **unverified** after GitHub authentication expired. The user chose to hand off the current project rather than reconnect in this session.
-- APK binaries are hosted as GitHub Actions artifacts, not committed to source. Artifacts are subject to GitHub retention; rebuild with the commands below if they expire.
+Under **Artifacts**, choose:
+
+- **LifeMate-Release-APK** — optimized release APK plus SHA-256 checksum. **Unsigned**: sign with your own retained key before installation/distribution.
+- **LifeMate-Debug-APK** — installable immediately for device testing.
+- **LifeMate-build-and-reports** — both APK variants, build/lint/unit-test reports, and the Room schema.
+- **device-test-reports** — Android emulator results and real light/dark screenshots.
+
+The verified run passed compilation, Android lint, all JVM tests, the Compose/database/backup/PIN emulator suite, and actual notification delivery after process termination and emulator reboot. It also checked the next recurring alarm after both deliveries. See [verification scope](docs/VERIFICATION.md) and [release/signing instructions](docs/RELEASE.md).
+
+Artifacts are subject to GitHub retention. To rebuild, push a change on the tracked branch, rerun its workflow from GitHub Actions, or use **Run workflow** on `arena/01a090c4-lifemate` when available.
+
+## Actual Android screens
+
+<img src="docs/screenshots/home-light.jpg" width="240" alt="LifeMate home screen in light mode" /> <img src="docs/screenshots/home-dark.jpg" width="240" alt="LifeMate home screen in dark mode" />
+
+Captured from the native Compose application on an Android 15 emulator. Sample records are test-only; a fresh installation starts with your profile setup and no fictional tasks.
 
 ## Run it
 
