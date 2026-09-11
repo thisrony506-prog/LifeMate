@@ -41,7 +41,7 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 }
 @Composable fun SectionHeading(title: String, action: String? = null, onAction: () -> Unit = {}) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(title, style = MaterialTheme.typography.titleLarge)
+        Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
         if (action != null) TextButton(onClick = onAction) { Text(action); Icon(Icons.AutoMirrored.Outlined.ArrowForward, null, Modifier.padding(start = 6.dp).size(16.dp)) }
     }
 }

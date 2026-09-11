@@ -8,3 +8,9 @@ errors = [line for line in lines if line.startswith("e: ") or " error:" in line 
 summary = "\n".join(errors[:45] + ["--- Last log lines ---"] + lines[-65:])[-18000:]
 summary = summary.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
 print(f"::notice title=Android diagnostics::{summary}")
+if "compile" in str(log):
+    import base64
+    for file in Path("app/schemas").rglob("*.json"):
+        encoded = base64.b64encode(file.read_bytes()).decode()
+        if len(encoded) < 55000:
+            print(f"::notice title=Room schema {file.name}::{encoded}")

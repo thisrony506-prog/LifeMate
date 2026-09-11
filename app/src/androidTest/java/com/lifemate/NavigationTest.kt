@@ -20,7 +20,7 @@ class NavigationTest {
             app.db.dao().saveProfile(Profile(fullName = "Rony Test", preferredName = "Rony"))
             app.preferences.set("theme", "Light")
         }
-        compose.waitUntil(15_000) { compose.onAllNodesWithText("Explore").fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(15_000) { compose.onAllNodesWithContentDescription("Search everything").fetchSemanticsNodes().isNotEmpty() }
     }
     @Test fun noteCreationPersistsAcrossActivityRecreation() {
         compose.onNodeWithContentDescription("Create something new").performClick()

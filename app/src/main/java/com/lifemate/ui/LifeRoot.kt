@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.*
 import androidx.lifecycle.compose.*
@@ -69,7 +70,7 @@ import java.time.LocalDate
     if (route.startsWith("edit") && !locked) BackHandler { discard = true }
     if (locked) BackHandler { activity.moveTaskToBack(true) }
     LifeTheme(state.preferences.theme) {
-        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Surface(Modifier.fillMaxSize().testTag("theme-${state.preferences.theme}"), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize().safeDrawingPadding()) {
                 when {
                     state.loading -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) { Icon(Icons.Outlined.Spa, null, Modifier.size(54.dp), tint = MaterialTheme.colorScheme.primary); Text("LifeMate", style = MaterialTheme.typography.displaySmall); CircularProgressIndicator() }
@@ -85,10 +86,7 @@ import java.time.LocalDate
                                         IconButton({ navigate("search") }) { Icon(Icons.Outlined.Search, "Search everything") }
                                         IconButton({ navigate("menu") }) { Icon(Icons.Outlined.GridView, "All features") }
                                     }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background))
-                                    else Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                                        TextButton({ navigate("search") }) { Icon(Icons.Outlined.Search, null, Modifier.size(18.dp)); Text(" Search") }
-                                        TextButton({ navigate("menu") }) { Icon(Icons.Outlined.GridView, null, Modifier.size(18.dp)); Text(" Explore") }
-                                    }
+
                                 },
                                 bottomBar = {
                                     if (showBottom) NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {

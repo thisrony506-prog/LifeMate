@@ -14,7 +14,7 @@ val Lime = Color(0xFFD9ECC0)
 val Apricot = Color(0xFFF7DDC4)
 private val Light = lightColorScheme(primary = Jade, onPrimary = Color.White, primaryContainer = Color(0xFFE0EFDF), onPrimaryContainer = Color(0xFF204D3F),
     secondary = Color(0xFFB98050), secondaryContainer = Apricot, background = Color(0xFFF7F9F5), onBackground = Color(0xFF203B32),
-    surface = Color(0xFFFFFFFF), onSurface = Color(0xFF203B32), surfaceVariant = Color(0xFFEDF1E9), onSurfaceVariant = Color(0xFF778079), outline = Color(0xFF8B968C), outlineVariant = Color(0xFFE1E7DE))
+    surface = Color(0xFFFFFFFF), onSurface = Color(0xFF203B32), surfaceVariant = Color(0xFFEDF1E9), onSurfaceVariant = Color(0xFF627269), outline = Color(0xFF8B968C), outlineVariant = Color(0xFFE1E7DE))
 private val Dark = darkColorScheme(primary = Color(0xFFAFD9B5), onPrimary = Color(0xFF153D2D), primaryContainer = Color(0xFF274E3E), onPrimaryContainer = Color(0xFFD9ECC0),
     secondary = Color(0xFFE5BD96), secondaryContainer = Color(0xFF573D29), background = Color(0xFF111D18), onBackground = Color(0xFFE5EEE4),
     surface = Color(0xFF1A2921), onSurface = Color(0xFFE5EEE4), surfaceVariant = Color(0xFF29382E), onSurfaceVariant = Color(0xFFA6B6AA), outlineVariant = Color(0xFF35463A))

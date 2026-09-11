@@ -32,9 +32,10 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
     val greeting = when (LocalTime.now().hour) { in 5..11 -> "Good morning"; in 12..17 -> "Good afternoon"; else -> "Good evening" }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Box(Modifier.clip(CircleShape).clickable { navigate("profile") }) { Avatar(state.profile) }
-                Column(Modifier.weight(1f)) { Text("LifeMate", style = MaterialTheme.typography.titleLarge); Text("YOUR PERSONAL LIFE ASSISTANT", fontSize = 8.sp, letterSpacing = 1.4.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                Column(Modifier.weight(1f)) { Text("LifeMate", style = MaterialTheme.typography.titleLarge); Text("MAKE TODAY YOURS", fontSize = 8.sp, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                IconButton(onClick = { navigate("search") }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Search, "Search everything") }
                 IconButton(onClick = { navigate("notifications") }) { Icon(Icons.Outlined.Notifications, "Notifications") }
                 IconButton(onClick = { navigate("settings") }, modifier = Modifier.size(40.dp)) { Icon(Icons.Outlined.Settings, "Settings") }
             }
@@ -70,6 +71,12 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
                 }
             }
         }
+        item { SectionHeading("Your day, at a glance", "Calendar") { navigate("calendar") } }
+        if (tasks.isEmpty()) item { EmptyState(Kind.ROUTINE, "Create your first routine", "Give your day a little rhythm. Start with one thing that matters.", "Create routine") { navigate("edit/ROUTINE/new") } }
+        else {
+            if (completed == tasks.size) item { SoftCard(color = MaterialTheme.colorScheme.primaryContainer) { Text("Great job, ${state.profile?.displayName}! You completed everything for today.", style = MaterialTheme.typography.titleMedium) } }
+            items(tasks.take(5), key = { it.id }) { item -> ItemRow(item, state, { navigate("detail/${item.id}") }, { vm.toggle(item, today) }, today) }
+        }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 SectionHeading("A little help to get started")
@@ -83,12 +90,6 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
                     }
                 }
             }
-        }
-        item { SectionHeading("Your day, at a glance", "Calendar") { navigate("calendar") } }
-        if (tasks.isEmpty()) item { EmptyState(Kind.ROUTINE, "Create your first routine", "Give your day a little rhythm. Start with one thing that matters.", "Create routine") { navigate("edit/ROUTINE/new") } }
-        else {
-            if (completed == tasks.size) item { SoftCard(color = MaterialTheme.colorScheme.primaryContainer) { Text("Great job, ${state.profile?.displayName}! You completed everything for today.", style = MaterialTheme.typography.titleMedium) } }
-            items(tasks.take(5), key = { it.id }) { item -> ItemRow(item, state, { navigate("detail/${item.id}") }, { vm.toggle(item, today) }, today) }
         }
         if (birthday != null) item {
             SoftCard(Modifier.fillMaxWidth().clickable { navigate("detail/${birthday.id}") }, color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)) {
