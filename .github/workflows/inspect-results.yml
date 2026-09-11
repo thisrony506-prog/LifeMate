@@ -26,10 +26,11 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+          print('::notice title=Downloaded files::' + ', '.join(str(p) for p in Path('downloaded').rglob('*') if p.is_file())[:5000])
           for file in Path('downloaded').rglob('*'):
-              if file.suffix == '.html' and ('class' in str(file) or 'package' in str(file)):
+              if file.suffix in ('.html', '.txt', '.xml', '.log') and 'device-test-reports' in str(file):
                   text = re.sub('<[^>]+>', ' ', file.read_text(errors='replace'))
-                  if 'failed' in text.lower() or 'AssertionError' in text:
+                  if True:
                       text = text[-18000:].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
                       print(f'::notice title={file.name}::{text}')
           PY
