@@ -9,6 +9,8 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -46,9 +48,9 @@ import java.time.*
     }
 }
 @Composable fun ToggleRow(title: String, subtitle: String = "", checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(Modifier.fillMaxWidth().toggleable(value = checked, role = Role.Switch, onValueChange = onChange).padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.weight(1f)) { Text(title, style = MaterialTheme.typography.titleMedium); if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-        Switch(checked, onChange)
+        Switch(checked, onCheckedChange = null)
     }
 }
 @Composable fun SoundPicker(sound: String, onChange: (String) -> Unit) {
@@ -148,7 +150,7 @@ fun checklistJson(lines: String, original: String): String {
                 }
             }
         }
-        if (kind !in setOf(Kind.NOTE, Kind.MEMORY, Kind.BIRTHDAY)) Field(draft.notes, { draft = draft.copy(notes = it) }, "Personal notes (optional)", singleLine = false, minLines = 2)
+        if (kind !in setOf(Kind.NOTE, Kind.BIRTHDAY)) Field(draft.notes, { draft = draft.copy(notes = it) }, "Personal notes (optional)", singleLine = false, minLines = 2)
         if (kind != Kind.GOAL) Field(draft.tags, { draft = draft.copy(tags = it) }, "Tags / category, separated by commas")
         if (kind == Kind.NOTE) ToggleRow("Important note", checked = draft.important) { draft = draft.copy(important = it) }
         SoftCard(color = MaterialTheme.colorScheme.surfaceVariant) {

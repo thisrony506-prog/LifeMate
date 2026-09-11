@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.*
@@ -52,7 +54,8 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
     }
 }
 @Composable fun KindBadge(kind: Kind, size: Dp = 46.dp) {
-    Box(Modifier.size(size).clip(RoundedCornerShape(15.dp)).background(kind.tint().copy(alpha = .12f)), contentAlignment = Alignment.Center) { Icon(kind.icon(), null, Modifier.size(size * .48f), tint = kind.tint()) }
+    val tint = if (MaterialTheme.colorScheme.background.luminance() < .2f) lerp(kind.tint(), Color.White, .4f) else kind.tint()
+    Box(Modifier.size(size).clip(RoundedCornerShape(15.dp)).background(tint.copy(alpha = .12f)), contentAlignment = Alignment.Center) { Icon(kind.icon(), null, Modifier.size(size * .48f), tint = tint) }
 }
 @Composable fun Avatar(profile: Profile?, size: Dp = 44.dp) {
     Box(Modifier.size(size).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
@@ -80,6 +83,7 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(item.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    if (item.important) Icon(Icons.Outlined.PriorityHigh, "Important", Modifier.padding(start = 4.dp).size(16.dp), tint = MaterialTheme.colorScheme.primary)
                     if (item.pinned) Icon(Icons.Outlined.PushPin, "Pinned", Modifier.padding(start = 4.dp).size(14.dp))
                 }
                 val subtitle = when (item.kind) {

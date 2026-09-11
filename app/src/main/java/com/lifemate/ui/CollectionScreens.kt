@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -22,7 +23,7 @@ import java.time.*
 @Composable fun CollectionScreen(kind: Kind, state: LifeState, vm: LifeViewModel, navigate: (String) -> Unit) {
     var query by rememberSaveable(kind) { mutableStateOf("") }
     var filter by rememberSaveable(kind) { mutableStateOf("All") }
-    var sort by rememberSaveable(kind) { mutableStateOf("Newest") }
+    var sort by rememberSaveable(kind) { mutableStateOf(if (kind == Kind.BIRTHDAY) "Date" else "Newest") }
     val today = LocalDate.now()
     val all = state.items.filter { it.kind == kind }
     val filtered = all.filter { item ->
@@ -34,6 +35,7 @@ import java.time.*
                 "Completed" -> state.completed(item)
                 "Pending" -> !state.completed(item)
                 "Pinned" -> item.pinned
+                "Important" -> item.important
                 else -> true
             }
     }.let { records -> when (sort) {
@@ -54,11 +56,11 @@ import java.time.*
     LazyColumn(contentPadding = PaddingValues(22.dp, 16.dp, 22.dp, 110.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         item { PageHeading(kind.plural, subtitle) }
         item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), placeholder = { Text("Search names, tags, dates…") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }, shape = RoundedCornerShape(18.dp), singleLine = true) }
-        item { ChoiceChips(if (kind in setOf(Kind.NOTE, Kind.MEMORY)) listOf("All", "Pinned", "Archived") else if (kind == Kind.BIRTHDAY) listOf("All", "Today", "Upcoming", "Archived") else listOf("All", "Today", "Upcoming", "Pending", "Completed", "Archived"), filter) { filter = it } }
+        item { ChoiceChips(if (kind == Kind.NOTE) listOf("All", "Pinned", "Important", "Archived") else if (kind == Kind.MEMORY) listOf("All", "Pinned", "Archived") else if (kind == Kind.BIRTHDAY) listOf("All", "Today", "Upcoming", "Archived") else listOf("All", "Today", "Upcoming", "Pending", "Completed", "Archived"), filter) { filter = it } }
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Eyebrow("${filtered.size} ${kind.plural}")
             var expanded by remember { mutableStateOf(false) }
-            Box { TextButton({ expanded = true }) { Icon(Icons.Outlined.Sort, null, Modifier.size(18.dp)); Text(" $sort") }; DropdownMenu(expanded, { expanded = false }) { listOf("Newest", "Name", "Date").forEach { option -> DropdownMenuItem({ Text(option) }, { sort = option; expanded = false }) } } }
+            Box { TextButton({ expanded = true }) { Icon(Icons.AutoMirrored.Outlined.Sort, null, Modifier.size(18.dp)); Text(" $sort") }; DropdownMenu(expanded, { expanded = false }) { listOf("Newest", "Name", "Date").forEach { option -> DropdownMenuItem({ Text(option) }, { sort = option; expanded = false }) } } }
         } }
         if (filtered.isEmpty()) item {
             val title = if (all.isNotEmpty()) "Nothing here just yet" else when (kind) { Kind.ROUTINE -> "Create your first routine"; Kind.MISSION -> "Start your first mission"; Kind.BIRTHDAY -> "Add an important person's birthday"; else -> "Your ${kind.plural.lowercase()} start here" }

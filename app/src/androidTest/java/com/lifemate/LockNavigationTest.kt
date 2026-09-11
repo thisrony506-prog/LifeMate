@@ -24,4 +24,25 @@ class LockNavigationTest {
         compose.waitUntil(10_000) { compose.onAllNodesWithContentDescription("Search everything").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Your space, kept safe.").assertDoesNotExist()
     }
+    @Test fun privateDialogIsDismissedAfterBackgroundTimeout() {
+        runBlocking { app.db.dao().saveProfile(Profile(fullName = "Dialog privacy test")) }
+        compose.waitUntil(15_000) { compose.onAllNodesWithContentDescription("Settings").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithText("App lock").performScrollTo().performClick()
+        compose.onNodeWithText("New PIN").performTextInput("839271")
+        compose.onNodeWithText("Confirm PIN").performTextInput("839271")
+        compose.onNodeWithText("Save PIN").performClick()
+        compose.waitUntil(10_000) { app.secure.hasPin() }
+        compose.onNodeWithText("Change PIN").performScrollTo().performClick()
+        compose.onNodeWithText("Current PIN").assertIsDisplayed()
+        compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
+        Thread.sleep(31_000)
+        compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Your space, kept safe.").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Current PIN").assertDoesNotExist()
+        compose.onNodeWithText("Your PIN").performTextInput("839271")
+        compose.onNodeWithText("Unlock LifeMate").performScrollTo().performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Make it feel like you").fetchSemanticsNodes().isNotEmpty() }
+    }
+
 }

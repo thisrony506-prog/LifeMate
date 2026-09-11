@@ -59,3 +59,8 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
+// Room 2.6 writes one identical schema for both variants. Avoid concurrent first-time exports.
+tasks.matching { it.name == "kspReleaseKotlin" }.configureEach {
+    mustRunAfter("kspDebugKotlin")
+}
