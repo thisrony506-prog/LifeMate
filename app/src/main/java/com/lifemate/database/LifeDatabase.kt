@@ -24,8 +24,11 @@ interface LifeDao {
     @Query("DELETE FROM attachments WHERE id=:id") suspend fun deleteAttachment(id: String)
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun recordDelivery(delivery: Delivery): Long
     @Query("DELETE FROM deliveries WHERE occurrence < :before") suspend fun pruneDeliveries(before: Long)
+    @Query("SELECT * FROM scheduled_alarms WHERE itemId=:id") suspend fun getAlarm(id: String): ScheduledAlarm?
+    @Upsert suspend fun saveAlarm(alarm: ScheduledAlarm)
+    @Query("DELETE FROM scheduled_alarms WHERE itemId=:id") suspend fun deleteAlarm(id: String)
     @Query("DELETE FROM profiles") suspend fun clear()
 }
-@Database(entities = [Profile::class, LifeItem::class, Completion::class, Attachment::class, Delivery::class], version = 1, exportSchema = true)
+@Database(entities = [Profile::class, LifeItem::class, Completion::class, Attachment::class, Delivery::class, ScheduledAlarm::class], version = 1, exportSchema = true)
 @TypeConverters(Converters::class)
 abstract class LifeDatabase : RoomDatabase() { abstract fun dao(): LifeDao }

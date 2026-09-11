@@ -66,6 +66,7 @@ import java.time.LocalDate
         if (id != null && !state.loading && state.profile != null && !locked) { navigate("detail/$id"); activity.openItem.value = null }
     }
     if (route.startsWith("edit") && !locked) BackHandler { discard = true }
+    if (locked) BackHandler { activity.moveTaskToBack(true) }
     LifeTheme(state.preferences.theme) {
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize().safeDrawingPadding()) {

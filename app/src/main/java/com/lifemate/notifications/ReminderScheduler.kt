@@ -32,31 +32,41 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
     private fun pending(id: String, occurrence: Long = 0): PendingIntent = PendingIntent.getBroadcast(context, 0,
         Intent(context, AlarmReceiver::class.java).setData(Uri.parse("lifemate://alarm/$id"))
             .putExtra("id", id).putExtra("occurrence", occurrence), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-    fun cancel(id: String) { alarms.cancel(pending(id)); NotificationManagerCompat.from(context).cancel(id.hashCode()) }
-    suspend fun schedule(item: LifeItem) = mutex.withLock { scheduleInternal(item) }
-    private suspend fun scheduleInternal(item: LifeItem) {
-        cancel(item.id)
+    fun cancel(id: String) { alarms.cancel(pending(id)); NotificationManagerCompat.from(context).cancel(id, 0) }
+    suspend fun schedule(item: LifeItem) = mutex.withLock { scheduleInternal(item, false) }
+    private suspend fun scheduleInternal(item: LifeItem, preservePending: Boolean) {
+        alarms.cancel(pending(item.id))
         val prefs = preferences.flow.first()
-        if (item.archived || !item.notifications || !prefs.notifications) return
-        var next = Schedule.next(item.spec(), Instant.now(), ZoneId.systemDefault()) ?: return
-        // Do not wake the device for a daily target already completed.
-        if (dao.isDone(item.id, next.atZone(ZoneId.systemDefault()).toLocalDate().toString())) {
-            next = Schedule.next(item.spec(), next, ZoneId.systemDefault()) ?: return
+        if (item.archived || !item.notifications || !prefs.notifications) { dao.deleteAlarm(item.id); return }
+        val zone = ZoneId.systemDefault()
+        val now = Instant.now()
+        val saved = dao.getAlarm(item.id)
+        var next = if (preservePending && saved != null && saved.revision == item.updatedAt && saved.zone == zone.id &&
+            saved.occurrence > now.minusSeconds(12 * 3600).toEpochMilli()) Instant.ofEpochMilli(saved.occurrence)
+            else Schedule.next(item.spec(), now, zone)
+        while (next != null && dao.isDone(item.id, next.atZone(zone).toLocalDate().toString())) {
+            next = Schedule.next(item.spec(), next, zone)
         }
-        val intent = pending(item.id, next.toEpochMilli())
-        try {
-            if (canBePrecise()) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.toEpochMilli(), intent)
-            else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.toEpochMilli(), intent)
-        } catch (_: SecurityException) {
-            alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.toEpochMilli(), intent)
-        }
+        if (next == null) { dao.deleteAlarm(item.id); return }
+        register(item, next)
     }
-    suspend fun reconcile() {
-        dao.allItems().forEach { schedule(it) }
+    private suspend fun register(item: LifeItem, next: Instant) {
+        dao.saveAlarm(ScheduledAlarm(item.id, next.toEpochMilli(), item.updatedAt, ZoneId.systemDefault().id))
+        val intent = pending(item.id, next.toEpochMilli())
+        val trigger = maxOf(next.toEpochMilli(), System.currentTimeMillis() + 500)
+        try {
+            if (canBePrecise()) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, intent)
+            else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, intent)
+        } catch (_: SecurityException) { alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, trigger, intent) }
+    }
+    suspend fun reconcile() = mutex.withLock {
+        dao.allItems().forEach { scheduleInternal(it, true) }
         dao.pruneDeliveries(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(90))
     }
     suspend fun deliver(id: String, occurrence: Long) = mutex.withLock {
         val item = dao.get(id) ?: return@withLock
+        val plan = dao.getAlarm(id) ?: return@withLock
+        if (plan.occurrence != occurrence || plan.revision != item.updatedAt) return@withLock
         val prefs = preferences.flow.first()
         val day = Instant.ofEpochMilli(occurrence).atZone(ZoneId.systemDefault()).toLocalDate()
         // Ignore stale broadcasts (for example after a delayed restore) and completed records.
@@ -92,17 +102,13 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
                 .setContentIntent(open).setAutoCancel(true).setCategory(if (item.kind == Kind.BIRTHDAY) NotificationCompat.CATEGORY_EVENT else NotificationCompat.CATEGORY_REMINDER)
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setOnlyAlertOnce(true).build()
             if (dao.recordDelivery(Delivery(id, occurrence)) != -1L) {
-                try { NotificationManagerCompat.from(context).notify(id.hashCode(), notification) } catch (_: SecurityException) { /* Revoked between check and delivery. */ }
+                try { NotificationManagerCompat.from(context).notify(id, 0, notification) } catch (_: SecurityException) { /* Revoked between check and delivery. */ }
             }
         }
-        // Schedule without cancelling the notification that was just delivered.
-        val next = Schedule.next(item.spec(), Instant.now().plusSeconds(1), ZoneId.systemDefault())
-        if (next != null && !item.archived && item.notifications && prefs.notifications) {
-            try {
-                if (canBePrecise()) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.toEpochMilli(), pending(id, next.toEpochMilli()))
-                else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.toEpochMilli(), pending(id, next.toEpochMilli()))
-            } catch (_: SecurityException) { alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next.toEpochMilli(), pending(id, next.toEpochMilli())) }
-        }
+        // Persist the next occurrence before registering it; reconciliation repairs interrupted registrations.
+        dao.deleteAlarm(id)
+        val next = Schedule.next(item.spec(), maxOf(Instant.now(), Instant.ofEpochMilli(occurrence)).plusSeconds(1), ZoneId.systemDefault())
+        if (next != null && !item.archived && item.notifications && prefs.notifications) register(item, next)
     }
     fun enqueueMaintenance() {
         val work = WorkManager.getInstance(context)

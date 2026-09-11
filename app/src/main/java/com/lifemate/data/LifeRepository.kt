@@ -22,8 +22,9 @@ class LifeRepository(val context: Context, val db: LifeDatabase, private val sch
         LocalDate.parse(item.date); LocalTime.parse(item.time)
         require(item.duration in 1..36500 && item.interval in 1..1461)
         require(item.repeat != Repeat.SPECIFIC || item.spec().days.isNotEmpty()) { "Select at least one weekday." }
-        dao.save(item.copy(updatedAt = System.currentTimeMillis()))
-        scheduler.schedule(item)
+        val saved = item.copy(updatedAt = System.currentTimeMillis())
+        dao.save(saved)
+        scheduler.schedule(saved)
     }
     suspend fun toggle(item: LifeItem, date: LocalDate = LocalDate.now()) {
         require(item.occurs(date)) { "This item isn't scheduled for that day." }

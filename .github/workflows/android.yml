@@ -18,7 +18,13 @@ jobs:
           java-version: '17'
       - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew testDebugUnitTest lintDebug assembleDebug assembleRelease --stacktrace
+      - name: Compile, lint, unit tests, and APKs
+        run: |
+          set -o pipefail
+          ./gradlew testDebugUnitTest lintDebug assembleDebug assembleRelease --stacktrace 2>&1 | tee compile.log
+      - name: Publish readable diagnostics
+        if: always()
+        run: python3 scripts/report-ci.py compile.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -26,6 +32,8 @@ jobs:
           path: |
             app/build/outputs/apk/
             app/build/reports/
+            app/schemas/
+            compile.log
   device-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -45,7 +53,12 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          script: ./gradlew connectedDebugAndroidTest --stacktrace
+          script: |
+            set -o pipefail
+            ./gradlew connectedDebugAndroidTest --stacktrace 2>&1 | tee device.log
+      - name: Publish device diagnostics
+        if: always()
+        run: python3 scripts/report-ci.py device.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:

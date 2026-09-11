@@ -43,3 +43,6 @@ class Converters {
     @TypeConverter fun repeat(value: String) = Repeat.valueOf(value)
     @TypeConverter fun repeat(value: Repeat) = value.name
 }
+
+@Entity(tableName = "scheduled_alarms", foreignKeys = [ForeignKey(entity = LifeItem::class, parentColumns = ["id"], childColumns = ["itemId"], onDelete = ForeignKey.CASCADE)])
+data class ScheduledAlarm(@PrimaryKey val itemId: String, val occurrence: Long, val revision: Long, val zone: String)
