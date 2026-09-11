@@ -24,10 +24,12 @@ class ReminderTest {
         val item = LifeItem(title = "Tomorrow", date = LocalDate.now().plusDays(1).toString(), time = "10:00", repeat = Repeat.DAILY)
         app.repository.save(item)
         assertNotNull(scheduled(item.id))
+        assertNotNull(app.db.dao().getAlarm(item.id))
         app.scheduler.cancel(item.id)
         val recreated = ReminderScheduler(app, app.db.dao(), app.preferences)
         recreated.reconcile()
         assertNotNull(scheduled(item.id))
+        assertNotNull(app.db.dao().getAlarm(item.id))
         app.repository.delete(item)
         assertNull(app.db.dao().get(item.id))
     }
@@ -40,6 +42,7 @@ class ReminderTest {
         assertEquals(LocalDate.now().plusDays(3), next.atZone(ZoneId.systemDefault()).toLocalDate())
         app.scheduler.reconcile()
         assertNotNull(scheduled(item.id))
+        assertNotNull(app.db.dao().getAlarm(item.id))
         app.repository.delete(item)
     }
 }

@@ -45,9 +45,11 @@ class NavigationTest {
         compose.onNodeWithTag("nav-Profile").performClick()
         compose.onNodeWithText("Rony Test").assertIsDisplayed()
         compose.onNodeWithText("Settings & privacy", substring = true).performScrollTo().performClick()
-        compose.onNodeWithText("Dark").performScrollTo().performClick()
+        compose.onNodeWithTag("appearance-settings").performScrollTo()
+        compose.onNodeWithText("Dark").performClick()
         compose.waitUntil(10_000) { runBlocking { app.preferences.flow.first().theme == "Dark" } }
-        compose.onNodeWithText("Light").performScrollTo().performClick()
+        compose.onNodeWithTag("appearance-settings").performScrollTo()
+        compose.onNodeWithText("Light").performClick()
     }
     @Test fun missionCheckinIsPersistedAndUnique() {
         val item = LifeItem(kind = Kind.MISSION, title = "Reading journey", date = LocalDate.now().toString(), duration = 7, notifications = false)

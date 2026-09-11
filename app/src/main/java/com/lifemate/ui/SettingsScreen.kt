@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import com.lifemate.*
 import com.lifemate.domain.*
@@ -57,7 +58,7 @@ import java.time.*
             OutlinedButton({ navigate("edit-profile") }, Modifier.fillMaxWidth()) { Text("Edit personal information") }
         }
         SoftCard { SectionHeading("Notifications"); NotificationSettings(state, vm) }
-        SoftCard(Modifier.fillMaxWidth()) { SectionHeading("Appearance"); ChoiceChips(listOf("Light", "Dark", "System"), state.preferences.theme) { vm.preference("theme", it) } }
+        SoftCard(Modifier.fillMaxWidth().testTag("appearance-settings")) { SectionHeading("Appearance"); ChoiceChips(listOf("Light", "Dark", "System"), state.preferences.theme) { vm.preference("theme", it) } }
         SoftCard(Modifier.fillMaxWidth()) {
             SectionHeading("Your private space")
             ToggleRow("App lock", "PIN protection; locks after 30 seconds away. Screenshots are blocked while enabled.", locked) { pinDialog = if (it) "set" else "remove" }

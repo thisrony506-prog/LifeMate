@@ -6,6 +6,11 @@ import com.lifemate.domain.*
 import kotlinx.coroutines.runBlocking
 import org.junit.Assume.assumeTrue
 import org.junit.Test
+import org.junit.Assert.*
+import java.time.ZoneId
+import java.time.LocalDate
+import java.time.LocalTime
+import com.lifemate.domain.Schedule
 import java.time.LocalDateTime
 
 /** Opt-in seed stage for scripts/device-smoke.sh, which asserts delivery AFTER this process exits. */
@@ -16,6 +21,13 @@ class ExternalAlarmTest {
         val app = InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as LifeMateApp
         if (app.db.dao().getProfile() == null) app.db.dao().saveProfile(Profile(fullName = "Alarm verification"))
         app.preferences.set("notifications", true)
+        if (args.getString("verifyPrevious") == "true") {
+            val previous = requireNotNull(app.db.dao().get("5f2e5e7a-73d7-4519-a0c0-cf999de4caa0"))
+            val plan = requireNotNull(app.db.dao().getAlarm(previous.id))
+            val originalTime = LocalDate.parse(previous.date).atTime(LocalTime.parse(previous.time)).atZone(ZoneId.systemDefault()).toInstant()
+            assertEquals(Schedule.next(previous.spec(), originalTime, ZoneId.systemDefault())!!.toEpochMilli(), plan.occurrence)
+        }
+        if (args.getString("verifyOnly") == "true") return@runBlocking
         val trigger = LocalDateTime.now().plusSeconds(25).withNano(0)
         val item = LifeItem(id = "5f2e5e7a-73d7-4519-a0c0-cf999de4caa0", kind = Kind.REMINDER,
             title = args.getString("alarmTitle") ?: "LifeMate delivery check", date = trigger.toLocalDate().toString(),

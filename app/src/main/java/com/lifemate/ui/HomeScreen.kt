@@ -18,12 +18,16 @@ import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.style.TextOverflow
 import com.lifemate.domain.*
 import java.time.*
 import java.time.format.DateTimeFormatter
 
 val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
 @Composable fun HomeScreen(state: LifeState, vm: LifeViewModel, today: LocalDate, navigate: (String) -> Unit) {
+    val compact = LocalConfiguration.current.screenWidthDp < 360
+    val ringSize = if (compact) 80.dp else 96.dp
     val tasks = state.items.filter { it.kind in taskKinds && it.occurs(today) }.sortedBy { it.time }
     val completed = tasks.count { state.done(it, today) }
     val progress = if (tasks.isEmpty()) 0f else completed.toFloat() / tasks.size
@@ -37,7 +41,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Box(Modifier.clip(CircleShape).clickable { navigate("profile") }) { Avatar(state.profile) }
-                Column(Modifier.weight(1f)) { Text("LifeMate", style = MaterialTheme.typography.titleLarge); Text("MAKE TODAY YOURS", fontSize = 8.sp, letterSpacing = 1.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                Text("LifeMate", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 IconButton(onClick = { navigate("search") }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Search, "Search everything") }
                 IconButton(onClick = { navigate("notifications") }) { Icon(Icons.Outlined.Notifications, "Notifications") }
                 IconButton(onClick = { navigate("settings") }, modifier = Modifier.size(40.dp)) { Icon(Icons.Outlined.Settings, "Settings") }
@@ -46,7 +50,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Eyebrow(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")))
-                Text("$greeting,\n${state.profile?.displayName ?: "friend"}.", style = MaterialTheme.typography.displaySmall)
+                Text("$greeting,\n${state.profile?.displayName ?: "friend"}.", style = if (compact) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge)
                 Text("A little intention. A little progress. A better you.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -57,13 +61,13 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
                         drawCircle(Color.White.copy(alpha = .035f), size.width * .40f, androidx.compose.ui.geometry.Offset(size.width, 0f))
                         drawCircle(Color.White.copy(alpha = .045f), size.width * .27f, androidx.compose.ui.geometry.Offset(size.width, 0f))
                     }
-                    Row(Modifier.padding(24.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    Row(Modifier.padding(20.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Text("TODAY'S PROGRESS", fontSize = 10.sp, letterSpacing = 1.5.sp, color = Lime)
-                            Text(if (tasks.isNotEmpty() && completed == tasks.size) "You did it!" else if (completed == 0) "Make room\nfor a good day." else "Small steps,\nbig possibilities.", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+                            Text(if (tasks.isNotEmpty() && completed == tasks.size) "You did it!" else if (completed == 0) "Make today\na little better." else "Small steps.\nReal progress.", style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineMedium, color = Color.White)
                             Text("$completed of ${tasks.size} tasks completed", style = MaterialTheme.typography.bodyMedium, color = Color(0xFFD4E5D9))
                         }
-                        Box(Modifier.size(104.dp).semantics { contentDescription = "Today's progress ${(progress * 100).toInt()} percent" }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(ringSize).semantics { contentDescription = "Today's progress ${(progress * 100).toInt()} percent" }, contentAlignment = Alignment.Center) {
                             Canvas(Modifier.fillMaxSize()) {
                                 drawArc(Color.White.copy(alpha = .14f), -90f, 360f, false, style = Stroke(9.dp.toPx(), cap = StrokeCap.Round))
                                 if (progress > 0) drawArc(Lime, -90f, 360 * progress, false, style = Stroke(9.dp.toPx(), cap = StrokeCap.Round))

@@ -47,5 +47,7 @@ class ScreenshotTest {
         val scaled = Bitmap.createScaledBitmap(bitmap, 440, (bitmap.height * 440f / bitmap.width).toInt(), true)
         val dir = File(compose.activity.getExternalFilesDir(null), "screenshots").apply { mkdirs() }
         File(dir, name).outputStream().use { scaled.compress(Bitmap.CompressFormat.JPEG, 78, it) }
+        val preview = Bitmap.createScaledBitmap(bitmap, 300, (bitmap.height * 300f / bitmap.width).toInt(), true)
+        File(dir, "preview-$name").outputStream().use { preview.compress(Bitmap.CompressFormat.JPEG, 45, it) }
     }
 }
