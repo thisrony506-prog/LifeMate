@@ -85,8 +85,22 @@ jobs:
         run: |
           set -o pipefail
           flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee "$GITHUB_WORKSPACE/compile.log"
-          (cd "$GITHUB_WORKSPACE" && python3 scripts/format-flutter.py)
           flutter test 2>&1 | tee -a "$GITHUB_WORKSPACE/compile.log"
+      - name: Format Flutter data
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py data
+      - name: Format Flutter services
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py services
+      - name: Format Flutter ui
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py ui
+      - name: Format Flutter test
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py test
+      - name: Format Flutter main
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py main
       - name: Assign version
         run: python3 scripts/release-version.py
       - name: Verify all code (no unsigned download)
@@ -138,8 +152,22 @@ jobs:
         run: |
           set -o pipefail
           flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee "$GITHUB_WORKSPACE/compile.log"
-          (cd "$GITHUB_WORKSPACE" && python3 scripts/format-flutter.py)
           flutter test 2>&1 | tee -a "$GITHUB_WORKSPACE/compile.log"
+      - name: Format Flutter data
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py data
+      - name: Format Flutter services
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py services
+      - name: Format Flutter ui
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py ui
+      - name: Format Flutter test
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py test
+      - name: Format Flutter main
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py main
       - name: Assign version
         run: python3 scripts/release-version.py
       - name: Build and verify signing continuity
