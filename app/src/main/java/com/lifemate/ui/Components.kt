@@ -40,7 +40,7 @@ fun Kind.tint() = when (this) {
     Kind.BIRTHDAY -> Color(0xFFBC3B73)
     Kind.NOTE -> Color(0xFF716399)
     Kind.MEMORY -> Color(0xFF266F80)
-    Kind.GOAL -> Color(0xFFA56950)
+    Kind.GOAL -> Color(0xFF965B43)
 }
 fun Kind.summary() = when (this) {
     Kind.ROUTINE -> "Give your day a simple, reliable rhythm"
