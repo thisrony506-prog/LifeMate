@@ -1,6 +1,30 @@
 # LifeMate verification
 
-## Redesigned signed release verified — 2026-09-12
+## Browser-free in-app updater verified — 2026-09-12
+
+**[Download signed LifeMate 1.2.55](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.55/LifeMate-100055.apk)** · Android 8+ · `com.lifemate` · code **100055**.
+
+[Run 34707758773](https://github.com/thisrony506-prog/LifeMate/actions/runs/34707758773), source **`64526e2dc47c73091b932e70e5a34c346fa95805`**, passed all three jobs and automatic publication. This supersedes the browser-only/no-install-permission descriptions in historical sections below.
+
+- **49 JVM tests**, **17 script tests**, compilation, R8 and lint passed.
+- Android feature tests passed with zero failures (the opt-in alarm helper is intentionally skipped in the normal suite); all three real process-exit/reboot/recurrence host checks passed.
+- New Android tests exercised in-app transfer progress, verified-cache reuse, unsafe redirect blocking, hash/size/truncation/oversize rejection, non-APK rejection, cancellation cleanup, cache revalidation and a native install intent with scoped read-only `content://` URI. Network tests use controlled byte/HTTP fixtures; archive rejection uses the real Android package parser.
+- Compose tests confirmed percentage progress, disabled download while busy, the **Install update** action after verification, and that tapping Install/Back does not dismiss the required gate.
+- The actual published signed **1.2.52 / 100052** was installed in the emulator; its encrypted `UpgradeProof` profile survived `adb install -r` to the signed **1.2.55 / 100055**, with the higher installed version confirmed. This install test uses ADB; it is not a claim that Android's permission/installer UI was fully automated end-to-end.
+- Automatic draft digest/asset validation, canonical published URL validation, sole APK artifact upload and temporary key cleanup passed. The public API independently confirmed the matching source release, size, GitHub digest, retained signer and exactly one non-expired **LifeMate-Release-APK** Actions artifact.
+
+APK size: **22,776,291 bytes**. SHA-256: `c833abd4faeddb12271c7b68067d58deab52d357633580a73b2c10492146429d`. Retained public signer: `518aec44e1f3c230464381c6b539f411b2f317db0db80e6fa896688a3b4a97a8`.
+
+### Behavior and remaining device checks
+
+The required popup now downloads privately, shows percentage/MB, verifies the signed bytes and APK identity, then offers native **Install update** without a browser. The saved file is rechecked before handoff. Android's installation-source permission and final confirmation are mandatory; cancelling does not unlock the app. Unfinished transfers stop when leaving the app and restart on retry. Completed cache files are revalidated/reused. An API error alone still cannot invent a required update.
+
+On a physical phone, test granting/denying LifeMate's “Allow from this source”, returning to tap Install, cancelling the system installer, offline interruption/retry, storage/cache eviction, actual GitHub/CDN access and a later real in-app update while preserving data. An extra optional download from the Arena sandbox encountered a CDN EOF; no local post-download binary inspection is claimed. Hosted signing/installation and GitHub's uploaded-byte digest checks passed.
+
+Older installed APKs cannot gain native download code remotely: **install this release once**, then its future updates use the in-app flow. All feature colors, cards, weekly insights, offline organizer functions and voice/privacy limits from 1.2.52 remain unchanged. [RELEASE.md](RELEASE.md) and [UX-UPDATE.md](UX-UPDATE.md) describe the current flow and backup limits.
+
+
+## Earlier redesigned release — 1.2.52
 
 **[Download LifeMate 1.2.52](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.52/LifeMate-100052.apk)** · `com.lifemate` · Android 8+ · versionCode **100052**.
 

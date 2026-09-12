@@ -38,11 +38,19 @@ This intentionally replaces the older optional Home-banner/disable-check prefere
 1. Foreground release checks remain rate-limited to at most once per six hours; Settings also has manual checking. Debug/instrumentation builds do not automatically fetch.
 2. Only a numerically newer release whose metadata validates against the **installed signing certificate**, official canonical asset URL and matching GitHub digest can trigger the required dialog.
 3. The dialog cannot be dismissed with Back or an outside tap. It offers **Download update**, **Export a private backup** and **Close app**, but not a continue/skip action.
-4. Download opens the official HTTPS APK in a browser. Downloading alone does not unlock the old version: Android must install the higher signed version. The app has no silent installer or install-packages permission. Do not uninstall to update.
+4. Download happens **inside the popup**, with percentage/MB progress and a verification stage. After checking the signed size/SHA-256, package, version and matching installed signer, **Install update** opens Android's native installer through a read-only content URI. Android may require permission to install from **LifeMate**; grant it in Android settings, return and tap Install update. The app declares `REQUEST_INSTALL_PACKAGES` for this user-requested flow, but cannot install silently. Downloading or cancelling installation never unlocks the old version. Do not uninstall to update.
 5. An offline/API error alone never invents an update lock. Once a verified newer release is known, its validated cached metadata keeps the requirement in force even while offline; a stale older response or 404 cannot erase it. Installing the required or a newer version removes the gate through numeric comparison.
 6. App PIN protection remains ahead of private content and backup access. Export from the update dialog warns that record ZIP backups are **unencrypted**.
 
-Older already-installed 1.2.43 builds cannot acquire this policy until the user installs the redesigned APK. No old release binary is rewritten.
+Older installed builds must install the newer APK once to acquire its updater: 1.2.52 and earlier still have their old browser-based download code. No old release binary is rewritten.
+
+### Native download reliability and trust
+
+Only the canonical signed GitHub asset is requested. Redirects are limited to HTTPS on `github.com`, `release-assets.githubusercontent.com` and `objects.githubusercontent.com`, with no user credentials, fragment, nonstandard port or arbitrary host; at most five redirects. There are 15-second network timeouts, a ten-minute transfer limit, a 200 MB maximum signed size, a free-space preflight and bounded streaming (not a whole-APK memory buffer). No account, token, analytics or personal record is sent.
+
+Partial files remain private and are removed on failure/cancellation/retry. Transfer stops when the activity stops; this is not an always-running download service. Retry starts from the beginning for interrupted transfers. Completed APKs can be reused after revalidating their hash/identity; cache eviction requires downloading again. The installed version—not a writable “download finished” preference—controls the mandatory gate.
+
+Test coverage includes safe/unsafe redirects, exact size/hash checks, truncated/oversized/tampered input, non-APK rejection, cancellation cleanup, cached-file tampering/reuse, progress/disabled actions, native content-URI intent construction and the gate remaining after Install is tapped. Network transfer tests use controlled fixtures. Permission refusal, cancelled system installer, actual device/CDN connectivity and OEM installer presentation remain manual-device checks.
 
 ## Opt-in spoken reminders
 

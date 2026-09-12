@@ -4,15 +4,15 @@
 
 ## Installable APKs and safe updates
 
-**[Download signed LifeMate 1.2.52 (Android 8+)](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.52/LifeMate-100052.apk)** — versionCode `100052`, approximately 22.8 MB. Old unsigned 1.1.x downloads cannot be installed; use this signed release instead.
+**[Download signed LifeMate 1.2.55 (Android 8+)](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.55/LifeMate-100055.apk)** — versionCode `100055`, approximately 22.8 MB. Old unsigned 1.1.x downloads cannot be installed; use this signed release instead.
 
 Signing is configured and verified. **Do not generate a replacement key or repeat initial setup.** Keep an encrypted offline backup of the original JKS and its password separately. [Release maintenance and one-time setup reference](docs/RELEASE.md) explains recovery; never send private signing material into chat.
 
 The release workflow retains `com.lifemate`, assigns `100000 + GITHUB_RUN_NUMBER` / `1.2.<run number>`, verifies `apksigner` continuity, and checks a signed data-preserving upgrade before publication. Successful runs expose one signed `LifeMate-<versionCode>.apk`, not debug/report/signing downloads.
 
-Update controls are in **Settings**. Foreground checks run at most once every six hours, and a manual check is available. A **verified newer signed version** displays a non-dismissible update dialog: download and install it to continue. Android still requires installation confirmation; LifeMate cannot install silently. Backup export and closing the app remain available. No connection/API error alone triggers a lock, but an already-verified required update remains required offline. Same-certificate metadata, official asset URL and GitHub digest checks are retained.
+Update controls are in **Settings**. Foreground checks run at most once every six hours, and a manual check is available. A **verified newer signed version** displays a non-dismissible update dialog: download and install it to continue. **The APK downloads inside the popup with percentage/MB progress.** Signed size/SHA-256 and APK identity checks must pass before **Install update** opens Android's installer—no browser. If asked, allow LifeMate in Android's installation-source settings, return and tap Install update. Android still requires confirmation; LifeMate cannot install silently. Backup export and closing the app remain available. No connection/API error alone triggers a lock, but an already-verified required update remains required offline. Same-certificate metadata, official asset URL and GitHub digest checks are retained.
 
-**Verified:** [run 34705976534](https://github.com/thisrony506-prog/LifeMate/actions/runs/34705976534), source `e9f11b8`, passed all three jobs: compilation/lint, **45 JVM tests**, **17 script tests**, Android feature/UI/card tests and real notification checks. The signed emulator test upgraded the actual published **1.2.43 → 1.2.52**, retaining its encrypted profile. Publication completed automatically; Actions contains exactly one **LifeMate-Release-APK** artifact. See [verification evidence](docs/VERIFICATION.md).
+**Verified:** [run 34707758773](https://github.com/thisrony506-prog/LifeMate/actions/runs/34707758773), source `64526e2`, passed all three jobs: compilation/lint, **49 JVM tests**, **17 script tests**, Android feature/UI/card tests and real notification checks. The signed emulator test upgraded the actual published **1.2.52 → 1.2.55**, retaining its encrypted profile. Publication completed automatically; Actions contains exactly one **LifeMate-Release-APK** artifact. See [verification evidence](docs/VERIFICATION.md). Older installed builds (1.2.52 and earlier) need this APK installed once before they gain the new browser-free updater.
 
 ## A cleaner, more personal LifeMate
 
@@ -89,7 +89,7 @@ A singleton profile owns typed `LifeItem` records through a Room foreign key. Co
 
 ## Privacy & security
 
-- No analytics, ad SDK, account requirement, automatic media upload or automatic cloud backup. INTERNET is limited to public update metadata; automatic checks can be disabled. No personal records are sent.
+- No analytics, ad SDK, account requirement, automatic media upload or automatic cloud backup. INTERNET is limited to public update metadata and user-requested official APK downloads. Foreground checks are rate-limited; verified newer versions require installation. No personal records are sent.
 - SQLCipher encrypts structured data. A random database key is AES-GCM wrapped with Android Keystore.
 - PINs use random salts and PBKDF2-HMAC-SHA256 (120,000 iterations), with encrypted storage and a 60-second lockout after five failures. Optional strong biometrics use Android's BiometricPrompt. PIN protection enables screenshot blocking and relocks after 30 seconds away.
 - Media/audio live in private internal storage, relying on Android sandbox/device encryption rather than separate file encryption. Exported/shared files leave that protection only after an explicit user action.
