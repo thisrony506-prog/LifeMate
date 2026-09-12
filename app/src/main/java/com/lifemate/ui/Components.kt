@@ -35,11 +35,11 @@ fun Kind.icon(): ImageVector = when (this) {
 fun Kind.tint() = when (this) {
     Kind.ROUTINE -> Color(0xFF9C641F)
     Kind.MISSION -> Color(0xFF7852B0)
-    Kind.HABIT -> Color(0xFF43877C)
-    Kind.REMINDER -> Color(0xFF587CB1)
+    Kind.HABIT -> Color(0xFF30786B)
+    Kind.REMINDER -> Color(0xFF4269A4)
     Kind.BIRTHDAY -> Color(0xFFBC3B73)
-    Kind.NOTE -> Color(0xFF8175AC)
-    Kind.MEMORY -> Color(0xFF628AAC)
+    Kind.NOTE -> Color(0xFF716399)
+    Kind.MEMORY -> Color(0xFF266F80)
     Kind.GOAL -> Color(0xFFA56950)
 }
 fun Kind.summary() = when (this) {

@@ -78,6 +78,9 @@ fun checklistJson(lines: String, original: String): String {
     return JSONArray(lines.lines().map(String::trim).filter(String::isNotBlank).map { JSONObject().put("text", it).put("done", checks[it] ?: false) }).toString()
 }
 @Composable fun EditorScreen(kind: Kind, original: LifeItem?, initialDate: String?, state: LifeState, vm: LifeViewModel, onSaved: (String) -> Unit) {
+    FeatureTheme(kind) { FeatureEditorContent(kind, original, initialDate, state, vm, onSaved) }
+}
+@Composable private fun FeatureEditorContent(kind: Kind, original: LifeItem?, initialDate: String?, state: LifeState, vm: LifeViewModel, onSaved: (String) -> Unit) {
     var draft by rememberSaveable(original?.id, kind) { mutableStateOf(original ?: LifeItem(kind = kind, date = initialDate ?: LocalDate.now().toString(), repeat = if (kind in setOf(Kind.ROUTINE, Kind.HABIT)) Repeat.DAILY else Repeat.ONCE, sound = "default", vibration = state.preferences.vibration, notifications = kind !in setOf(Kind.NOTE, Kind.MEMORY))) }
     var duration by rememberSaveable { mutableStateOf(draft.duration.toString()) }
     var interval by rememberSaveable { mutableStateOf(draft.interval.toString()) }

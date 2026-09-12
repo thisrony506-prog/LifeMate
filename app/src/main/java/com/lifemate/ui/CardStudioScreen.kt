@@ -65,7 +65,10 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
         if (uri != null) scope.launch {
             importing = true; error = null
             try {
-                val photo = withContext(Dispatchers.IO) { PostCardRenderer.importPhoto(context,uri) }
+                val photo = withContext(Dispatchers.IO) {
+                    val imported = PostCardRenderer.importPhoto(context,uri)
+                    try { ensureActive(); imported } catch (e: CancellationException) { imported.delete(); throw e }
+                }
                 design = design.copy(photo = photo.path, rotation = 0, zoom = 1f)
             } catch (e: CancellationException) { throw e }
             catch (e: Exception) { error = e.message ?: "Photo could not be opened." }
@@ -84,7 +87,10 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
                     if (previous.parentFile?.canonicalFile == File(context.filesDir,"studio").canonicalFile) previous.delete()
                 }
             }
-            val rendered = withContext(Dispatchers.IO) { PostCardRenderer.render(context,design) }
+            val rendered = withContext(Dispatchers.IO) {
+                val file = PostCardRenderer.render(context,design)
+                try { ensureActive(); file } catch (e: CancellationException) { file.delete(); throw e }
+            }
             card = rendered; readyDesign = design
         } catch (e: CancellationException) { throw e }
         catch (e: Exception) { error = e.message ?: "Unable to make this image. Try again with a smaller photo." }

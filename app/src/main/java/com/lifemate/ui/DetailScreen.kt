@@ -35,6 +35,9 @@ import java.time.*
 import java.time.temporal.ChronoUnit
 
 @Composable fun DetailScreen(item: LifeItem, state: LifeState, vm: LifeViewModel, navigate: (String) -> Unit, onDeleted: () -> Unit) {
+    FeatureTheme(item.kind) { FeatureDetailContent(item, state, vm, navigate, onDeleted) }
+}
+@Composable private fun FeatureDetailContent(item: LifeItem, state: LifeState, vm: LifeViewModel, navigate: (String) -> Unit, onDeleted: () -> Unit) {
     val context = LocalContext.current
     val today = LocalDate.now()
     var delete by remember { mutableStateOf(false) }

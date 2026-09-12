@@ -72,6 +72,18 @@ class NavigationTest {
             compose.onNodeWithContentDescription("LifeMate logo").assertIsDisplayed()
         }
     }
+    @Test fun photoStudioEditsAndRestoresAnEncryptedDraft() {
+        compose.onNodeWithTag("nav-Profile").performClick()
+        compose.onNodeWithContentDescription("All features").performClick()
+        compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Photo & card studio", substring = true))
+        compose.onNodeWithText("Photo & card studio", substring = true).performClick()
+        compose.onNodeWithText("Your photo studio").assertIsDisplayed()
+        compose.onNodeWithText("Your words (up to 600 characters)").performScrollTo().performTextReplacement("A bright new chapter")
+        compose.waitUntil(15_000) { app.secure.readStudioDraft("social-post")?.contains("A bright new chapter") == true }
+        compose.activityRule.scenario.recreate()
+        compose.waitForIdle()
+        compose.onNodeWithText("Your words (up to 600 characters)").performScrollTo().assertTextContains("A bright new chapter")
+    }
     @Test fun missionCheckinIsPersistedAndUnique() {
         val item = LifeItem(kind = Kind.MISSION, title = "Reading journey", date = LocalDate.now().toString(), duration = 7, notifications = false)
         runBlocking { app.db.dao().save(item) }
