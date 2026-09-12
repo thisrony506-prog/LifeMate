@@ -47,7 +47,7 @@ import java.time.LocalDate
         Field(draft.introduction, { draft = draft.copy(introduction = it) }, "A little about you (optional)", singleLine = false, minLines = 2)
         Field(draft.information, { draft = draft.copy(information = it) }, "Important personal information (optional)", singleLine = false, minLines = 2)
         SoftCard(color = MaterialTheme.colorScheme.primaryContainer) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Outlined.Lock, null); Text("Just yours. Your profile and records are encrypted on this device. No account, cloud upload, or tracking.", style = MaterialTheme.typography.bodyMedium) }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(Icons.Outlined.Lock, null); Text("Your profile and records are encrypted on this device. No account or tracking.", style = MaterialTheme.typography.bodyMedium) }
         }
         Button({
             if (draft.fullName.isBlank()) vm.message("Please enter your name. Everything else is optional.")
