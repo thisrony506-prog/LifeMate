@@ -9,6 +9,7 @@ import com.lifemate.utils.SecureStore
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 class LifeMateApp : Application() {
+    var clearFlutterData: (suspend () -> Unit)? = null
     val secure by lazy { SecureStore(this) }
     val db by lazy {
         System.loadLibrary("sqlcipher")

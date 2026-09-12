@@ -87,9 +87,12 @@ import java.time.LocalDate
         if (vm.app.secure.hasPin()) activity.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         else { activity.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE); locked = false }
     }
+    LaunchedEffect(activity.nativeRoute.value) {
+        activity.nativeRoute.value?.let { navigate(it); activity.nativeRoute.value=null }
+    }
     LaunchedEffect(activity.openItem.value, state.loading, state.profile, locked) {
         val id = activity.openItem.value
-        if (id != null && !state.loading && state.profile != null && !locked) { navigate("detail/$id"); activity.openItem.value = null }
+        if (id != null && !state.loading && state.profile != null && !locked) { activity.flutterMode.value=false; navigate("detail/$id"); activity.openItem.value = null }
     }
     if ((route.startsWith("edit") || route=="post/{id}") && !locked) BackHandler { discard = true }
     if (locked) BackHandler { activity.moveTaskToBack(true) }
@@ -106,18 +109,22 @@ import java.time.LocalDate
                 when {
                     state.loading -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) { BrandMark(64.dp); Text("LifeMate", style = MaterialTheme.typography.displaySmall); CircularProgressIndicator() }
                     state.error != null -> Column(Modifier.padding(26.dp).align(Alignment.Center)) { EmptyState(null, "Your data is still yours", state.error!!); Button({ activity.recreate() }) { Text("Try again") } }
+                    state.profile == null && activity.flutterMode.value -> com.lifemate.flutter.FlutterHome(activity)
                     state.profile == null -> Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding -> Box(Modifier.padding(padding)) { ProfileEditor(null, vm) { } } }
                     else -> {
                         val showBottom = route in setOf("home", "missions", "memories", "list/{kind}", "calendar", "profile", "menu", "statistics")
                         // Dialogs have their own Android windows; hiding semantics alone cannot lock them.
                         // Remove private UI while locked, but retain form/navigation saveable state.
                         if (!locked) unlockedContent.SaveableStateProvider("private-content") {
+                            if(activity.flutterMode.value && !update.available) com.lifemate.flutter.FlutterHome(activity)
+                            else if(!activity.flutterMode.value) {
                             ModalNavigationDrawer(drawerState=drawer, gesturesEnabled=!update.available,
                                 drawerContent={ SideMenu(if(route=="list/{kind}") "list/${entry?.arguments?.getString("kind")}" else route) { target -> scope.launch { drawer.close() }; navigate(target) } }) {
                             Scaffold(containerColor = MaterialTheme.colorScheme.background,
                                 snackbarHost = { SnackbarHost(snackbar) },
                                 topBar = {
                                     if (route != "home") TopAppBar(title = { BrandTitle() }, navigationIcon = { if (showBottom) IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Outlined.Menu,"Open menu") } else IconButton({ back() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Go back") } }, actions = {
+                                        IconButton({ activity.flutterMode.value=true }) { Icon(Icons.Outlined.Spa,"Open Life Mate") }
                                         IconButton({ navigate("search") }) { Icon(Icons.Outlined.Search, "Search everything") }
                                         IconButton({ navigate("menu") }) { Icon(Icons.Outlined.GridView, "All features") }
                                     }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background))
@@ -132,7 +139,7 @@ import java.time.LocalDate
                                             }, icon = { Icon(destination.icon, null) }, label = { Text(destination.label, maxLines = 1, style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.sp)) })
                                         }
                                     }
-                                }, floatingActionButton = { if (showBottom) FloatingActionButton({ adding = true }, shape = RoundedCornerShape(20.dp), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(Icons.Outlined.Add, "Create something new") } }
+                                }, floatingActionButton = { if (showBottom) Row(horizontalArrangement=Arrangement.spacedBy(12.dp)) { FloatingActionButton({activity.flutterMode.value=true},containerColor=MaterialTheme.colorScheme.primaryContainer) {Icon(Icons.Outlined.Spa,"Open Life Mate")}; FloatingActionButton({ adding = true }, shape = RoundedCornerShape(20.dp), containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary) { Icon(Icons.Outlined.Add, "Create something new") } } }
                             ) { padding ->
                                 Box(Modifier.padding(padding).fillMaxSize()) {
                                     NavHost(navController = nav, startDestination = "home") {
@@ -178,6 +185,7 @@ import java.time.LocalDate
                                     if (busy) LinearProgressIndicator(Modifier.fillMaxWidth().align(Alignment.TopCenter))
                                 }
                             }
+                        }
                         }
                         }
                         if (locked) Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { LockScreen(activity, vm.app.secure, state.preferences.biometric) { locked = false; stoppedAt = 0 } }

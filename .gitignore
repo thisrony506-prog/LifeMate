@@ -18,3 +18,16 @@ release-download/
 
 __pycache__/
 *.pyc
+
+# Generated Flutter hosts, caches and local cloud configuration
+**/.dart_tool/
+**/.flutter-plugins*
+life_mate_flutter/.android/
+life_mate_flutter/.ios/
+**/Pods/
+**/node_modules/
+**/firebase_options.dart
+**/google-services.json
+**/GoogleService-Info.plist
+**/.env*
+backend/functions/lib/

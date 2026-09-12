@@ -6,7 +6,7 @@ plugins {
 }
 android {
     namespace = "com.lifemate"
-    compileSdk = 35
+    compileSdk = 36
     buildToolsVersion = "35.0.0"
     defaultConfig {
         applicationId = "com.lifemate"
@@ -48,6 +48,8 @@ android {
 }
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
+    implementation(project(":flutter"))
+    implementation("androidx.fragment:fragment-compose:1.8.5")
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.activity:activity-compose:1.9.3")

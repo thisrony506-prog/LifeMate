@@ -22,6 +22,13 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+      - name: Prepare Flutter module
+        run: bash scripts/setup-flutter.sh
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
@@ -49,6 +56,13 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+      - name: Prepare Flutter module
+        run: bash scripts/setup-flutter.sh
       - uses: gradle/actions/setup-gradle@v4
       - name: Signing and release script tests
         run: |
@@ -56,6 +70,12 @@ jobs:
           python3 -m unittest discover -s scripts/tests -v 2>&1 | tee compile.log
           mkdir -p "$RUNNER_TEMP/lifemate-script-checks"
           javac -d "$RUNNER_TEMP/lifemate-script-checks" scripts/SignReleaseMetadata.java 2>&1 | tee -a compile.log
+      - name: Flutter analysis and tests
+        if: ${{ github.job == 'verify' }}
+        working-directory: life_mate_flutter
+        run: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter test
       - name: Assign version
         run: python3 scripts/release-version.py
       - name: Verify all code (no unsigned download)
@@ -69,7 +89,7 @@ jobs:
   build:
     name: Signed APK and safe upgrade
     needs: [device-tests, verify]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate' && vars.LIFEMATE_RELEASE_READY != 'false'
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -89,9 +109,22 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+      - name: Prepare Flutter module
+        run: bash scripts/setup-flutter.sh
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-disabled: true
+      - name: Flutter analysis and tests
+        if: ${{ github.job == 'verify' }}
+        working-directory: life_mate_flutter
+        run: |
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+          flutter test
       - name: Assign version
         run: python3 scripts/release-version.py
       - name: Build and verify signing continuity

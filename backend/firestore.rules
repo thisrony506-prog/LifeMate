@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(uid) { return request.auth != null && request.auth.uid == uid; }
+    match /users/{uid}/meta/vault {
+      allow read: if owner(uid);
+      allow create: if owner(uid) && request.resource.data.keys().hasOnly(['ciphertext']) && request.resource.data.ciphertext is string && request.resource.data.ciphertext.size() < 2000;
+      allow update, delete: if false;
+    }
+    match /users/{uid}/vault/{id} {
+      allow read: if owner(uid);
+      allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['ciphertext','revision','updatedAt']) && request.resource.data.ciphertext is string && request.resource.data.ciphertext.size() < 100000 && request.resource.data.revision is int && request.resource.data.revision > 0 && request.resource.data.updatedAt == request.time;
+      allow delete: if false; // Encrypted tombstones carry offline deletions.
+    }
+    match /live/{id} {
+      allow get: if request.auth != null && resource.data.expiresAt > request.time;
+      allow list: if false;
+      allow create: if request.auth != null && request.resource.data.owner == request.auth.uid && validShare();
+      allow update: if request.auth != null && resource.data.owner == request.auth.uid && request.resource.data.owner == resource.data.owner && validShare();
+      allow delete: if request.auth != null && resource.data.owner == request.auth.uid;
+      function validShare() { return request.resource.data.keys().hasOnly(['owner','ciphertext','expiresAt','updatedAt']) && request.resource.data.ciphertext is string && request.resource.data.ciphertext.size() < 4000 && request.resource.data.expiresAt > request.time && request.resource.data.expiresAt <= request.time + duration.value(15,'m') && request.resource.data.updatedAt == request.time; }
+    }
+    match /{document=**} { allow read,write: if false; }
+  }
+}

@@ -83,6 +83,12 @@ class LifeRepository(val context: Context, val db: LifeDatabase, private val sch
         try { normalized.copyTo(target); target.path } finally { normalized.delete() }
     }
     suspend fun deleteAll() = withContext(Dispatchers.IO) {
+        val application=context.applicationContext as com.lifemate.LifeMateApp
+        if(application.clearFlutterData!=null) application.clearFlutterData!!.invoke()
+        else {
+            java.io.File(context.filesDir,"life_mate_v1").deleteRecursively()
+            context.filesDir.listFiles()?.filter { it.name.matches(Regex("[a-f0-9-]{36}\\.encrypted")) }?.forEach { it.delete() }
+        }
         dao.allItems().forEach { scheduler.cancel(it.id) }
         db.withTransaction { dao.clear() }
         mediaDir.listFiles()?.forEach { it.delete() }
