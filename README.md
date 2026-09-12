@@ -4,15 +4,24 @@
 
 ## Installable APKs and safe updates
 
-**[Download signed LifeMate 1.2.43 (Android 8+)](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.43/LifeMate-100043.apk)** — versionCode `100043`, approximately 22.8 MB. Old unsigned 1.1.x downloads cannot be installed; use this signed release instead.
+**[Download signed LifeMate 1.2.52 (Android 8+)](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.52/LifeMate-100052.apk)** — versionCode `100052`, approximately 22.8 MB. Old unsigned 1.1.x downloads cannot be installed; use this signed release instead.
 
 Signing is configured and verified. **Do not generate a replacement key or repeat initial setup.** Keep an encrypted offline backup of the original JKS and its password separately. [Release maintenance and one-time setup reference](docs/RELEASE.md) explains recovery; never send private signing material into chat.
 
 The release workflow retains `com.lifemate`, assigns `100000 + GITHUB_RUN_NUMBER` / `1.2.<run number>`, verifies `apksigner` continuity, and checks a signed data-preserving upgrade before publication. Successful runs expose one signed `LifeMate-<versionCode>.apk`, not debug/report/signing downloads.
 
-The Home update notice/manual update page requires metadata signed by the **installed app's signing key** and a matching GitHub APK digest. Foreign/malformed/unsigned/unverified assets are rejected. Automatic checks start in the foreground at most every six hours and can be disabled. Manual checks are available; errors are never "up to date". Download opens the official HTTPS APK in the browser; Android asks before installation. Core features remain offline-capable.
+Update controls are in **Settings**. Foreground checks run at most once every six hours, and a manual check is available. A **verified newer signed version** displays a non-dismissible update dialog: download and install it to continue. Android still requires installation confirmation; LifeMate cannot install silently. Backup export and closing the app remain available. No connection/API error alone triggers a lock, but an already-verified required update remains required offline. Same-certificate metadata, official asset URL and GitHub digest checks are retained.
 
-**Verified:** [run 34703966887](https://github.com/thisrony506-prog/LifeMate/actions/runs/34703966887), source `cf2d7ad`, passed all three jobs: compilation/lint, 34 JVM tests, 16 script tests, Android feature tests, and the signed installation/upgrade/publication gates. The emulator installed the actual published **1.2.41**, saved an encrypted profile, and retained it through an in-place **1.2.43** upgrade. Publication completed automatically; Actions contains exactly one **LifeMate-Release-APK** artifact. See [verification evidence and remaining physical-device checks](docs/VERIFICATION.md).
+**Verified:** [run 34705976534](https://github.com/thisrony506-prog/LifeMate/actions/runs/34705976534), source `e9f11b8`, passed all three jobs: compilation/lint, **45 JVM tests**, **17 script tests**, Android feature/UI/card tests and real notification checks. The signed emulator test upgraded the actual published **1.2.43 → 1.2.52**, retaining its encrypted profile. Publication completed automatically; Actions contains exactly one **LifeMate-Release-APK** artifact. See [verification evidence](docs/VERIFICATION.md).
+
+## A cleaner, more personal LifeMate
+
+- Feature-colored collections, forms and details, grouped by planning, growth and memories/celebrations. Eight readable primary accents and coordinated dark mode.
+- Pink birthday wishes and a **private photo/card studio**: local photo import, editable text, five font styles, color palettes, photo effects, rotate/crop zoom, text placement and portrait/square/landscape PNG output. Save or share to Facebook yourself; nothing is posted automatically. Draft text is encrypted on-device.
+- **Weekly insights** on Home and Statistics: scheduled/completed/remaining work, missed past tasks, same-weekday comparison and each mission's weekly/full progress. No invented scores or future tasks counted as missed.
+- **Opt-in voice reminders** through an installed offline English/Bangla Android TTS voice, with quiet/privacy checks, a Stop notification and a 30-second limit. Text notifications remain the fallback. Phone/OEM/voice compatibility must be checked on a real device.
+
+See [feature behavior, privacy, backup limits and manual-device checks](docs/UX-UPDATE.md). Studio drafts/photos are not in record ZIP backups: save completed images separately. Existing organizer features and the supplied logo are retained.
 
 ## Design and branding
 

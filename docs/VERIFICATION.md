@@ -1,6 +1,38 @@
 # LifeMate verification
 
-## Signed release verified — 2026-09-12
+## Redesigned signed release verified — 2026-09-12
+
+**[Download LifeMate 1.2.52](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.52/LifeMate-100052.apk)** · `com.lifemate` · Android 8+ · versionCode **100052**.
+
+**All three jobs passed** in [run 34705976534](https://github.com/thisrony506-prog/LifeMate/actions/runs/34705976534), application source **`e9f11b81e0b1acb0671ccc4ac0a3f7689dd28f1f`**. This supersedes the older UI/update-policy descriptions and test counts below.
+
+| Executed verification | Result |
+| --- | --- |
+| Compile, R8 release assembly, lint | Passed |
+| JVM tests | **45 passed**, including real week boundaries/duplicates/future work, quiet voice policy and known-update rollback retention |
+| Local/hosted Python regression tests | **17 passed**, including 4.5:1 white-label contrast for all eight light-mode feature primary colors; local Bash syntax and diff checks also passed |
+| Android feature/UI tests | Passed with zero failures: existing persistence/security/navigation/update verification, Settings-only update entry, non-dismissible required dialog/Back handling, actual card dimensions/Unicode/photo effects/import rejection, encrypted draft storage and real studio UI restoration after recreation |
+| Process-exit/reboot reminder checks | All three host-invoked checks passed; opt-in external helper is intentionally skipped in the normal suite |
+| Signed continuity and install/upgrade | Passed: actual published **1.2.43 / 100043** installed, encrypted `UpgradeProof` profile saved, then **1.2.52 / 100052** installed via `adb install -r` without uninstalling; retained profile/new installed version confirmed |
+| Publication | Automatic draft-byte verification, publication, final canonical URL/digest verification and temporary signing-key cleanup all passed |
+| Downloadable outputs | Exactly one non-expired **LifeMate-Release-APK** Actions artifact and exactly one APK asset on the published non-prerelease release |
+
+Public API metadata was independently checked after publication against the source/run, version, single-asset identity, byte size, digest and retained signer:
+
+- APK: **22,776,217 bytes**.
+- SHA-256: `1ec81bf773321aa41a46be4bf352c8363e431cfdd999cade57a8ce2b062d744d`.
+- Retained public certificate SHA-256: `518aec44e1f3c230464381c6b539f411b2f317db0db80e6fa896688a3b4a97a8`.
+
+[UX-UPDATE.md](UX-UPDATE.md) records the design, private studio, weekly arithmetic, required-update behavior, voice limits and changed privacy/backup details. No Room schema, existing records, supplied logo, application ID or signing identity was replaced.
+
+### Important physical-device limits
+
+Audible English/Bangla TTS quality and engine availability were **not** certified on the user's phone. The automated voice test covers the quiet/privacy decision policy; real TTS installation, audio routing, Android/OEM background-service restrictions, mute/channel/DND changes and the visible Stop control need device testing. Real Facebook share targets and third-party photo/document providers also require device checks. Card rendering/import and Compose draft restoration were executed on the emulator; this does not prove every external app/provider.
+
+The redesigned app requires installation after a verified newer release is known, including offline afterward. An error without a known verified newer version never blocks access. Backup export remains available at the gate. Studio drafts/private photos are **not in record ZIP backups**; save finished PNGs separately. The signing-key backup requirements below still apply.
+
+
+## Earlier signed baseline — 1.2.43
 
 **[Download LifeMate 1.2.43](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.43/LifeMate-100043.apk)** · `com.lifemate` · Android 8+ · versionCode `100043`.
 

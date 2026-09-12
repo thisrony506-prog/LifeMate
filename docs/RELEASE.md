@@ -4,9 +4,11 @@ Application ID remains **`com.lifemate`**. Core organizer features remain offlin
 
 ## Current verified release
 
-**[Download signed LifeMate 1.2.43](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.43/LifeMate-100043.apk)**. [Run 34703966887](https://github.com/thisrony506-prog/LifeMate/actions/runs/34703966887) passed all three jobs and automatically published the release and one APK-only Actions artifact. A real in-place upgrade from the public 1.2.41 retained the encrypted profile. See [VERIFICATION.md](VERIFICATION.md) for evidence and manual-device limits.
+**[Download signed LifeMate 1.2.52](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.52/LifeMate-100052.apk)**. [Run 34705976534](https://github.com/thisrony506-prog/LifeMate/actions/runs/34705976534) passed all three jobs and automatically published the release and one APK-only Actions artifact. A real in-place upgrade from the public 1.2.43 to 1.2.52 retained the encrypted profile. See [VERIFICATION.md](VERIFICATION.md) for evidence and manual-device limits.
 
-**All four signing secrets are configured and working. Do not repeat setup or generate a new key.** Keep an encrypted offline backup of the original JKS and its password separately in a password manager. Future signed versions reuse this identity. If 1.2.41 is already installed, install the newer APK over it and choose Android's **Update**; do not uninstall first.
+**All four signing secrets are configured and working. Do not repeat setup or generate a new key.** Keep an encrypted offline backup of the original JKS and its password separately in a password manager. Future signed versions reuse this identity. If an earlier signed LifeMate is already installed, install the newer APK over it and choose Android's **Update**; do not uninstall first.
+
+The redesigned release adds feature-colored UI, pink birthday/photo cards, weekly insights and opt-in device TTS. It intentionally changes updates from an optional Home banner to a required-install dialog after verified discovery. [UX-UPDATE.md](UX-UPDATE.md) explains behavior, speech/device limitations and the studio draft backup exclusion.
 
 ## Exact commands in your private Codespace — one-time reference only
 
@@ -98,11 +100,11 @@ A **new workflow run** increases the version. A rerun retains its identity, so a
 
 ## Update trust and installation
 
-The Home notice / App updates screen compares numeric version codes and only offers strictly newer, canonical official assets. It rejects malformed/foreign/non-HTTPS URLs, leading-zero/malformed versions, draft/prerelease releases, duplicate assets/proofs, missing digests, invalid asset types/states/sizes, and missing/forged signatures. The metadata signature must verify against the **installed app's certificate**, not an arbitrary key supplied by the server. The signed APK digest must match GitHub's asset digest.
+The required-update dialog / Settings update screen compares numeric version codes and only offers strictly newer, canonical official assets. It rejects malformed/foreign/non-HTTPS URLs, leading-zero/malformed versions, draft/prerelease releases, duplicate assets/proofs, missing digests, invalid asset types/states/sizes, and missing/forged signatures. The metadata signature must verify against the **installed app's certificate**, not an arbitrary key supplied by the server. The signed APK digest must match GitHub's asset digest.
 
 This authenticates the release metadata and binds the approved APK bytes to the retained key. The app does not fetch APK bytes itself: the browser performs the download, and **Android validates the actual APK signature and handles installation**. Metadata checking is not a claim that the app has inspected a browser's downloaded file. GitHub HTTPS, the signed publisher and Android's installer remain part of the trust chain.
 
-Automatic checks start only in the foreground, at most once per six hours. Clock rollback does not trigger a request loop. Manual checks intentionally bypass that automatic interval. Offline, timeout, rate-limit, API and invalid-proof errors are not reported as "up to date". Automatic checks can be disabled; only public version/connection information reaches GitHub, not profile, notes or media. Debug/instrumentation builds do not auto-check production releases.
+Automatic checks start only in the foreground, at most once per six hours. Clock rollback does not trigger a request loop. Manual checks intentionally bypass that automatic interval. Offline, timeout, rate-limit, API and invalid-proof errors are not reported as "up to date". The redesigned app always performs these rate-limited foreground checks. A verified newer version requires installation; missing connectivity alone does not invent a lock, and a known verified requirement survives offline/stale responses. Only public version/connection information reaches GitHub, not profile, notes or media. Debug/instrumentation builds do not auto-check production releases.
 
 Download opens the canonical official HTTPS APK in your browser. Android asks you to confirm installation/update; if needed, allow installs from that browser. LifeMate has no root operation, silent installer, or `REQUEST_INSTALL_PACKAGES` permission. Do not uninstall to update—uninstalling deletes local data. Back up before important updates and stop on a signature conflict rather than bypassing it.
 
