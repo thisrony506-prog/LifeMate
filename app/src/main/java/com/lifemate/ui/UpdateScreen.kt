@@ -16,18 +16,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lifemate.BuildConfig
 import com.lifemate.updates.UpdateState
 
-@Composable fun UpdateBanner(update: UpdateState, onOpen: () -> Unit) {
-    if (update.available) {
-        SoftCard(Modifier.fillMaxWidth().testTag("update-banner"), MaterialTheme.colorScheme.primaryContainer) {
-            Text("LifeMate ${update.release!!.version} is ready", style = MaterialTheme.typography.titleMedium)
-            Text("A newer version is available. Keep your data and update in place.", style = MaterialTheme.typography.bodyMedium)
-            Button(onOpen) { Text("View update") }
-        }
-    } else {
-        TextButton(onOpen, Modifier.testTag("open-updates")) { Text("Version ${BuildConfig.VERSION_NAME} · Updates") }
-    }
-}
-
 @Composable fun UpdateScreen(state: LifeState, vm: LifeViewModel) {
     val update by vm.updates.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -47,8 +35,9 @@ import com.lifemate.updates.UpdateState
             OutlinedButton({ vm.checkUpdates(true) }, enabled = !update.checking, modifier = Modifier.fillMaxWidth()) { Text("Check for updates") }
         }
         SoftCard(Modifier.fillMaxWidth()) {
-            ToggleRow("Automatic update checks", "Checks public GitHub release information when you open the app, at most once every 6 hours.", state.preferences.automaticUpdates) { vm.preference("automaticUpdates", it) }
-            Text("Only the app version and normal connection information (such as your IP address) reach GitHub. Your notes, profile and media are never sent. All organizer features work offline.", style = MaterialTheme.typography.bodyMedium)
+            Text("Automatic update checks", style = MaterialTheme.typography.titleMedium)
+            Text("Checks the official release when you open LifeMate, at most once every 6 hours. A verified newer version requires installation before continuing. No internet or a server error alone never triggers an update lock.")
+            Text("Only the app version and normal connection information (such as your IP address) reach GitHub. Your notes, profile and media are never sent. Organizer features work offline unless a verified newer version is already known.", style = MaterialTheme.typography.bodyMedium)
         }
         SoftCard(Modifier.fillMaxWidth()) {
             Text("Install safely", style = MaterialTheme.typography.titleMedium)

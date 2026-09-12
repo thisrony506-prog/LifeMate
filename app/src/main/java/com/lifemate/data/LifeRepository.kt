@@ -69,6 +69,8 @@ class LifeRepository(val context: Context, val db: LifeDatabase, private val sch
         db.withTransaction { dao.clear() }
         mediaDir.listFiles()?.forEach { it.delete() }
         File(context.cacheDir, "cards").deleteRecursively()
+        File(context.filesDir, "studio").deleteRecursively()
+        com.lifemate.utils.SecureStore(context).clearStudioDrafts()
         preferences.clear()
     }
 }

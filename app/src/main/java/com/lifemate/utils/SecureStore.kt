@@ -35,6 +35,9 @@ class SecureStore(context: Context) {
         }
     }
     @Synchronized fun databaseKey(): ByteArray = get("database") ?: ByteArray(32).apply { SecureRandom().nextBytes(this); put("database", this) }
+    fun readStudioDraft(id: String): String? = get("studio:$id")?.toString(Charsets.UTF_8)
+    fun saveStudioDraft(id: String, json: String) = put("studio:$id", json.toByteArray(Charsets.UTF_8))
+    fun clearStudioDrafts() { val edit = prefs.edit(); prefs.all.keys.filter { it.startsWith("studio:") }.forEach { edit.remove(it) }; edit.commit() }
     fun hasPin() = prefs.contains("pin")
     fun setPin(pin: String) {
         require(pin.length in 6..12 && pin.all(Char::isDigit))

@@ -37,6 +37,7 @@ import java.time.LocalDate
 @Composable fun LifeRoot(activity: MainActivity, vm: LifeViewModel = viewModel()) {
     val state by vm.state.collectAsStateWithLifecycle()
     val busy by vm.busy.collectAsStateWithLifecycle()
+    val update by vm.updates.collectAsStateWithLifecycle()
     val nav = rememberNavController()
     val unlockedContent = rememberSaveableStateHolder()
     val entry by nav.currentBackStackEntryAsState()
@@ -51,8 +52,8 @@ import java.time.LocalDate
     val lifecycle = LocalLifecycleOwner.current
     // Only public release metadata is requested; debug/instrumentation runs never auto-fetch.
     val lifecycleState by lifecycle.lifecycle.currentStateFlow.collectAsState()
-    LaunchedEffect(state.loading, state.preferences.automaticUpdates, locked, lifecycleState) {
-        if (!state.loading && !locked && state.preferences.automaticUpdates &&
+    LaunchedEffect(state.loading, locked, lifecycleState) {
+        if (!state.loading && !locked &&
             lifecycleState == Lifecycle.State.RESUMED && !BuildConfig.DEBUG) vm.checkUpdates()
     }
     fun navigate(path: String) {
@@ -125,9 +126,9 @@ import java.time.LocalDate
                                 Box(Modifier.padding(padding).fillMaxSize()) {
                                     NavHost(navController = nav, startDestination = "home") {
                                         composable("home") { HomeScreen(state, vm, today, ::navigate) }
-                                        composable("missions") { CollectionScreen(Kind.MISSION, state, vm, ::navigate) }
-                                        composable("memories") { CollectionScreen(Kind.MEMORY, state, vm, ::navigate) }
-                                        composable("list/{kind}") { backStack -> CollectionScreen(Kind.valueOf(backStack.arguments!!.getString("kind")!!), state, vm, ::navigate) }
+                                        composable("missions") { FeatureTheme(Kind.MISSION) { CollectionScreen(Kind.MISSION, state, vm, ::navigate) } }
+                                        composable("memories") { FeatureTheme(Kind.MEMORY) { CollectionScreen(Kind.MEMORY, state, vm, ::navigate) } }
+                                        composable("list/{kind}") { backStack -> val kind = Kind.valueOf(backStack.arguments!!.getString("kind")!!); FeatureTheme(kind) { CollectionScreen(kind, state, vm, ::navigate) } }
                                         composable("calendar") { CalendarScreen(state, vm, ::navigate) }
                                         composable("profile") { ProfileScreen(state, ::navigate) }
                                         composable("edit-profile") { ProfileEditor(state.profile, vm) { nav.popBackStack() } }
@@ -136,6 +137,7 @@ import java.time.LocalDate
                                         composable("statistics") { StatisticsScreen(state) }
                                         composable("settings") { SettingsScreen(activity, state, vm, ::navigate, { lockRevision++ }) { nav.navigate("home") { popUpTo("home") { inclusive = true } } } }
                                         composable("updates") { UpdateScreen(state, vm) }
+                                        composable("studio") { BirthdayTheme { CardStudioScreen(vm = vm) } }
                                         composable("privacy") { PolicyScreen(true) }
                                         composable("terms") { PolicyScreen(false) }
                                         composable("notifications") { NotificationsScreen(state, vm, ::navigate) }
@@ -146,7 +148,7 @@ import java.time.LocalDate
                                         }
                                         composable("wish/{id}") { backStack ->
                                             val person = state.items.firstOrNull { it.id == backStack.arguments?.getString("id") }
-                                            if (person != null) WishScreen(person, vm)
+                                            if (person != null) BirthdayTheme { WishScreen(person, vm) }
                                             else EmptyState(Kind.BIRTHDAY, "Birthday not found", "This person's record may have been deleted.", "Birthdays") { navigate("list/BIRTHDAY") }
                                         }
                                         composable("edit/{kind}/{id}?date={date}", arguments = listOf(navArgument("date") { type = NavType.StringType; nullable = true; defaultValue = null })) { backStack ->
@@ -165,13 +167,14 @@ import java.time.LocalDate
                         if (locked) Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { LockScreen(activity, vm.app.secure, state.preferences.biometric) { locked = false; stoppedAt = 0 } }
                     }
                 }
-                if (adding && !locked) ModalBottomSheet(onDismissRequest = { adding = false }, containerColor = MaterialTheme.colorScheme.background) {
+                if (adding && !locked && !update.available) ModalBottomSheet(onDismissRequest = { adding = false }, containerColor = MaterialTheme.colorScheme.background) {
                     LazyColumn(contentPadding = PaddingValues(22.dp, 0.dp, 22.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         item { PageHeading("Make a little space", "What would you like to add?"); Spacer(Modifier.height(12.dp)) }
                         items(Kind.entries) { kind -> Surface(onClick = { adding = false; navigate("edit/${kind.name}/new") }, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) { Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) { KindBadge(kind); Text("New ${kind.label.lowercase()}", style = MaterialTheme.typography.titleMedium) } } }
                     }
                 }
-                if (discard && !locked) ConfirmDialog("Leave without saving?", "Unsaved edits on this screen will be discarded.", "Discard edits", { discard = false }) { discard = false; nav.popBackStack() }
+                if (!state.loading && !locked && state.profile != null && update.available) RequiredUpdateGate(update, vm) { activity.moveTaskToBack(true) }
+                if (discard && !locked && !update.available) ConfirmDialog("Leave without saving?", "Unsaved edits on this screen will be discarded.", "Discard edits", { discard = false }) { discard = false; nav.popBackStack() }
             }
         }
     }

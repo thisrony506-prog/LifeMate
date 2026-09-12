@@ -36,6 +36,12 @@ import java.time.*
         Text(if (vm.app.scheduler.canBePrecise()) "Precise alarms are allowed." else "Reminders use approximate timing. Android may delay them while idle.", style = MaterialTheme.typography.bodyMedium)
         if (!vm.app.scheduler.canBePrecise()) OutlinedButton({ try { settings.launch(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:${context.packageName}"))) } catch (_: ActivityNotFoundException) { vm.message("Precise alarm settings aren't available on this device.") } }, Modifier.fillMaxWidth()) { Text("Allow precise reminders") }
     }
+    ToggleRow("Voice reminders", "Read a short reminder aloud with an installed offline English/Bangla voice. Off by default; people nearby can hear it. Silent mode, DND, locked screens and app PIN lock stay silent.", state.preferences.voiceReminders) { vm.preference("voiceReminders", it) }
+    if (state.preferences.voiceReminders) {
+        OutlinedButton({ com.lifemate.notifications.VoiceReminderService.speak(context,"LifeMate reminder. It is time for your next small step."); vm.message("Voice needs an installed offline English voice, notification permission and an unlocked, non-silent phone. If unavailable, reminders remain as text.") }, Modifier.fillMaxWidth()) { Text("Test voice reminder") }
+        TextButton({ try { context.startActivity(Intent("com.android.settings.TTS_SETTINGS")) } catch (_: Exception) { vm.message("Open Android Settings and search for Text-to-speech to install an offline voice.") } }) { Text("Android voice settings") }
+        Text("Speech lasts at most 30 seconds, with a visible Stop notification. Android may block background speech for approximate alarms; the normal notification remains.",style = MaterialTheme.typography.bodyMedium)
+    }
     Text("Default sound", style = MaterialTheme.typography.titleMedium)
     SoundPicker(state.preferences.sound) { vm.preference("sound", it) }
     ToggleRow("Vibration", "Global preference; individual reminders may be silent.", state.preferences.vibration) { vm.preference("vibration", it) }
@@ -56,6 +62,11 @@ import java.time.*
             SectionHeading("Your profile")
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) { Avatar(state.profile); Text(state.profile?.fullName ?: "Your profile", style = MaterialTheme.typography.titleMedium) }
             OutlinedButton({ navigate("edit-profile") }, Modifier.fillMaxWidth()) { Text("Edit personal information") }
+        }
+        SoftCard(Modifier.fillMaxWidth()) {
+            SectionHeading("Keep LifeMate current")
+            Text("Installed version ${BuildConfig.VERSION_NAME} · verified signed releases only")
+            OutlinedButton({ navigate("updates") }, Modifier.fillMaxWidth()) { Text("App updates") }
         }
         SoftCard { SectionHeading("Notifications"); NotificationSettings(state, vm) }
         SoftCard(Modifier.fillMaxWidth().testTag("appearance-settings")) { SectionHeading("Appearance"); ChoiceChips(listOf("Light", "Dark", "System"), state.preferences.theme) { vm.preference("theme", it) } }
@@ -82,7 +93,6 @@ import java.time.*
                 BrandMark(44.dp)
                 Text("Your Personal Life Assistant.\nVersion ${BuildConfig.VERSION_NAME}")
             }
-            TextButton({ navigate("updates") }) { Text("App updates") }
             TextButton({ navigate("privacy") }) { Text("Privacy policy & data security") }
             TextButton({ navigate("terms") }) { Text("Terms & reliability notes") }
             TextButton({ try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/thisrony506-prog/LifeMate/issues"))) } catch (_: Exception) { vm.message("Open github.com/thisrony506-prog/LifeMate/issues in a browser for support.") } }) { Text("Contact / support on GitHub") }
@@ -111,10 +121,10 @@ import java.time.*
 }
 @Composable fun PolicyScreen(privacy: Boolean) {
     val sections = if (privacy) listOf(
-        "Local by design" to "LifeMate does not include analytics, advertising, tracking, or a cloud account. The internet permission is used only to check public GitHub release metadata. Automatic checks can be disabled in App updates; manual checks and downloading an APK require a connection. GitHub receives normal connection information and the app version, never your personal records. Core features work offline. Personal information is never sent to AI services. Birthday wishes and cards use offline templates.",
+        "Local by design" to "LifeMate does not include analytics, advertising, tracking, or a cloud account. The internet permission is used only to check public GitHub release metadata. Update controls are in Settings. A verified newer signed version requires installation before continuing; no connection or server error alone does not lock the app. Manual checks and downloads require a connection. GitHub receives normal connection information and the app version, never your personal records. Core features work offline. Personal information is never sent to AI services. Birthday wishes and cards use offline templates.",
         "Protected storage" to "Profile data, notes, schedules, and metadata are stored in a SQLCipher-encrypted Room database. Its random key is encrypted using Android Keystore. Media and audio are stored in the app's private internal directory, protected by Android's sandbox and device encryption; they are not separately encrypted by LifeMate. Use a device screen lock for stronger protection.",
         "App lock" to "Optional PINs are salted and hashed with PBKDF2-HMAC-SHA256, then encrypted with a Keystore key. Five failed attempts cause a one-minute cooldown. Strong Android biometrics can unlock the app when enabled. The app locks after 30 seconds in the background; notification details may remain visible according to Android lock-screen settings.",
-        "Permissions" to "Notification permission is requested when you enable reminders. Precise alarms are optional. Microphone access is requested only when recording. Photos and videos are selected through Android's system picker; no broad gallery permission is used. LifeMate never records in a background service.",
+        "Permissions" to "Notification permission is requested when you enable reminders. Precise alarms are optional. Microphone access is requested only when recording. Photos and videos are selected through Android's system picker; no broad gallery permission is used. LifeMate never records in a background service. Optional voice reminders use a short, visible playback service and an installed offline TTS voice; they respect silent mode, DND, screen lock and app lock. Studio photos are copied privately and exported without source location metadata.",
         "Sharing & backups" to "Sharing only happens when you tap Share and choose another app. Exported ZIP backups are unencrypted and include selected local media and personal information. Android's system document picker may offer cloud providers—choose one only if you want that provider to receive the file. Automatic Android cloud backup is disabled. Import validates files before replacing records.",
         "Your control" to "Edit, export, or delete your data at any time. Deleting an attachment removes LifeMate's private copy, not the original gallery file. Deleting all data does not delete backups or images you saved outside the app. Uninstalling deletes local storage. We cannot recover lost PINs or unexported data.",
         "Support" to "Support is available through the LifeMate GitHub issue tracker. Do not post private notes, birthdays, backups, or medical information to public issues. Opening support is an explicit browser action, not a background upload."

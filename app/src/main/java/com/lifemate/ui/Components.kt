@@ -33,11 +33,11 @@ fun Kind.icon(): ImageVector = when (this) {
     Kind.MEMORY -> Icons.Outlined.PhotoLibrary; Kind.GOAL -> Icons.Outlined.TrackChanges
 }
 fun Kind.tint() = when (this) {
-    Kind.ROUTINE -> Jade
-    Kind.MISSION -> Color(0xFFAA7A4B)
+    Kind.ROUTINE -> Color(0xFF9C641F)
+    Kind.MISSION -> Color(0xFF7852B0)
     Kind.HABIT -> Color(0xFF43877C)
     Kind.REMINDER -> Color(0xFF587CB1)
-    Kind.BIRTHDAY -> Color(0xFFAE7186)
+    Kind.BIRTHDAY -> Color(0xFFBC3B73)
     Kind.NOTE -> Color(0xFF8175AC)
     Kind.MEMORY -> Color(0xFF628AAC)
     Kind.GOAL -> Color(0xFFA56950)
@@ -132,3 +132,13 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 @Composable fun Field(value: String, onChange: (String) -> Unit, label: String, modifier: Modifier = Modifier, singleLine: Boolean = true, minLines: Int = 1) {
     OutlinedTextField(value, onChange, modifier.fillMaxWidth(), label = { Text(label) }, shape = RoundedCornerShape(16.dp), singleLine = singleLine, minLines = minLines)
 }
+
+/** Distinct feature accents, softened surfaces and readable night-mode colors. */
+@Composable fun featureAccent(kind: Kind): Color = if (MaterialTheme.colorScheme.background.luminance() < .5f) lerp(kind.tint(), Color.White, .48f) else kind.tint()
+@Composable fun featureContainer(kind: Kind): Color = lerp(MaterialTheme.colorScheme.surface, kind.tint(), if (MaterialTheme.colorScheme.background.luminance() < .5f) .20f else .09f)
+@Composable fun FeatureTheme(kind: Kind, content: @Composable () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    MaterialTheme(colorScheme = colors.copy(primary = featureAccent(kind), onPrimary = if (colors.background.luminance() < .5f) Color(0xFF17251F) else Color.White,
+        primaryContainer = featureContainer(kind), onPrimaryContainer = colors.onSurface), content = content)
+}
+@Composable fun BirthdayTheme(content: @Composable () -> Unit) { FeatureTheme(Kind.BIRTHDAY, content) }

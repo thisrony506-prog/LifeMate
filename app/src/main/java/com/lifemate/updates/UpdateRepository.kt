@@ -34,7 +34,7 @@ class UpdateRepository(
             connection.setRequestProperty("Accept", "application/vnd.github+json")
             connection.setRequestProperty("User-Agent", "LifeMate/${BuildConfig.VERSION_NAME}")
             when (connection.responseCode) {
-                404 -> { cache.edit().remove("metadata").apply(); return@withContext null }
+                404 -> return@withContext cached()
                 403, 429 -> error("Update service is busy. Try again later.")
                 200 -> Unit
                 else -> error("The update service is unavailable. Try again later.")
@@ -52,6 +52,8 @@ class UpdateRepository(
             }
             val text = bytes.toString(Charsets.UTF_8)
             val info = parse(text) ?: error("No compatible signed release is published yet.")
+            val known = cached()
+            if (known != null && known.code > info.code) return@withContext known
             cache.edit().putString("metadata", text).apply()
             info
         } finally { connection.disconnect() }

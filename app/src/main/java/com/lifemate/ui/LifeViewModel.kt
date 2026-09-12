@@ -69,7 +69,11 @@ class LifeViewModel(application: Application) : AndroidViewModel(application) {
     fun delete(item: LifeItem, after: () -> Unit) = runAction("Deleted", after) { repo.delete(item) }
     fun attach(item: LifeItem, uri: Uri) = runAction("Attachment saved on this device") { repo.attach(item.id, uri) }
     fun preference(key: String, value: String) = runAction { app.preferences.set(key, value); app.scheduler.reconcile() }
-    fun preference(key: String, value: Boolean) = runAction { app.preferences.set(key, value); app.scheduler.reconcile() }
+    fun preference(key: String, value: Boolean) = runAction {
+        app.preferences.set(key, value)
+        if (!value && key in setOf("voiceReminders", "notifications")) app.stopService(android.content.Intent(app, com.lifemate.notifications.VoiceReminderService::class.java))
+        app.scheduler.reconcile()
+    }
     fun export(uri: Uri) = runAction("Backup exported. Store it somewhere private.") { BackupManager(repo).export(uri) }
     fun restore(uri: Uri, after: () -> Unit) = runAction("Backup restored", after) { BackupManager(repo).restore(uri) }
 }

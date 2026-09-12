@@ -22,13 +22,13 @@ class NavigationTest {
         }
         compose.waitUntil(15_000) { compose.onAllNodesWithContentDescription("Search everything").fetchSemanticsNodes().isNotEmpty() }
     }
-    @Test fun updateScreenAndOfflinePreferenceWork() {
-        compose.onNodeWithTag("open-updates").performClick()
+    @Test fun updatesLiveInSettingsAndExplainTheRequiredPolicy() {
+        compose.onNodeWithTag("open-updates").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithText("App updates").performScrollTo().performClick()
         compose.onNodeWithText("Keep LifeMate up to date").assertIsDisplayed()
-        compose.onNodeWithText("Automatic update checks").performScrollTo().performClick()
-        compose.waitUntil(10_000) { !runBlocking { app.preferences.flow.first().automaticUpdates } }
-        compose.onNodeWithText("Automatic update checks").performScrollTo().performClick()
-        compose.waitUntil(10_000) { runBlocking { app.preferences.flow.first().automaticUpdates } }
+        compose.onNodeWithText("Automatic update checks").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("A verified newer version requires installation", substring = true).assertExists()
     }
     @Test fun noteCreationPersistsAcrossActivityRecreation() {
         compose.onNodeWithContentDescription("Create something new").performClick()
@@ -64,8 +64,8 @@ class NavigationTest {
         compose.onNodeWithContentDescription("Open your profile").performClick()
         compose.onNodeWithText("Rony Test").assertIsDisplayed()
         compose.onNodeWithContentDescription("All features").performClick()
-        Kind.entries.forEachIndexed { index, kind ->
-            compose.onNode(hasScrollToNodeAction()).performScrollToIndex(index + 1)
+        Kind.entries.forEach { kind ->
+            compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasTestTag("feature-${kind.name}"))
             compose.onNodeWithTag("feature-${kind.name}").assertIsDisplayed().performClick()
             compose.onNodeWithTag("page-title").assertTextEquals(kind.plural)
             compose.onNodeWithContentDescription("Go back").performClick()
@@ -77,8 +77,8 @@ class NavigationTest {
         runBlocking { app.db.dao().save(item) }
         compose.waitForIdle()
         // Put the single task at the top, clear of the bottom-right floating add button.
-        // The feed has four introductory rows before its first scheduled task.
-        compose.onNode(hasScrollToNodeAction()).performScrollToIndex(4)
+        // The feed has five introductory rows before its first scheduled task.
+        compose.onNode(hasScrollToNodeAction()).performScrollToIndex(5)
         compose.onNodeWithContentDescription("Complete Reading journey").performClick()
         compose.waitUntil(10_000) { runBlocking { app.db.dao().isDone(item.id, LocalDate.now().toString()) } }
         compose.onNodeWithContentDescription("Mark Reading journey incomplete").performClick()

@@ -56,7 +56,8 @@ import java.time.*
         Kind.REMINDER -> "Make space in your mind. We'll remember."
     }
     LazyColumn(contentPadding = PaddingValues(22.dp, 16.dp, 22.dp, 110.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { PageHeading(kind.plural, subtitle) }
+        item { SoftCard(Modifier.fillMaxWidth(), featureContainer(kind)) { KindBadge(kind); PageHeading(kind.plural, subtitle) } }
+        if (kind == Kind.BIRTHDAY) item { BirthdayTheme { Button({ navigate("studio") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Palette, null); Text("  Open photo & card studio") } } }
         item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), placeholder = { Text("Search names, tags, dates…") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }, shape = RoundedCornerShape(18.dp), singleLine = true) }
         item { ChoiceChips(if (kind == Kind.NOTE) listOf("All", "Pinned", "Important", "Archived") else if (kind == Kind.MEMORY) listOf("All", "Pinned", "Archived") else if (kind == Kind.BIRTHDAY) listOf("All", "Today", "Upcoming", "Archived") else listOf("All", "Today", "Upcoming", "Pending", "Completed", "Archived"), filter) { filter = it } }
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -97,8 +98,10 @@ import java.time.*
 @Composable fun MenuScreen(navigate: (String) -> Unit) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { PageHeading("Your life, organized", "Everything you need, in one gentle space.") }
-        items(Kind.entries) { kind ->
-            Surface(onClick = { navigate("list/${kind.name}") }, modifier = Modifier.testTag("feature-${kind.name}"), shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface,
+        listOf("Plan your day" to listOf(Kind.ROUTINE, Kind.REMINDER), "Grow with intention" to listOf(Kind.MISSION, Kind.HABIT, Kind.GOAL), "Keep & celebrate" to listOf(Kind.BIRTHDAY, Kind.MEMORY, Kind.NOTE)).forEach { (title, kinds) ->
+        item { SectionHeading(title) }
+        items(kinds) { kind ->
+            Surface(onClick = { navigate("list/${kind.name}") }, modifier = Modifier.testTag("feature-${kind.name}"), shape = RoundedCornerShape(22.dp), color = featureContainer(kind),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .65f))) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     KindBadge(kind, 48.dp)
@@ -110,6 +113,8 @@ import java.time.*
                 }
             }
         }
+        }
+        item { BirthdayTheme { Button({ navigate("studio") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Palette, null); Text("  Photo & card studio") } } }
         item { OutlinedButton({ navigate("statistics") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Insights, null); Text("  Your statistics") } }
         item { OutlinedButton({ navigate("settings") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Settings, null); Text("  Settings & privacy") } }
     }

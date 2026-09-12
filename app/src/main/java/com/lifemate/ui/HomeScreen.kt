@@ -29,7 +29,6 @@ import java.time.format.DateTimeFormatter
 
 val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
 @Composable fun HomeScreen(state: LifeState, vm: LifeViewModel, today: LocalDate, navigate: (String) -> Unit) {
-    val update by vm.updates.collectAsStateWithLifecycle()
     val compact = LocalConfiguration.current.screenWidthDp < 360
     val ringSize = if (compact) 80.dp else 96.dp
     val tasks = state.items.filter { it.kind in taskKinds && it.occurs(today) }.sortedBy { it.time }
@@ -50,9 +49,8 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
                     Text("LifeMate", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     IconButton(onClick = { navigate("search") }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Search, "Search everything") }
                     IconButton(onClick = { navigate("notifications") }) { Icon(Icons.Outlined.Notifications, "Notifications") }
-                    IconButton(onClick = { navigate("settings") }, modifier = Modifier.size(40.dp)) { Icon(Icons.Outlined.Settings, "Settings") }
+                    IconButton(onClick = { navigate("settings") }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Settings, "Settings") }
                 }
-                UpdateBanner(update) { navigate("updates") }
             }
         }
         item {
@@ -89,6 +87,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
                 }
             }
         }
+        item { WeeklyOverview(state, today) { navigate("statistics") } }
         item { SectionHeading("Your day", "Calendar") { navigate("calendar") } }
         if (tasks.isEmpty()) item { EmptyState(Kind.ROUTINE, "Create your first routine", "Give your day a little rhythm. Start with one thing that matters.", "Create routine") { navigate("edit/ROUTINE/new") } }
         else {
@@ -98,10 +97,10 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SectionHeading("A little help to get started")
+                SectionHeading("Create something good")
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     listOf(Kind.ROUTINE, Kind.MISSION, Kind.REMINDER, Kind.NOTE).forEach { kind ->
-                        Surface(onClick = { navigate("edit/${kind.name}/new") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surface, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                        Surface(onClick = { navigate("edit/${kind.name}/new") }, modifier = Modifier.weight(1f), shape = RoundedCornerShape(18.dp), color = featureContainer(kind), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
                             Column(Modifier.padding(vertical = 15.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(9.dp)) {
                                 Icon(kind.icon(), null, tint = kind.tint(), modifier = Modifier.size(24.dp)); Text(kind.label, fontSize = 11.sp, fontWeight = FontWeight.Medium)
                             }
@@ -110,8 +109,16 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
                 }
             }
         }
+        item { BirthdayTheme { SoftCard(Modifier.fillMaxWidth(), featureContainer(Kind.BIRTHDAY)) {
+            Text("Create. Celebrate. Share.", style = MaterialTheme.typography.titleLarge)
+            Text("Pink birthday wishes & beautiful photo posts. Made privately, by you.")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton({ navigate("list/BIRTHDAY") }) { Text("Birthdays") }
+                Button({ navigate("studio") }) { Text("Photo studio") }
+            }
+        } } }
         if (birthday != null) item {
-            SoftCard(Modifier.fillMaxWidth().clickable { navigate("detail/${birthday.id}") }, color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = .5f)) {
+            SoftCard(Modifier.fillMaxWidth().clickable { navigate("detail/${birthday.id}") }, color = featureContainer(Kind.BIRTHDAY)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     KindBadge(Kind.BIRTHDAY)
                     Column(Modifier.weight(1f)) { Eyebrow("A day worth remembering"); Spacer(Modifier.height(5.dp)); Text("${birthday.title}'s birthday", style = MaterialTheme.typography.titleMedium); Text(Schedule.nextBirthday(LocalDate.parse(birthday.date), today).format(dateFormat), style = MaterialTheme.typography.bodyMedium) }

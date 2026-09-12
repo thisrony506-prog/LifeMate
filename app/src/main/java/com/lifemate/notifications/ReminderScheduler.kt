@@ -115,7 +115,11 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
                 // when yesterday's notification has not been dismissed.
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE).setOnlyAlertOnce(false).build()
             if (dao.recordDelivery(Delivery(id, occurrence)) != -1L) {
-                try { NotificationManagerCompat.from(context).notify(id, 0, notification) } catch (_: SecurityException) { /* Revoked between check and delivery. */ }
+                try {
+                    NotificationManagerCompat.from(context).notify(id, 0, notification)
+                    val actualChannel = context.getSystemService(NotificationManager::class.java).getNotificationChannel(channelId)
+                    if (prefs.voiceReminders && sound != "silent" && actualChannel != null && actualChannel.importance >= NotificationManager.IMPORTANCE_DEFAULT && actualChannel.sound != null) VoiceReminderService.speak(context, message)
+                } catch (_: SecurityException) { /* Revoked between check and delivery. */ }
             }
         }
         // Persist the next occurrence before registering it; reconciliation repairs interrupted registrations.
