@@ -2,6 +2,7 @@
 set +x
 set +v
 set -euo pipefail
+trap 'echo "::error::Signed APK verification failed at script line $LINENO. See the named check above."' ERR
 repo=thisrony506-prog/LifeMate
 mkdir -p release-download "$RUNNER_TEMP/previous-release"
 # Use the real previous published APK whenever available, to test signing continuity.
@@ -34,24 +35,35 @@ fi
 cp app/build/outputs/apk/release/app-release.apk "release-download/LifeMate-$LIFEMATE_VERSION_CODE.apk"
 apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
 aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -1)
+echo 'Checking APK signatures, signer count and package identity.'
 for apk in "$RUNNER_TEMP/previous.apk" release-download/*.apk; do
-  "$apksigner" verify --min-sdk-version 26 --verbose --print-certs "$apk" > "$apk.certificate.txt"
-  test "$(grep -c '^Signer #[0-9]* certificate SHA-256 digest:' "$apk.certificate.txt")" -eq 1
+  if ! "$apksigner" verify --min-sdk-version 26 --verbose --print-certs "$apk" > "$apk.certificate.txt"; then
+    grep -E '^(DOES NOT VERIFY|ERROR|WARNING|Verified using|Number of signers:)' "$apk.certificate.txt" || true
+    echo '::error::Android apksigner rejected the APK.'
+    exit 1
+  fi
+  # Only public verification summaries/fingerprints, never keys/passwords or certificate subjects.
+  grep -E '^(Verified using|Number of signers:)|^Signer .* certificate SHA-256 digest:' "$apk.certificate.txt" || true
+  python3 scripts/verify-apk-signers.py "$apk.certificate.txt" > "$RUNNER_TEMP/checked-signer.txt"
   "$aapt" dump badging "$apk" > "$RUNNER_TEMP/candidate-badging.txt"
+  grep '^package:' "$RUNNER_TEMP/candidate-badging.txt"
   grep -q "package: name='com.lifemate' " "$RUNNER_TEMP/candidate-badging.txt"
 done
-old=$(grep '^Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/previous.apk.certificate.txt")
-new=$(grep '^Signer #1 certificate SHA-256 digest:' release-download/*.certificate.txt)
+old=$(python3 scripts/verify-apk-signers.py "$RUNNER_TEMP/previous.apk.certificate.txt")
+new=$(python3 scripts/verify-apk-signers.py release-download/*.certificate.txt)
 [[ "$old" == "$new" ]] || { echo '::error::Signing key changed. Refusing to publish an incompatible upgrade.'; exit 1; }
+echo 'PASS: verified APK signer continuity and package identity'
 # Only the APK may remain in the download folder.
 rm release-download/*.certificate.txt
 "$aapt" dump badging release-download/*.apk > "$RUNNER_TEMP/badging.txt"
+echo "Checking current APK versionCode=$LIFEMATE_VERSION_CODE"
 grep -q "package: name='com.lifemate' versionCode='$LIFEMATE_VERSION_CODE'" "$RUNNER_TEMP/badging.txt"
 if grep -q application-debuggable "$RUNNER_TEMP/badging.txt"; then
   echo '::error::Release must not be debuggable.'; exit 1
 fi
 test "$(find release-download -type f | wc -l)" -eq 1
 
+echo 'Signing public update metadata with the verified retained key.'
 java scripts/SignReleaseMetadata.java "release-download/LifeMate-$LIFEMATE_VERSION_CODE.apk" \
   "$LIFEMATE_VERSION_CODE" "$LIFEMATE_VERSION_NAME" \
   "https://github.com/$repo/releases/download/v$LIFEMATE_VERSION_NAME/LifeMate-$LIFEMATE_VERSION_CODE.apk" \

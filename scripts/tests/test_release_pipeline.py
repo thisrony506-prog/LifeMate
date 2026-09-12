@@ -52,3 +52,13 @@ class ReleasePipelineTest(unittest.TestCase):
                 result=subprocess.run(['bash',str(ROOT/'scripts/prepare-signing.sh')],env=env,capture_output=True)
                 self.assertNotEqual(result.returncode,0)
                 self.assertFalse(Path(d+'/lifemate-release.jks').exists())
+
+    def test_verified_signer_output_formats(self):
+        import runpy
+        parse=runpy.run_path(str(ROOT/'scripts/verify-apk-signers.py'))['signer_digest']
+        digest='ab'*32
+        for label in ('#1','(minSdkVersion=28, maxSdkVersion=2147483647)'):
+            self.assertEqual(parse(f'Number of signers: 1\nSigner {label} certificate SHA-256 digest: {digest}\n'),digest)
+        with self.assertRaises(ValueError): parse('Number of signers: 2\n')
+        with self.assertRaises(ValueError): parse('Number of signers: 1\nSource Stamp Signer certificate SHA-256 digest: '+digest+'\n')
+        with self.assertRaises(ValueError): parse('Number of signers: 1\nSigner #1 certificate SHA-256 digest: '+digest+'\nSigner #1 certificate SHA-256 digest: '+'cd'*32+'\n')
