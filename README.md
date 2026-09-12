@@ -4,9 +4,9 @@
 
 ## APK downloads & verification
 
-[**Download the verified LifeMate 1.1.0 Release APK**](https://github.com/thisrony506-prog/LifeMate/actions/runs/34674504318).
+[**Download the verified LifeMate 1.1.1 Release APK**](https://github.com/thisrony506-prog/LifeMate/actions/runs/34677197968).
 
-This prior 1.1.0 run does not contain the newly supplied logo. The 1.1.1 update is awaiting its own verification. This prior run passed both verification jobs and contains exactly one artifact. It was built without private signing secrets, so its APK is **unsigned**.
+This run includes the user-supplied logo, passed both verification jobs and contains exactly one artifact. It was built without private signing secrets, so its APK is **unsigned**.
 
 Choose a successful run for `arena/01a090c4-lifemate`, then download **LifeMate-Release-APK** under **Artifacts**. New runs publish **one artifact containing exactly one release APK**—no debug download, reports, screenshots, checksum file or readme in the download. GitHub wraps artifacts in a ZIP; extract it to get the APK.
 
