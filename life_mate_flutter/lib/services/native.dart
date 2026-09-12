@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 
 class NativeBridge {
+  static bool demo = false;
   static const channel = MethodChannel('com.lifemate/personal_os');
   static bool get android => Platform.isAndroid;
   static Future<Map<String, dynamic>> snapshot() async {
@@ -9,6 +10,7 @@ class NativeBridge {
     return Map<String, dynamic>.from(await channel.invokeMethod<Map>('snapshot') ?? {});
   }
   static Future<void> open(String route) async {
+    if(demo) throw StateError("Exit Demo mode first");
     if (!android) throw UnsupportedError('These retained Android tools are not available on iOS yet.');
     await channel.invokeMethod('openLegacy', {'route': route});
   }

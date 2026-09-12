@@ -40,6 +40,7 @@ class FamilyShare {
     final point = await position();
     if (id != share) return;
     final cipher = await CloudService.seal(jsonEncode({'latitude': point.latitude, 'longitude': point.longitude, 'accuracy': point.accuracy, 'at': DateTime.now().toIso8601String()}), key);
+    if (id != share) return; // Consent may have been revoked while encrypting.
     await FirebaseFirestore.instance.doc('live/$share').set({'owner': uid, 'ciphertext': cipher, 'expiresAt': Timestamp.fromDate(until), 'updatedAt': FieldValue.serverTimestamp()});
   }
   Future<void> stop() async {
@@ -59,7 +60,8 @@ class FamilyShare {
     await for (final snapshot in FirebaseFirestore.instance.doc('live/${parts[0]}').snapshots()) {
       final data = snapshot.data();
       if (data == null || (data['expiresAt'] as Timestamp).toDate().isBefore(DateTime.now())) { yield null; continue; }
-      yield jsonDecode(await CloudService.unseal(data['ciphertext'] as String, SecretKey(keyBytes))) as Map<String,dynamic>;
+      final point=jsonDecode(await CloudService.unseal(data['ciphertext'] as String, SecretKey(keyBytes))) as Map<String,dynamic>;
+      yield {...point, 'expires': (data['expiresAt'] as Timestamp).toDate().toIso8601String()};
     }
   }
 }

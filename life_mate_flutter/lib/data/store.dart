@@ -32,6 +32,7 @@ class LifeStore extends ChangeNotifier {
   Future<void> refreshNative() async {
     final data = await NativeBridge.snapshot();
     if (data['name'] != null) name = data['name'].toString();
+    if (data['notificationsAllowed']==true) reminderIssue=null;
     legacy = ((data['items'] as List?) ?? []).map((v) => Map<String, dynamic>.from(v as Map)).toList();
     notifyListeners();
   }
@@ -50,7 +51,7 @@ class LifeStore extends ChangeNotifier {
     await save(Entry(kind: EntryKind.routine, title: t('Wake up', 'ঘুম থেকে ওঠা'), fields: {'time': time}), remind: true);
     notifyListeners();
   }
-  void setDemo(bool value) { demo = value; notifyListeners(); }
+  void setDemo(bool value) { demo = value; NativeBridge.demo=value; notifyListeners(); }
   Future<void> save(Entry entry, {bool remind = false}) async {
     if (demo) throw StateError(t('Leave Demo mode to save your own data.', 'নিজের তথ্য রাখতে ডেমো মোড বন্ধ করো।'));
     if (entry.title.trim().isEmpty || entry.title.length > 200) throw const FormatException('Invalid title');
@@ -70,6 +71,7 @@ class LifeStore extends ChangeNotifier {
     await save(e.copy(deleted: true, dirty: true));
     if (e.text('photo').isNotEmpty) await vault?.deleteMedia(e.text('photo'));
   }
+  void reloadVault() { _records=vault?.entries??[]; notifyListeners(); }
   Future<void> acceptCloud(Entry e) async {
     await vault?.put(e); _records.removeWhere((v) => v.id == e.id); _records.add(e); notifyListeners();
   }

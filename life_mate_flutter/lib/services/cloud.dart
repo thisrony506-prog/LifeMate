@@ -63,8 +63,9 @@ class CloudService {
     for (final doc in remote.docs) {
       final entry = Entry.fromJson(jsonDecode(await unseal(doc.data()['ciphertext'] as String, secret)) as Map<String,dynamic>);
       final revision = doc.data()['revision'] as int;
+      if(entry.id != doc.id || entry.revision != revision || !entry.syncable) throw const FormatException('Invalid encrypted record binding');
       final existing = local[entry.id];
-      if (existing != null && existing.dirty && existing.revision != revision) {
+      if (existing != null && (revision < existing.revision || existing.dirty && existing.revision != revision)) {
         throw StateError(store.t('Sync conflict. Both copies are safe; export before resolving on the other device.', 'সিঙ্কে দ্বন্দ্ব। দুই কপিই নিরাপদ আছে; অন্য ডিভাইসে সমাধানের আগে ব্যাকআপ রাখো।'));
       }
       if (existing == null || !existing.dirty) await store.acceptCloud(entry.copy(revision: revision, dirty: false));

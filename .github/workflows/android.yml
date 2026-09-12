@@ -28,7 +28,9 @@ jobs:
           channel: stable
           cache: true
       - name: Prepare Flutter module
-        run: bash scripts/setup-flutter.sh
+        run: |
+          set -o pipefail
+          bash scripts/setup-flutter.sh 2>&1 | tee compile.log device.log
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: false
@@ -62,7 +64,9 @@ jobs:
           channel: stable
           cache: true
       - name: Prepare Flutter module
-        run: bash scripts/setup-flutter.sh
+        run: |
+          set -o pipefail
+          bash scripts/setup-flutter.sh 2>&1 | tee compile.log device.log
       - uses: gradle/actions/setup-gradle@v4
       - name: Signing and release script tests
         run: |
@@ -74,8 +78,9 @@ jobs:
         if: ${{ github.job == 'verify' }}
         working-directory: life_mate_flutter
         run: |
-          flutter analyze --no-fatal-infos --no-fatal-warnings
-          flutter test
+          set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee "$GITHUB_WORKSPACE/compile.log"
+          flutter test 2>&1 | tee -a "$GITHUB_WORKSPACE/compile.log"
       - name: Assign version
         run: python3 scripts/release-version.py
       - name: Verify all code (no unsigned download)
@@ -115,7 +120,9 @@ jobs:
           channel: stable
           cache: true
       - name: Prepare Flutter module
-        run: bash scripts/setup-flutter.sh
+        run: |
+          set -o pipefail
+          bash scripts/setup-flutter.sh 2>&1 | tee compile.log device.log
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-disabled: true
@@ -123,8 +130,9 @@ jobs:
         if: ${{ github.job == 'verify' }}
         working-directory: life_mate_flutter
         run: |
-          flutter analyze --no-fatal-infos --no-fatal-warnings
-          flutter test
+          set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee "$GITHUB_WORKSPACE/compile.log"
+          flutter test 2>&1 | tee -a "$GITHUB_WORKSPACE/compile.log"
       - name: Assign version
         run: python3 scripts/release-version.py
       - name: Build and verify signing continuity

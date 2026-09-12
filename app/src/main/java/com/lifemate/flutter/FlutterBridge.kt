@@ -34,6 +34,7 @@ class FlutterBridge(private val activity: MainActivity) {
                             val profile=app.db.dao().getProfile()
                             mapOf("name" to (profile?.displayName ?: ""), "hasPin" to app.secure.hasPin(),
                                 "theme" to app.preferences.flow.first().theme,
+                                "notificationsAllowed" to androidx.core.app.NotificationManagerCompat.from(activity).areNotificationsEnabled(),
                                 "items" to app.db.dao().allItems().filter { !it.archived && it.tags != "life-mate-hive" }.map { mapOf("id" to it.id,"title" to it.title,"kind" to it.kind.name,"date" to it.date) })
                         })
                         "profile" -> {
@@ -57,6 +58,7 @@ class FlutterBridge(private val activity: MainActivity) {
                             val repeat=Repeat.valueOf(args["repeat"].toString());require(repeat in setOf(Repeat.ONCE,Repeat.DAILY,Repeat.MONTHLY,Repeat.YEARLY))
                             app.repository.save(LifeItem(id=id,kind=Kind.REMINDER,title=title,date=date.toString(),time=time.toString(),repeat=repeat,tags="life-mate-hive"))
                             val allowed=androidx.core.app.NotificationManagerCompat.from(activity).areNotificationsEnabled()
+                            if(!allowed && android.os.Build.VERSION.SDK_INT>=33) androidx.core.app.ActivityCompat.requestPermissions(activity,arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),7341)
                             if(allowed)result.success(true) else result.error("permission","Enable notification permission in Life Mate settings. The record was saved.",null)
                         }
                         "cancel" -> {

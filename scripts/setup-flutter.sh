@@ -2,6 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/../life_mate_flutter"
 flutter pub get
+python3 - <<'LOCK'
+import base64,gzip
+from pathlib import Path
+print('::notice title=Flutter dependency lock::'+base64.b64encode(gzip.compress(Path('pubspec.lock').read_bytes())).decode())
+LOCK
 # Generated iOS development host: same public identity, explicit permission purpose.
 python3 - <<'PY'
 from pathlib import Path

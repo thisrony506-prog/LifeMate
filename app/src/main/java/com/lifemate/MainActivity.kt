@@ -16,6 +16,7 @@ class MainActivity : FragmentActivity() {
     override fun onDestroy() { super.onDestroy();bridge?.destroy();bridge=null }
     override fun onRequestPermissionsResult(code: Int, permissions: Array<out String>, results: IntArray) {
         super.onRequestPermissionsResult(code,permissions,results)
+        bridge?.refresh()
         supportFragmentManager.fragments.filterIsInstance<io.flutter.embedding.android.FlutterFragment>().forEach { it.onRequestPermissionsResult(code,permissions,results) }
     }
     @Deprecated("Activity results are forwarded to Flutter plugins")

@@ -34,10 +34,10 @@ class _SosState extends State<SosPage> {
 }
 class FamilyLocationPage extends StatefulWidget {const FamilyLocationPage({super.key});@override State<FamilyLocationPage> createState()=>_LocationState();}
 class _LocationState extends State<FamilyLocationPage> with WidgetsBindingObserver {
-  final share=FamilyShare();final invite=TextEditingController();String? invitation;StreamSubscription<Map<String,dynamic>?>? subscription;Map<String,dynamic>? point;bool busy=false;
-  @override void initState(){super.initState();WidgetsBinding.instance.addObserver(this);}
+  Timer? expiryTimer; final share=FamilyShare();final invite=TextEditingController();String? invitation;StreamSubscription<Map<String,dynamic>?>? subscription;Map<String,dynamic>? point;bool busy=false;
+  @override void initState(){super.initState();WidgetsBinding.instance.addObserver(this);expiryTimer=Timer.periodic(const Duration(seconds:1),(_){if(!mounted)return;final until=DateTime.tryParse(point?['expires']?.toString()??'');if(until!=null&&DateTime.now().isAfter(until))setState(()=>point=null);if(invitation!=null&&!share.active)setState(()=>invitation=null);});}
   @override void didChangeAppLifecycleState(AppLifecycleState state){if(state==AppLifecycleState.paused||state==AppLifecycleState.detached){share.stop().then((_){if(mounted)setState(()=>invitation=null);});}}
-  @override void dispose(){WidgetsBinding.instance.removeObserver(this);share.stop();subscription?.cancel();invite.dispose();super.dispose();}
+  @override void dispose(){expiryTimer?.cancel();WidgetsBinding.instance.removeObserver(this);share.stop();subscription?.cancel();invite.dispose();super.dispose();}
   @override Widget build(BuildContext context){final s=LifeScope.of(context);return Scaffold(appBar:AppBar(title:Text(s.t('Location, by choice','অবস্থান, নিজের ইচ্ছায়'))),body:PageBody(children:[
     Text(s.t('Sharing is off by default. A secret invitation allows its holder to see your encrypted location. Share it only with someone you trust. Keep this screen open: updates stop when you leave the app and access expires after 15 minutes.','শেয়ারিং শুরুতে বন্ধ। গোপন আমন্ত্রণ যার কাছে থাকবে সে তোমার এনক্রিপ্ট করা অবস্থান দেখতে পারবে। শুধু বিশ্বস্ত কাউকে দাও। এই স্ক্রিন খোলা রাখো: অ্যাপ ছাড়লে আপডেট থামে, ১৫ মিনিটে প্রবেশাধিকার শেষ হয়।')),
     if(!CloudService.configured) Panel(child:Text(s.t('Firebase is not connected. No location has been uploaded.','Firebase সংযুক্ত নয়। কোনো অবস্থান আপলোড হয়নি।'))),
