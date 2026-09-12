@@ -22,7 +22,7 @@ import java.util.UUID
 /** Flutter is inside the existing native PIN/update gate, never a second launcher. */
 class FlutterBridge(private val activity: MainActivity) {
     private val app get() = activity.application as LifeMateApp
-    val engine = FlutterEngine(activity)
+    val engine = FlutterEngine(activity.applicationContext)
     private val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "com.lifemate/personal_os")
     init {
         channel.setMethodCallHandler { call, result ->

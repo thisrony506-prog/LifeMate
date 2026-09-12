@@ -28,10 +28,17 @@ class MainActivity : FragmentActivity() {
     }
     val openItem = mutableStateOf<String?>(null)
     override fun onCreate(savedInstanceState: Bundle?) {
+        // A restored cached-engine Fragment may attach during super.onCreate.
+        // Ensure its engine exists before FragmentManager restores it.
+        if(savedInstanceState?.getBoolean("life_flutter") == true || intent.getBooleanExtra("flutter",!BuildConfig.DEBUG)) lifeFlutter()
         super.onCreate(savedInstanceState); enableEdgeToEdge()
         flutterMode.value = intent.getBooleanExtra("flutter", !BuildConfig.DEBUG)
         openItem.value = validItemId(intent)
         setContent { LifeRoot(this) }
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putBoolean("life_flutter",bridge!=null)
+        super.onSaveInstanceState(outState)
     }
     private fun validItemId(intent: Intent): String? = intent.getStringExtra("itemId")?.let {
         runCatching { java.util.UUID.fromString(it).toString() }.getOrNull()

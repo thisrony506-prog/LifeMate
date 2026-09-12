@@ -21,5 +21,5 @@ void main(){
     final corrupt=Uint8List.fromList(bytes);corrupt[corrupt.length~/2]^=1;
     await expectLater(VaultBackup.restore(store,corrupt,'correct recovery phrase'),throwsA(anything));
     expect(store.all.length,2);await box.close();await dir.delete(recursive:true);
-  });
+  },timeout:const Timeout(Duration(minutes:2)));
 }

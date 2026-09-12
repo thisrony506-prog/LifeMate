@@ -64,6 +64,10 @@ import java.time.LocalDate
     LaunchedEffect(state.preferences.soundEffects) { if(state.preferences.soundEffects) vm.feedback.prepare() else vm.feedback.stop() }
     LaunchedEffect(lifecycleState,locked) { vm.feedback.foreground=lifecycleState==Lifecycle.State.RESUMED && !locked; if(!vm.feedback.foreground) vm.feedback.stop() }
     fun navigate(path: String) {
+        val recordId=path.substringBefore('?').substringAfterLast('/')
+        if((path.startsWith("detail/") || path.startsWith("edit/")) && state.items.any { it.id==recordId && it.tags=="life-mate-hive" }) {
+            activity.pendingFlutterRecord=recordId; activity.flutterMode.value=true;activity.refreshFlutter();return
+        }
         val destination = when (path) { "list/MISSION" -> "missions"; "list/MEMORY" -> "memories"; else -> path }
         if(destination=="posts" && route=="post/{id}") nav.popBackStack()
         nav.navigate(destination) { launchSingleTop = true }
@@ -105,7 +109,7 @@ import java.time.LocalDate
             }
         }
         Surface(Modifier.fillMaxSize().testTag("theme-${state.preferences.theme}"), color = MaterialTheme.colorScheme.background) {
-            Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+            Box(Modifier.fillMaxSize().then(if(activity.flutterMode.value && !locked && !update.available) Modifier else Modifier.safeDrawingPadding())) {
                 when {
                     state.loading -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) { BrandMark(64.dp); Text("LifeMate", style = MaterialTheme.typography.displaySmall); CircularProgressIndicator() }
                     state.error != null -> Column(Modifier.padding(26.dp).align(Alignment.Center)) { EmptyState(null, "Your data is still yours", state.error!!); Button({ activity.recreate() }) { Text("Try again") } }
