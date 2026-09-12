@@ -25,7 +25,7 @@ import java.time.*
 @Composable fun CollectionScreen(kind: Kind, state: LifeState, vm: LifeViewModel, navigate: (String) -> Unit) {
     var query by rememberSaveable(kind) { mutableStateOf("") }
     var filter by rememberSaveable(kind) { mutableStateOf("All") }
-    var sort by rememberSaveable(kind) { mutableStateOf(if (kind == Kind.BIRTHDAY) "Date" else "Newest") }
+    var sort by rememberSaveable(kind) { mutableStateOf(if (kind in setOf(Kind.BIRTHDAY,Kind.ROUTINE)) "Date" else "Newest") }
     val today = LocalDate.now()
     val all = state.items.filter { it.kind == kind }
     val filtered = all.filter { item ->
@@ -42,7 +42,7 @@ import java.time.*
             }
     }.let { records -> when (sort) {
         "Name" -> records.sortedBy { it.title.lowercase() }
-        "Date" -> records.sortedBy { if (kind == Kind.BIRTHDAY) Schedule.nextBirthday(LocalDate.parse(it.date), today).toString() else it.date + it.time }
+        "Date" -> records.sortedBy { if (kind == Kind.BIRTHDAY) Schedule.nextBirthday(LocalDate.parse(it.date), today).toString() else if(kind==Kind.ROUTINE) it.time else it.date + it.time }
         else -> records.sortedWith(compareByDescending<LifeItem> { it.pinned }.thenByDescending { it.createdAt })
     } }
     val subtitle = when (kind) {
@@ -56,7 +56,7 @@ import java.time.*
         Kind.REMINDER -> "Make space in your mind. We'll remember."
     }
     LazyColumn(contentPadding = PaddingValues(22.dp, 16.dp, 22.dp, 110.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        item { SoftCard(Modifier.fillMaxWidth(), featureContainer(kind)) { KindBadge(kind); PageHeading(kind.plural, subtitle) } }
+        item { PageHeading(kind.plural, "") }
         if (kind == Kind.BIRTHDAY) item { BirthdayTheme { Button({ navigate("studio") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Palette, null); Text("  Open photo & card studio") } } }
         item { OutlinedTextField(query, { query = it }, Modifier.fillMaxWidth(), placeholder = { Text("Search names, tags, dates…") }, leadingIcon = { Icon(Icons.Outlined.Search, null) }, shape = RoundedCornerShape(18.dp), singleLine = true) }
         item { ChoiceChips(if (kind == Kind.NOTE) listOf("All", "Pinned", "Important", "Archived") else if (kind == Kind.MEMORY) listOf("All", "Pinned", "Archived") else if (kind == Kind.BIRTHDAY) listOf("All", "Today", "Upcoming", "Archived") else listOf("All", "Today", "Upcoming", "Pending", "Completed", "Archived"), filter) { filter = it } }
@@ -66,8 +66,8 @@ import java.time.*
             Box { TextButton({ expanded = true }) { Icon(Icons.AutoMirrored.Outlined.Sort, null, Modifier.size(18.dp)); Text(" $sort") }; DropdownMenu(expanded, { expanded = false }) { listOf("Newest", "Name", "Date").forEach { option -> DropdownMenuItem({ Text(option) }, { sort = option; expanded = false }) } } }
         } }
         if (filtered.isEmpty()) item {
-            val title = if (all.isNotEmpty()) "Nothing here just yet" else when (kind) { Kind.ROUTINE -> "Create your first routine"; Kind.MISSION -> "Start your first mission"; Kind.BIRTHDAY -> "Add an important person's birthday"; else -> "Your ${kind.plural.lowercase()} start here" }
-            EmptyState(kind, title, if (all.isNotEmpty()) "Try another search or filter." else subtitle, "New ${kind.label.lowercase()}") { navigate("edit/${kind.name}/new") }
+            val title = if (all.isNotEmpty()) "No matches" else "No ${kind.plural.lowercase()}"
+            EmptyState(kind, title, "", "New ${kind.label.lowercase()}") { navigate("edit/${kind.name}/new") }
         }
         items(filtered, key = { it.id }) { item ->
             if (kind == Kind.MEMORY) {
@@ -78,6 +78,22 @@ import java.time.*
                         else Box(Modifier.fillMaxWidth().height(130.dp).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) { Icon(if (state.media(item).any { it.mime.startsWith("video/") }) Icons.Outlined.PlayCircle else Icons.Outlined.PhotoCamera, null, Modifier.size(44.dp), tint = MaterialTheme.colorScheme.primary) }
                         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) { Eyebrow(LocalDate.parse(item.date).format(dateFormat)); Text(item.title, style = MaterialTheme.typography.titleLarge); if (item.description.isNotBlank()) Text(item.description, style = MaterialTheme.typography.bodyMedium) }
                     }
+                }
+            } else if(kind==Kind.ROUTINE) {
+                Row(horizontalArrangement=Arrangement.spacedBy(10.dp),verticalAlignment=Alignment.CenterVertically) {
+                    Text(LocalTime.parse(item.time).toString(),style=MaterialTheme.typography.labelLarge,modifier=Modifier.width(48.dp),color=MaterialTheme.colorScheme.primary)
+                    Box(Modifier.weight(1f)) { ItemRow(item,state,{navigate("detail/${item.id}")},if(item.occurs(today)) ({vm.toggle(item)}) else null) }
+                }
+            } else if(kind==Kind.HABIT) {
+                SoftCard(Modifier.fillMaxWidth()) {
+                    ItemRow(item,state,{navigate("detail/${item.id}")},if(item.occurs(today)) ({vm.toggle(item)}) else null)
+                    val week=(6 downTo 0).map {today.minusDays(it.toLong())}
+                    val month=(today.dayOfMonth-1 downTo 0).map {today.minusDays(it.toLong())}
+                    val scheduled=month.count {item.occurs(it)}
+                    Text("${Schedule.currentStreak(state.dates(item),today)} day streak · ${month.count {item.occurs(it) && state.done(item,it)}} / $scheduled this month",style=MaterialTheme.typography.bodyMedium)
+                    Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) { week.forEach { day ->
+                        Icon(if(state.done(item,day)) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked,"$day: ${if(state.done(item,day)) "complete" else "pending"}",tint=if(state.done(item,day)) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,modifier=Modifier.size(20.dp))
+                    } }
                 }
             } else ItemRow(item, state, { navigate("detail/${item.id}") }, if (kind in taskKinds && item.occurs(today)) ({ vm.toggle(item) }) else null)
         }
@@ -97,23 +113,23 @@ import java.time.*
 }
 @Composable fun MenuScreen(navigate: (String) -> Unit) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { PageHeading("Your life, organized", "Everything you need, in one gentle space.") }
+        item { PageHeading("All features", "") }
         listOf("Plan your day" to listOf(Kind.ROUTINE, Kind.REMINDER), "Grow with intention" to listOf(Kind.MISSION, Kind.HABIT, Kind.GOAL), "Keep & celebrate" to listOf(Kind.BIRTHDAY, Kind.MEMORY, Kind.NOTE)).forEach { (title, kinds) ->
         item { SectionHeading(title) }
         items(kinds) { kind ->
-            Surface(onClick = { navigate("list/${kind.name}") }, modifier = Modifier.testTag("feature-${kind.name}"), shape = RoundedCornerShape(22.dp), color = featureContainer(kind),
+            Surface(onClick = { navigate("list/${kind.name}") }, modifier = Modifier.testTag("feature-${kind.name}"), shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .65f))) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     KindBadge(kind, 48.dp)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(kind.plural, style = MaterialTheme.typography.titleMedium)
-                        Text(kind.summary(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
         }
+        item { OutlinedButton({ navigate("posts") },Modifier.fillMaxWidth()) { Text("Facebook Posts") } }
         item { BirthdayTheme { Button({ navigate("studio") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Palette, null); Text("  Photo & card studio") } } }
         item { OutlinedButton({ navigate("statistics") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Insights, null); Text("  Your statistics") } }
         item { OutlinedButton({ navigate("settings") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Settings, null); Text("  Settings & privacy") } }

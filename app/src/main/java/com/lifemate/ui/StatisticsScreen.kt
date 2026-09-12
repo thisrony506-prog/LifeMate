@@ -24,13 +24,17 @@ import java.time.*
     val done = dates.sumOf { day -> records.count { it.occurs(day) && state.done(it, day) } }
     val percentage = if (denominator == 0) 0 else done * 100 / denominator
     LazyColumn(contentPadding = PaddingValues(22.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        item { PageHeading("Look how far you've come", "Progress, not perfection.") }
+        item { PageHeading("Statistics", "") }
+        item { SoftCard(Modifier.fillMaxWidth()) {
+            val tasks=records.filter {it.occurs(today)}
+            Eyebrow("Today");Text("${tasks.count {state.done(it,today)}} / ${tasks.size}",style=MaterialTheme.typography.headlineLarge)
+        } }
         item { WeeklyOverview(state, today) }
         item { ChoiceChips(listOf("Week", "Month"), period) { period = it } }
         item { SoftCard(Modifier.fillMaxWidth(), MaterialTheme.colorScheme.primaryContainer) {
             Eyebrow("${if (period == "Week") "Last 7 days" else "This month"} · completion rate")
             Text("$percentage%", style = MaterialTheme.typography.displaySmall)
-            Text("$done of $denominator scheduled tasks completed")
+            Text("$done / $denominator")
             LinearProgressIndicator(progress = { percentage / 100f }, modifier = Modifier.fillMaxWidth())
         } }
         item { SoftCard {
@@ -65,6 +69,11 @@ import java.time.*
             Text("${(state.progress(mission) * 100).toInt()}% of the full ${mission.duration}-day mission")
             if (mission.dailyTarget.isNotBlank()) Text("Daily focus: ${mission.dailyTarget}")
         } } }
+        item { SectionHeading("Goals") }
+        state.items.filter {it.kind==Kind.GOAL && !it.archived}.forEach { goal -> item(key="goal-${goal.id}") {SoftCard(Modifier.fillMaxWidth()) {
+            Text(goal.title,style=MaterialTheme.typography.titleMedium);Text("${goal.progress}%")
+            LinearProgressIndicator(progress={state.progress(goal)},modifier=Modifier.fillMaxWidth())
+        }} }
         item { SectionHeading("Habit streaks") }
         val habits = state.items.filter { it.kind == Kind.HABIT && !it.archived }
         if (habits.isEmpty()) item { EmptyState(Kind.HABIT, "Every streak starts at one", "Create a habit to start seeing your progress here.") }

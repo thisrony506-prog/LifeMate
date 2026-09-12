@@ -38,12 +38,12 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
         o.optDouble("zoom",1.0).toFloat().coerceIn(1f,2.5f),o.optInt("rotation",0),o.optString("alignment","Center"),o.optString("photo",""))
 }.getOrDefault(fallback)
 
-@Composable fun CardStudioScreen(vm: LifeViewModel, birthday: LifeItem? = null) {
+@Composable fun CardStudioScreen(vm: LifeViewModel, birthday: LifeItem? = null, post: com.lifemate.database.SocialPost? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val draftId = birthday?.id ?: "social-post"
+    val draftId = post?.let { "post-${it.id}" } ?: birthday?.id ?: "social-post"
     val person = birthday?.nickname?.ifBlank { birthday.title } ?: "friend"
-    val default = remember(draftId) { PostDesign(text = if (birthday != null) Wishes.generate(person,birthday.relationship,"Short") else "Make today\na little brighter.", format = if (birthday != null) "Portrait" else "Square") }
+    val default = remember(draftId) { PostDesign(text = if(post!=null) com.lifemate.domain.PostTemplates.graphic(post) else if (birthday != null) Wishes.generate(person,birthday.relationship,"Short") else "Make today\na little brighter.", palette="White", ink=if(post?.photo.isNullOrBlank()) "Ink" else "White", photo=post?.photo.orEmpty(), format = if (birthday != null) "Portrait" else "Square") }
     var saved by rememberSaveable(draftId) { mutableStateOf(runCatching { vm.app.secure.readStudioDraft(draftId) }.getOrNull() ?: default.json()) }
     var design by remember(draftId) { mutableStateOf(designFromJson(saved, default)) }
     var tone by rememberSaveable(draftId) { mutableStateOf("Short") }
@@ -96,10 +96,10 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
         catch (e: Exception) { error = e.message ?: "Unable to make this image. Try again with a smaller photo." }
     }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        PageHeading(if (birthday == null) "Your photo studio" else "Make their day", "A little creativity. Something worth sharing.")
+        PageHeading(if (birthday == null) "Your photo studio" else "Birthday card", "")
         SoftCard(Modifier.fillMaxWidth(), MaterialTheme.colorScheme.primaryContainer) {
-            Text(if (birthday == null) "Create a Facebook-ready photo post" else "Birthday wishes, with a personal touch", style = MaterialTheme.typography.titleMedium)
-            Text("Local editing only. Choose a photo, add your words, then save or share it yourself. No automatic posting.", style = MaterialTheme.typography.bodyMedium)
+            Text(if (birthday == null) "Post image" else "Birthday wishes", style = MaterialTheme.typography.titleMedium)
+            Text("Private editing · Save or share when ready.", style = MaterialTheme.typography.bodyMedium)
         }
         val (width,height) = PostCardRenderer.dimensions(design.format)
         Box(Modifier.fillMaxWidth().aspectRatio(width.toFloat()/height).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.surfaceVariant).testTag("studio-preview"), contentAlignment = Alignment.Center) {
@@ -141,8 +141,8 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
                 }
                 "Style" -> {
                     Text("Color story",style = MaterialTheme.typography.titleMedium)
-                    ChoiceChips(PostCardRenderer.palettes,design.palette) { design = design.copy(palette = it) }
-                    Text("Gradient backgrounds appear when no photo is selected.",style = MaterialTheme.typography.bodyMedium)
+                    ChoiceChips(PostCardRenderer.palettes,design.palette) { design = design.copy(palette = it, ink = if(it=="Black") "White" else if(it in setOf("White","Pink")) "Ink" else design.ink) }
+                    Text("Backgrounds appear when no photo is selected.",style = MaterialTheme.typography.bodyMedium)
                     Text("Photo effect",style = MaterialTheme.typography.titleMedium)
                     ChoiceChips(PostCardRenderer.effects,design.effect) { design = design.copy(effect = it) }
                     if (design.photo.isBlank()) Text("Choose a photo to see photo effects.")

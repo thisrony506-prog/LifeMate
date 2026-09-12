@@ -46,12 +46,15 @@ class BackupManager(private val repo: LifeRepository) {
         }
     }
     suspend fun export(uri: Uri) = withContext(Dispatchers.IO) {
-        val root = JSONObject().put("format", "LifeMate").put("version", 1).put("exportedAt", Instant.now().toString())
+        val root = JSONObject().put("format", "LifeMate").put("version", 2).put("exportedAt", Instant.now().toString())
         val media = mutableSetOf<String>()
         repo.db.withTransaction {
             val profile = requireNotNull(repo.dao.getProfile())
             root.put("profile", profile.json())
             if (profile.photo.isNotBlank()) media.add(profile.photo)
+            val posts = repo.dao.allPosts()
+            posts.filter { it.photo.isNotBlank() }.forEach { media.add(it.photo) }
+            root.put("posts",JSONArray(posts.map { JSONObject().put("id",it.id).put("type",it.type).put("topic",it.topic).put("message",it.message).put("person",it.person).put("date",it.date).put("caption",it.caption).put("photo",File(it.photo).name).put("createdAt",it.createdAt).put("updatedAt",it.updatedAt) }))
             root.put("items", JSONArray(repo.dao.allItems().map { it.json() }))
             root.put("completions", JSONArray(repo.dao.allCompletions().map { JSONObject().put("itemId", it.itemId).put("date", it.date).put("completedAt", it.completedAt) }))
             root.put("attachments", JSONArray(repo.dao.allAttachments().map {
@@ -92,7 +95,7 @@ class BackupManager(private val repo: LifeRepository) {
             val manifest = File(staging, "lifemate.json")
             require(manifest.length() <= 32L * 1024 * 1024) { "Backup manifest is too large." }
             val root = JSONObject(manifest.readText())
-            require(root.getString("format") == "LifeMate" && root.getInt("version") == 1) { "Unsupported backup version." }
+            require(root.getString("format") == "LifeMate" && root.getInt("version") in 1..2) { "Unsupported backup version." }
             val pj = root.getJSONObject("profile")
             val remapped = mutableMapOf<String, String>()
             fun media(name: String): String {
@@ -120,11 +123,15 @@ class BackupManager(private val repo: LifeRepository) {
                 val mime = it.getString("mime"); require(mime.startsWith("image/") || mime.startsWith("video/") || mime.startsWith("audio/"))
                 Attachment(UUID.fromString(it.getString("id")).toString(), it.getString("itemId"), media(it.getString("file")), mime, it.getString("name"))
             }
+            val posts = (if(root.getInt("version")==2) root.getJSONArray("posts") else JSONArray()).objects().map { j ->
+                SocialPost(id=UUID.fromString(j.getString("id")).toString(),type=j.getString("type"),topic=j.optString("topic"),message=j.optString("message"),person=j.optString("person"),date=j.optString("date"),caption=j.optString("caption"),photo=media(j.optString("photo")),createdAt=j.getLong("createdAt"),updatedAt=j.getLong("updatedAt")).also { PostTemplates.validate(it) }
+            }
+            require(posts.map { it.id }.toSet().size==posts.size) { "Duplicate post IDs." }
             val oldFiles = repo.mediaDir.listFiles()?.filter { it !in copied }.orEmpty()
             val oldItems = repo.dao.allItems()
             repo.db.withTransaction {
                 repo.dao.clear(); repo.dao.saveProfile(profile)
-                items.forEach { repo.dao.save(it) }; completions.forEach { repo.dao.complete(it) }; attachments.forEach { repo.dao.saveAttachment(it) }
+                posts.forEach { repo.dao.savePost(it) }; items.forEach { repo.dao.save(it) }; completions.forEach { repo.dao.complete(it) }; attachments.forEach { repo.dao.saveAttachment(it) }
             }
             committed = true
             val app = repo.context.applicationContext as com.lifemate.LifeMateApp

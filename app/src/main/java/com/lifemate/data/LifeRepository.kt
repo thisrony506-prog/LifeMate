@@ -26,7 +26,7 @@ class LifeRepository(val context: Context, val db: LifeDatabase, private val sch
         dao.save(saved)
         scheduler.schedule(saved)
     }
-    suspend fun toggle(item: LifeItem, date: LocalDate = LocalDate.now()) {
+    suspend fun toggle(item: LifeItem, date: LocalDate = LocalDate.now()): Boolean {
         require(date <= LocalDate.now()) { "Future days can't be completed yet." }
         val completed = db.withTransaction {
             val current = requireNotNull(dao.get(item.id)) { "This record has been deleted." }
@@ -36,9 +36,10 @@ class LifeRepository(val context: Context, val db: LifeDatabase, private val sch
         }
         if (completed && date == LocalDate.now()) scheduler.dismiss(item.id)
         scheduler.schedule(item)
+        return completed
     }
     suspend fun delete(item: LifeItem) = withContext(Dispatchers.IO) {
-        val attachments = dao.allAttachments().filter { it.itemId == item.id }
+        val attachments = dao.attachmentsFor(item.id)
         scheduler.cancel(item.id); dao.delete(item.id)
         attachments.forEach { safeMedia(it.path)?.delete() }
     }
@@ -64,6 +65,23 @@ class LifeRepository(val context: Context, val db: LifeDatabase, private val sch
         catch (e: Exception) { File(path).delete(); throw e }
     }
     suspend fun deleteAttachment(attachment: Attachment) = withContext(Dispatchers.IO) { dao.deleteAttachment(attachment.id); safeMedia(attachment.path)?.delete(); Unit }
+    suspend fun savePost(post: SocialPost) {
+        com.lifemate.domain.PostTemplates.validate(post)
+        val previous=dao.getPost(post.id)
+        dao.savePost(post.copy(updatedAt=System.currentTimeMillis()))
+        if(previous!=null && previous.photo.isNotBlank() && previous.photo!=post.photo && dao.allPosts().none { it.photo==previous.photo }) safeMedia(previous.photo)?.delete()
+    }
+    suspend fun deletePost(post: SocialPost) = withContext(Dispatchers.IO) {
+        val current=dao.getPost(post.id)
+        dao.deletePost(post.id)
+        if (current!=null && current.photo.isNotBlank() && dao.allPosts().none { it.photo==current.photo }) safeMedia(current.photo)?.delete()
+        Unit
+    }
+    suspend fun postPhoto(uri: Uri): String = withContext(Dispatchers.IO) {
+        val normalized = com.lifemate.utils.PostCardRenderer.importPhoto(context,uri)
+        val target = File(mediaDir,"${UUID.randomUUID()}.jpg")
+        try { normalized.copyTo(target); target.path } finally { normalized.delete() }
+    }
     suspend fun deleteAll() = withContext(Dispatchers.IO) {
         dao.allItems().forEach { scheduler.cancel(it.id) }
         db.withTransaction { dao.clear() }

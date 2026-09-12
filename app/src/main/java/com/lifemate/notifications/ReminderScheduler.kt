@@ -90,19 +90,19 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
             val name = dao.getProfile()?.displayName ?: "friend"
             val message = item.notificationText.ifBlank {
                 when (item.kind) {
-                    Kind.ROUTINE -> "Hello, $name. It's time for your ${item.title}."
-                    Kind.MISSION -> "Day ${(ChronoUnit.DAYS.between(LocalDate.parse(item.date), day) + 1).coerceIn(1, item.duration.toLong())} of ${item.title} is waiting."
+                    Kind.ROUTINE -> "$name · ${item.time}"
+                    Kind.MISSION -> "Mission day ${(ChronoUnit.DAYS.between(LocalDate.parse(item.date), day) + 1).coerceIn(1, item.duration.toLong())} · ${item.title}"
                     Kind.BIRTHDAY -> {
                         val actualDay = LocalDate.now()
                         val birthday = Schedule.nextBirthday(LocalDate.parse(item.date), day)
                         val away = ChronoUnit.DAYS.between(actualDay, birthday)
                         when {
-                            away < 0 -> "🎂 ${item.title}'s birthday was $birthday. A belated wish still matters."
-                            away == 0L -> "🎂 ${item.title}'s birthday is today."
-                            else -> "${item.title}'s birthday is in $away days."
+                            away < 0 -> "Birthday · $birthday"
+                            away == 0L -> "Birthday today · ${item.title}"
+                            else -> "Birthday in $away days · ${item.title}"
                         }
                     }
-                    else -> "${item.title} is waiting. A little progress goes a long way."
+                    else -> "${item.time} · ${item.repeat.label}"
                 }
             }
             val open = PendingIntent.getActivity(context, 0, Intent(context, MainActivity::class.java)
@@ -118,7 +118,7 @@ class ReminderScheduler(private val context: Context, private val dao: LifeDao, 
                 try {
                     NotificationManagerCompat.from(context).notify(id, 0, notification)
                     val actualChannel = context.getSystemService(NotificationManager::class.java).getNotificationChannel(channelId)
-                    if (prefs.voiceReminders && sound != "silent" && actualChannel != null && actualChannel.importance >= NotificationManager.IMPORTANCE_DEFAULT && actualChannel.sound != null) VoiceReminderService.speak(context, message)
+                    if (prefs.voiceReminders && sound != "silent" && actualChannel != null && actualChannel.importance >= NotificationManager.IMPORTANCE_DEFAULT && actualChannel.sound != null) VoiceReminderService.speak(context, "${item.title}. $message")
                 } catch (_: SecurityException) { /* Revoked between check and delivery. */ }
             }
         }

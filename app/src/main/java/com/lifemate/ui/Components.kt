@@ -32,16 +32,7 @@ fun Kind.icon(): ImageVector = when (this) {
     Kind.REMINDER -> Icons.Outlined.Notifications; Kind.BIRTHDAY -> Icons.Outlined.Cake; Kind.NOTE -> Icons.Outlined.Description
     Kind.MEMORY -> Icons.Outlined.PhotoLibrary; Kind.GOAL -> Icons.Outlined.TrackChanges
 }
-fun Kind.tint() = when (this) {
-    Kind.ROUTINE -> Color(0xFF9C641F)
-    Kind.MISSION -> Color(0xFF7852B0)
-    Kind.HABIT -> Color(0xFF30786B)
-    Kind.REMINDER -> Color(0xFF4269A4)
-    Kind.BIRTHDAY -> Color(0xFFBC3B73)
-    Kind.NOTE -> Color(0xFF716399)
-    Kind.MEMORY -> Color(0xFF266F80)
-    Kind.GOAL -> Color(0xFF965B43)
-}
+fun Kind.tint() = PremiumPink
 fun Kind.summary() = when (this) {
     Kind.ROUTINE -> "Give your day a simple, reliable rhythm"
     Kind.MISSION -> "Turn small daily actions into real progress"
@@ -57,7 +48,7 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 @Composable fun Eyebrow(text: String) { Text(text.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
 @Composable fun PageHeading(title: String, subtitle: String, action: (@Composable () -> Unit)? = null) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) { Text(title, Modifier.testTag("page-title"), style = MaterialTheme.typography.headlineLarge); Spacer(Modifier.height(6.dp)); Text(subtitle, Modifier.testTag("page-subtitle"), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Column(Modifier.weight(1f)) { Text(title, Modifier.testTag("page-title"), style = MaterialTheme.typography.headlineLarge); if (subtitle.isNotBlank()) { Spacer(Modifier.height(4.dp)); Text(subtitle, Modifier.testTag("page-subtitle"), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
         action?.invoke()
     }
 }
@@ -68,8 +59,8 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
     }
 }
 @Composable fun SoftCard(modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.surface, content: @Composable ColumnScope.() -> Unit) {
-    Surface(modifier, shape = RoundedCornerShape(24.dp), color = color, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+    Surface(modifier, shape = RoundedCornerShape(20.dp), color = color, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp), content = content)
     }
 }
 @Composable fun KindBadge(kind: Kind, size: Dp = 46.dp) {
@@ -88,7 +79,7 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
             Column(Modifier.padding(vertical = 18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (kind != null) KindBadge(kind, 60.dp) else Icon(Icons.Outlined.AutoAwesome, null, Modifier.size(40.dp), tint = MaterialTheme.colorScheme.primary)
                 Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                if (text.isNotBlank()) Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 if (action != null) Button(onClick = onAction) { Icon(Icons.Outlined.Add, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text(action) }
             }
         }
@@ -106,7 +97,7 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
                     if (item.pinned) Icon(Icons.Outlined.PushPin, "Pinned", Modifier.padding(start = 4.dp).size(14.dp))
                 }
                 val subtitle = when (item.kind) {
-                    Kind.MISSION -> "${state.dates(item).size} / ${item.duration} days · ${item.dailyTarget.ifBlank { "One day at a time" }}"
+                    Kind.MISSION -> "${(state.progress(item) * item.duration).toInt()} / ${item.duration} · ${(state.progress(item)*100).toInt()}%"
                     Kind.BIRTHDAY -> "${Schedule.nextBirthday(LocalDate.parse(item.date), day).format(dateFormat)} · ${item.relationship}"
                     Kind.NOTE, Kind.MEMORY -> item.description.ifBlank { LocalDate.parse(item.date).format(dateFormat) }
                     Kind.GOAL -> "${item.progress}% complete · ${LocalDate.parse(item.date).format(dateFormat)}"
@@ -133,12 +124,8 @@ val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
     OutlinedTextField(value, onChange, modifier.fillMaxWidth(), label = { Text(label) }, shape = RoundedCornerShape(16.dp), singleLine = singleLine, minLines = minLines)
 }
 
-/** Distinct feature accents, softened surfaces and readable night-mode colors. */
-@Composable fun featureAccent(kind: Kind): Color = if (MaterialTheme.colorScheme.background.luminance() < .5f) lerp(kind.tint(), Color.White, .48f) else kind.tint()
-@Composable fun featureContainer(kind: Kind): Color = lerp(MaterialTheme.colorScheme.surface, kind.tint(), if (MaterialTheme.colorScheme.background.luminance() < .5f) .20f else .09f)
-@Composable fun FeatureTheme(kind: Kind, content: @Composable () -> Unit) {
-    val colors = MaterialTheme.colorScheme
-    MaterialTheme(colorScheme = colors.copy(primary = featureAccent(kind), onPrimary = if (colors.background.luminance() < .5f) Color(0xFF17251F) else Color.White,
-        primaryContainer = featureContainer(kind), onPrimaryContainer = colors.onSurface), content = content)
-}
-@Composable fun BirthdayTheme(content: @Composable () -> Unit) { FeatureTheme(Kind.BIRTHDAY, content) }
+/** A single accent keeps every feature visually consistent in both themes. */
+@Composable fun featureAccent(kind: Kind): Color = MaterialTheme.colorScheme.primary
+@Composable fun featureContainer(kind: Kind): Color = MaterialTheme.colorScheme.primaryContainer
+@Composable fun FeatureTheme(kind: Kind, content: @Composable () -> Unit) { content() }
+@Composable fun BirthdayTheme(content: @Composable () -> Unit) { content() }

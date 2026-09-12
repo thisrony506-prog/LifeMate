@@ -22,6 +22,8 @@ class BackupTest {
         dao.save(item); dao.complete(Completion(item.id, item.date))
         val media = File(app.repository.mediaDir, "fixture.jpg").apply { writeBytes(byteArrayOf(1, 2, 3, 4)) }
         dao.saveAttachment(Attachment(itemId = item.id, path = media.absolutePath, mime = "image/jpeg", name = "Test image"))
+        val post=SocialPost(topic="Milestone",caption="30 days",photo=media.absolutePath)
+        dao.savePost(post)
         val backup = File(app.cacheDir, "round-trip.zip")
         BackupManager(app.repository).export(Uri.fromFile(backup))
         app.repository.deleteAll()
@@ -31,6 +33,8 @@ class BackupTest {
         assertTrue(dao.isDone(item.id, item.date))
         val attachment = dao.allAttachments().single()
         assertArrayEquals(byteArrayOf(1, 2, 3, 4), File(attachment.path).readBytes())
+        assertEquals("30 days",dao.getPost(post.id)?.caption)
+        assertArrayEquals(byteArrayOf(1,2,3,4),File(dao.getPost(post.id)!!.photo).readBytes())
         backup.delete()
     }
     @Test fun unsafeArchiveDoesNotReplaceCurrentData(): Unit = runBlocking {

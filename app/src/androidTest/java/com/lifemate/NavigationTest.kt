@@ -24,7 +24,8 @@ class NavigationTest {
     }
     @Test fun updatesLiveInSettingsAndExplainTheRequiredPolicy() {
         compose.onNodeWithTag("open-updates").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.onNodeWithContentDescription("Open menu").performClick()
+        compose.onNodeWithTag("drawer-settings").performScrollTo().performClick()
         compose.onNodeWithText("App updates").performScrollTo().performClick()
         compose.onNodeWithText("Keep LifeMate up to date").assertIsDisplayed()
         compose.onNodeWithText("Automatic update checks").performScrollTo().assertIsDisplayed()
@@ -45,11 +46,11 @@ class NavigationTest {
     }
     @Test fun bottomNavigationAndThemeAreReal() {
         compose.onNodeWithTag("nav-Missions").performClick()
-        compose.onNode(hasText("Big changes begin with small commitments.") and hasTestTag("page-subtitle")).assertIsDisplayed()
+        compose.onNodeWithTag("page-title").assertTextEquals("Missions")
         compose.onNodeWithTag("nav-Calendar").performClick()
-        compose.onNodeWithText("A little perspective").assertIsDisplayed()
+        compose.onNodeWithTag("page-title").assertTextEquals("Calendar")
         compose.onNodeWithTag("nav-Memories").performClick()
-        compose.onNode(hasText("Keep the moments. Remember the feeling.") and hasTestTag("page-subtitle")).assertIsDisplayed()
+        compose.onNodeWithTag("page-title").assertTextEquals("Memories")
         compose.onNodeWithTag("nav-Profile").performClick()
         compose.onNodeWithText("Rony Test").assertIsDisplayed()
         compose.onNodeWithText("Settings & privacy", substring = true).performScrollTo().performClick()
@@ -68,7 +69,7 @@ class NavigationTest {
             compose.onNode(hasScrollToNodeAction()).performScrollToNode(hasTestTag("feature-${kind.name}"))
             compose.onNodeWithTag("feature-${kind.name}").assertIsDisplayed().performClick()
             compose.onNodeWithTag("page-title").assertTextEquals(kind.plural)
-            compose.onNodeWithContentDescription("Go back").performClick()
+            compose.runOnUiThread {compose.activity.onBackPressedDispatcher.onBackPressed()}
             compose.onNodeWithContentDescription("LifeMate logo").assertIsDisplayed()
         }
     }
@@ -84,13 +85,26 @@ class NavigationTest {
         compose.waitForIdle()
         compose.onNodeWithText("Your words (up to 600 characters)").performScrollTo().assertTextContains("A bright new chapter")
     }
+    @Test fun facebookPostComposerSavesAndReopensLocalCaption() {
+        compose.onNodeWithContentDescription("Open menu").performClick()
+        compose.onNodeWithTag("drawer-posts").performScrollTo().performClick()
+        compose.onAllNodesWithText("Create post").onFirst().performClick()
+        compose.onNodeWithText("Post topic").performTextInput("Reading milestone")
+        compose.onNodeWithText("Short message").performTextInput("30 days completed")
+        compose.onNodeWithText("Create caption").performScrollTo().performClick()
+        compose.onNodeWithTag("save-post").performScrollTo().performClick()
+        compose.waitUntil(15_000) {runBlocking {app.db.dao().allPosts().any {it.topic=="Reading milestone" && it.caption.contains("30 days completed")}}}
+        compose.activityRule.scenario.recreate()
+        compose.waitForIdle()
+        assertEquals(1,runBlocking {app.db.dao().allPosts().count {it.topic=="Reading milestone"}})
+    }
     @Test fun missionCheckinIsPersistedAndUnique() {
         val item = LifeItem(kind = Kind.MISSION, title = "Reading journey", date = LocalDate.now().toString(), duration = 7, notifications = false)
         runBlocking { app.db.dao().save(item) }
         compose.waitForIdle()
         // Put the single task at the top, clear of the bottom-right floating add button.
         // The feed has five introductory rows before its first scheduled task.
-        compose.onNode(hasScrollToNodeAction()).performScrollToIndex(5)
+        compose.onNodeWithTag("home-feed").performScrollToIndex(5)
         compose.onNodeWithContentDescription("Complete Reading journey").performClick()
         compose.waitUntil(10_000) { runBlocking { app.db.dao().isDone(item.id, LocalDate.now().toString()) } }
         compose.onNodeWithContentDescription("Mark Reading journey incomplete").performClick()

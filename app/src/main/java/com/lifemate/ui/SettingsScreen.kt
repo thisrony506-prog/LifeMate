@@ -68,6 +68,11 @@ import java.time.*
             Text("Installed version ${BuildConfig.VERSION_NAME} · verified signed releases only")
             OutlinedButton({ navigate("updates") }, Modifier.fillMaxWidth()) { Text("App updates") }
         }
+        SoftCard(Modifier.fillMaxWidth()) {
+            SectionHeading("Feedback")
+            ToggleRow("Sound effects", "Subtle completion and success tones. Silent mode and DND are respected.",state.preferences.soundEffects) {vm.preference("soundEffects",it)}
+        }
+        SoftCard(Modifier.fillMaxWidth()) { PostAiSettings(state,vm) }
         SoftCard { SectionHeading("Notifications"); NotificationSettings(state, vm) }
         SoftCard(Modifier.fillMaxWidth().testTag("appearance-settings")) { SectionHeading("Appearance"); ChoiceChips(listOf("Light", "Dark", "System"), state.preferences.theme) { vm.preference("theme", it) } }
         SoftCard(Modifier.fillMaxWidth()) {
@@ -121,7 +126,7 @@ import java.time.*
 }
 @Composable fun PolicyScreen(privacy: Boolean) {
     val sections = if (privacy) listOf(
-        "Local by design" to "LifeMate does not include analytics, advertising, tracking, or a cloud account. The internet permission is used to check public GitHub release metadata and download an explicitly requested official APK into private storage. Update controls are in Settings. A verified newer signed version requires installation before continuing; no connection or server error alone does not lock the app. Manual checks and downloads require a connection. APK updates download inside LifeMate, with signed-digest and installed-key checks before Android installation confirmation. Installation-source permission is requested only when you tap Install update. GitHub receives normal connection information and the app version, never your personal records. Core features work offline. Personal information is never sent to AI services. Birthday wishes and cards use offline templates.",
+        "Local by design" to "LifeMate does not include analytics, advertising, tracking, or a cloud account. The internet permission is used for public update checks, requested APK downloads and optional post generation through a user-configured HTTPS backend. AI requests require explicit confirmation and send only the displayed post fields, never photos or other records. Provider API keys belong on the backend, not in LifeMate. Update controls are in Settings. A verified newer signed version requires installation before continuing; no connection or server error alone does not lock the app. Manual checks and downloads require a connection. APK updates download inside LifeMate, with signed-digest and installed-key checks before Android installation confirmation. Installation-source permission is requested only when you tap Install update. GitHub receives normal connection information and the app version, never your personal records. Core features work offline. Personal information is never sent to AI services. Birthday wishes and cards use offline templates.",
         "Protected storage" to "Profile data, notes, schedules, and metadata are stored in a SQLCipher-encrypted Room database. Its random key is encrypted using Android Keystore. Media and audio are stored in the app's private internal directory, protected by Android's sandbox and device encryption; they are not separately encrypted by LifeMate. Use a device screen lock for stronger protection.",
         "App lock" to "Optional PINs are salted and hashed with PBKDF2-HMAC-SHA256, then encrypted with a Keystore key. Five failed attempts cause a one-minute cooldown. Strong Android biometrics can unlock the app when enabled. The app locks after 30 seconds in the background; notification details may remain visible according to Android lock-screen settings.",
         "Permissions" to "Notification permission is requested when you enable reminders. Precise alarms are optional. Microphone access is requested only when recording. Photos and videos are selected through Android's system picker; no broad gallery permission is used. LifeMate never records in a background service. Optional voice reminders use a short, visible playback service and an installed offline TTS voice; they respect silent mode, DND, screen lock and app lock. Studio photos are copied privately and exported without source location metadata.",
@@ -139,5 +144,22 @@ import java.time.*
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(22.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
         PageHeading(if (privacy) "Private, by nature." else "A few things to know", if (privacy) "Privacy policy · LifeMate 1.0" else "Terms & reliability · LifeMate 1.0")
         sections.forEach { (title, text) -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { Text(title, style = MaterialTheme.typography.titleLarge); Text(text, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+    }
+}
+
+@Composable private fun PostAiSettings(state: LifeState, vm: LifeViewModel) {
+    var editing by remember { mutableStateOf(false) }
+    var endpoint by androidx.compose.runtime.saveable.rememberSaveable(state.preferences.postAiEndpoint) { mutableStateOf(state.preferences.postAiEndpoint) }
+    SectionHeading("Optional post AI")
+    Text(if(state.preferences.postAiEndpoint.isBlank()) "Not configured · offline templates available" else "Custom backend · asks before every request",style=MaterialTheme.typography.bodyMedium)
+    TextButton({editing=!editing}) {Text(if(editing) "Hide setup" else "Configure backend")}
+    if(editing) {
+        Field(endpoint,{endpoint=it.take(500)},"HTTPS backend endpoint")
+        Text("Use a trusted server that keeps its AI API key server-side. Do not paste provider keys or tokens here. No automatic uploads; photos are never sent.",style=MaterialTheme.typography.bodyMedium)
+        Button({
+            if(endpoint.isBlank() || com.lifemate.domain.PostAiConfig.validEndpoint(endpoint.trim())) {vm.preference("postAiEndpoint",endpoint.trim());editing=false}
+            else vm.message("Use an HTTPS endpoint without credentials, query parameters or fragments.")
+        }) {Text("Save configuration")}
+        if(state.preferences.postAiEndpoint.isNotBlank()) TextButton({vm.preference("postAiEndpoint","");endpoint="";editing=false}) {Text("Disable AI")}
     }
 }

@@ -15,19 +15,27 @@ import java.time.LocalDate
 
 data class LifeState(val loading: Boolean = true, val profile: Profile? = null, val items: List<LifeItem> = emptyList(),
     val completions: List<Completion> = emptyList(), val attachments: List<Attachment> = emptyList(), val preferences: Preferences = Preferences(), val error: String? = null) {
-    fun done(item: LifeItem, day: LocalDate = LocalDate.now()) = completions.any { it.itemId == item.id && it.date == day.toString() }
+    private val completionKeys by lazy { completions.map { it.itemId to it.date }.toHashSet() }
+    private val completionDates by lazy { completions.groupBy { it.itemId }.mapValues { (_,rows) -> rows.map { LocalDate.parse(it.date) }.toSet() } }
+    private val groupedMedia by lazy { attachments.groupBy { it.itemId } }
+    fun prepareIndexes() { completionKeys.size; completionDates.size; groupedMedia.size }
+    fun done(item: LifeItem, day: LocalDate = LocalDate.now()) = (item.id to day.toString()) in completionKeys
     fun completed(item: LifeItem, day: LocalDate = LocalDate.now()): Boolean = when {
         item.kind in setOf(Kind.MISSION, Kind.GOAL) -> progress(item) >= 1f
         item.repeat == Repeat.ONCE -> done(item, LocalDate.parse(item.date))
         else -> done(item, day)
     }
-    fun dates(item: LifeItem) = completions.filter { it.itemId == item.id }.map { LocalDate.parse(it.date) }.toSet()
+    fun dates(item: LifeItem) = completionDates[item.id].orEmpty()
     fun progress(item: LifeItem): Float = if (item.kind == Kind.MISSION) (dates(item).count { Schedule.occurs(item.spec(), it) }.toFloat() / item.duration).coerceIn(0f, 1f) else item.progress / 100f
-    fun media(item: LifeItem) = attachments.filter { it.itemId == item.id }
+    fun media(item: LifeItem) = groupedMedia[item.id].orEmpty()
 }
 class LifeViewModel(application: Application) : AndroidViewModel(application) {
     val app = application as LifeMateApp
     val repo = app.repository
+    val feedback = com.lifemate.utils.FeedbackSounds(app)
+    val posts = repo.dao.posts().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    fun playSuccess() { feedback.play("success",state.value.preferences.soundEffects) }
+    override fun onCleared() { feedback.close();super.onCleared() }
     private val updateRepository = com.lifemate.updates.UpdateRepository(application)
     private val updateState = MutableStateFlow(com.lifemate.updates.UpdateState(release = updateRepository.cached()))
     val updates = updateState.asStateFlow()
@@ -83,7 +91,8 @@ class LifeViewModel(application: Application) : AndroidViewModel(application) {
     val events = messages.receiveAsFlow()
     val busy = MutableStateFlow(false)
     private var activeActions = 0
-    val state = combine(repo.dao.profile(), repo.dao.items(), repo.dao.completions(), repo.dao.attachments(), app.preferences.flow) { p, i, c, a, s -> LifeState(false, p, i, c, a, s) }
+    val state = combine(repo.dao.profile(), repo.dao.items(), repo.dao.completions(), repo.dao.attachments(), app.preferences.flow) { p, i, c, a, s -> LifeState(false, p, i, c, a, s).also { it.prepareIndexes() } }
+        .flowOn(Dispatchers.Default)
         .catch { emit(LifeState(loading = false, error = "Your data couldn't be opened. Restart the app or contact support. Your files have not been deleted.")) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), LifeState())
     fun message(text: String) { viewModelScope.launch { messages.send(text) } }
@@ -97,7 +106,13 @@ class LifeViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
     fun save(item: LifeItem, after: () -> Unit) = runAction("${item.kind.label} saved", after) { repo.save(item) }
-    fun toggle(item: LifeItem, day: LocalDate = LocalDate.now()) = runAction { repo.toggle(item, day) }
+    fun toggle(item: LifeItem, day: LocalDate = LocalDate.now()) = runAction {
+        val completed=repo.toggle(item,day)
+        val missionFinished=completed && item.kind==Kind.MISSION && repo.dao.completedDates(item.id).count { item.occurs(LocalDate.parse(it)) }>=item.duration
+        if(completed) withContext(Dispatchers.Main) {
+            feedback.play(if(missionFinished) "mission" else "task",state.value.preferences.soundEffects)
+        }
+    }
     fun delete(item: LifeItem, after: () -> Unit) = runAction("Deleted", after) { repo.delete(item) }
     fun attach(item: LifeItem, uri: Uri) = runAction("Attachment saved on this device") { repo.attach(item.id, uri) }
     fun preference(key: String, value: String) = runAction { app.preferences.set(key, value); app.scheduler.reconcile() }

@@ -14,15 +14,13 @@ import java.time.format.DateTimeFormatter
     val week = WeeklyProgress.calculate(state.items, state.completions, today)
     val previous = WeeklyProgress.calculate(state.items, state.completions, today.minusWeeks(1))
     val delta = week.rate - previous.rate
-    SoftCard(Modifier.fillMaxWidth().testTag("weekly-overview"), featureContainer(Kind.MISSION)) {
+    SoftCard(Modifier.fillMaxWidth().testTag("weekly-overview"), MaterialTheme.colorScheme.surface) {
         Eyebrow("THIS WEEK · ${week.start.format(DateTimeFormatter.ofPattern("d MMM"))} – ${week.start.plusDays(6).format(DateTimeFormatter.ofPattern("d MMM"))}")
-        Text("Small steps, a stronger week", style = MaterialTheme.typography.titleLarge)
-        Text("${week.completed} / ${week.scheduled} weekly tasks", style = MaterialTheme.typography.headlineMedium)
+                Text("${week.completed} / ${week.scheduled}", style = MaterialTheme.typography.headlineMedium)
         LinearProgressIndicator(progress = { week.fraction }, modifier = Modifier.fillMaxWidth(), color = featureAccent(Kind.MISSION))
-        Text(if (week.scheduled == 0) "Plan one small mission to begin. Your real progress will appear here." else "${week.remaining} left this week · ${week.missed} missed before today")
-        Text("${week.rate}% of tasks due so far completed", style = MaterialTheme.typography.bodyMedium)
-        if (previous.due > 0 && week.due > 0) Text("${if (delta >= 0) "+" else ""}$delta percentage points vs the same point last week", style = MaterialTheme.typography.bodyMedium)
-        if (week.due > week.doneDue) Text("Next step: complete one due task. Future days are not counted as missed.", style = MaterialTheme.typography.bodyMedium)
-        onOpen?.let { TextButton(it) { Text("View weekly insights") } }
+        Text(if (week.scheduled == 0) "No tasks this week" else "${week.remaining} left · ${week.missed} missed")
+        Text("${week.rate}% due-to-date", style = MaterialTheme.typography.bodyMedium)
+        if (previous.due > 0 && week.due > 0) Text("${if (delta >= 0) "+" else ""}$delta pts vs last week", style = MaterialTheme.typography.bodyMedium)
+        onOpen?.let { TextButton(it) { Text("Weekly insights") } }
     }
 }

@@ -61,18 +61,28 @@ import java.time.LocalDate
 @Composable fun ProfileScreen(state: LifeState, navigate: (String) -> Unit) {
     val profile = state.profile ?: return
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(22.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-        PageHeading("Your personal space", "One life. A little more intention.")
+        PageHeading("Profile", "")
         SoftCard(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Avatar(profile, 76.dp)
-                Column { Text(profile.fullName, style = MaterialTheme.typography.headlineMedium); Text(profile.nickname.ifBlank { "It's good to have you here." }, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                Column { Text(profile.fullName, style = MaterialTheme.typography.headlineMedium); Text(profile.nickname, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             if (profile.introduction.isNotBlank()) Text(profile.introduction)
             if (profile.birthday.isNotBlank()) Text("Birthday · ${LocalDate.parse(profile.birthday).format(dateFormat)}")
             Button({ navigate("edit-profile") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Edit, null); Text(" Edit your profile") }
         }
         if (profile.information.isNotBlank()) SoftCard(Modifier.fillMaxWidth()) { Eyebrow("PERSONAL INFORMATION"); Text(profile.information) }
-        SoftCard(Modifier.fillMaxWidth(), MaterialTheme.colorScheme.primaryContainer) { Eyebrow("YOUR JOURNEY SO FAR"); Text("${state.completions.size} little steps forward", style = MaterialTheme.typography.headlineMedium); Text("Every one of them counts.") }
+        Row(horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+            SoftCard(Modifier.weight(1f)) { Eyebrow("Completed"); Text("${state.completions.size}",style=MaterialTheme.typography.headlineLarge) }
+            SoftCard(Modifier.weight(1f)) { Eyebrow("Active goals"); Text("${state.items.count { it.kind==com.lifemate.domain.Kind.GOAL && !it.archived && it.progress<100 }}",style=MaterialTheme.typography.headlineLarge) }
+        }
+        SoftCard(Modifier.fillMaxWidth()) {
+            val dates=state.items.filter {it.kind==com.lifemate.domain.Kind.MISSION}.flatMap {state.dates(it)}.toSet()
+            Eyebrow("Mission streak");Text("${com.lifemate.domain.Schedule.currentStreak(dates,LocalDate.now())} days",style=MaterialTheme.typography.headlineMedium)
+        }
+        TextButton({navigate("settings")}) {Text("App lock & biometric")}
+        TextButton({navigate("privacy")}) {Text("Privacy")}
+
         OutlinedButton({ navigate("statistics") }, Modifier.fillMaxWidth().heightIn(min = 54.dp)) { Icon(Icons.Outlined.Insights, null); Text(" Your progress & statistics") }
         OutlinedButton({ navigate("menu") }, Modifier.fillMaxWidth().heightIn(min = 54.dp)) { Icon(Icons.Outlined.GridView, null); Text(" All your LifeMate features") }
         OutlinedButton({ navigate("settings") }, Modifier.fillMaxWidth().heightIn(min = 54.dp)) { Icon(Icons.Outlined.Settings, null); Text(" Settings & privacy") }

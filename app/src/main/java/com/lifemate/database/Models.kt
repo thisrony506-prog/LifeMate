@@ -46,3 +46,10 @@ class Converters {
 
 @Entity(tableName = "scheduled_alarms", foreignKeys = [ForeignKey(entity = LifeItem::class, parentColumns = ["id"], childColumns = ["itemId"], onDelete = ForeignKey.CASCADE)])
 data class ScheduledAlarm(@PrimaryKey val itemId: String, val occurrence: Long, val revision: Long, val zone: String)
+
+@Entity(tableName = "social_posts", foreignKeys = [ForeignKey(entity = Profile::class, parentColumns = ["id"], childColumns = ["profileId"], onDelete = ForeignKey.CASCADE)], indices = [Index("profileId"), Index("updatedAt")])
+data class SocialPost(
+    @PrimaryKey val id: String = UUID.randomUUID().toString(), val profileId: Int = 1,
+    val type: String = "Normal Post", val topic: String = "", val message: String = "", val person: String = "", val date: String = "",
+    val caption: String = "", val photo: String = "", val createdAt: Long = System.currentTimeMillis(), val updatedAt: Long = System.currentTimeMillis()
+) : java.io.Serializable

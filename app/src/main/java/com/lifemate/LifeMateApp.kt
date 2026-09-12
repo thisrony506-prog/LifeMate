@@ -13,7 +13,7 @@ class LifeMateApp : Application() {
     val db by lazy {
         System.loadLibrary("sqlcipher")
         Room.databaseBuilder(this, LifeDatabase::class.java, "lifemate.db")
-            .openHelperFactory(SupportOpenHelperFactory(secure.databaseKey())).build()
+            .openHelperFactory(SupportOpenHelperFactory(secure.databaseKey())).addMigrations(com.lifemate.database.MIGRATION_1_2).build()
     }
     val preferences by lazy { PreferenceStore(this) }
     val scheduler by lazy { ReminderScheduler(this, db.dao(), preferences) }

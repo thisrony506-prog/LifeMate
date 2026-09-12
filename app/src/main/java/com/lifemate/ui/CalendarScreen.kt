@@ -22,11 +22,12 @@ import java.time.format.DateTimeFormatter
     var monthText by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     var selectedText by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
     val month = YearMonth.parse(monthText); val selected = LocalDate.parse(selectedText)
-    val calendarKinds = taskKinds + setOf(Kind.BIRTHDAY, Kind.GOAL)
-    val records = state.items.filter { it.kind in calendarKinds && !it.archived }
+    val calendarKinds = taskKinds + setOf(Kind.BIRTHDAY, Kind.GOAL, Kind.MEMORY)
+    val records = remember(state.items) { state.items.filter { it.kind in calendarKinds && !it.archived } }
+    val indicators = remember(records,month) { val start=month.atDay(1).minusDays((month.atDay(1).dayOfWeek.value-1).toLong()); (0L..41L).associate { offset -> val day=start.plusDays(offset); day to records.filter { it.occurs(day) }.map { it.kind }.distinct() } }
     val events = records.filter { it.occurs(selected) }.sortedBy { it.time }
     LazyColumn(contentPadding = PaddingValues(22.dp, 16.dp, 22.dp, 110.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        item { PageHeading("A little perspective", "Your days, thoughtfully connected.") }
+        item { PageHeading("Calendar", "") }
         item { SoftCard {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(month.format(DateTimeFormatter.ofPattern("MMMM yyyy")), Modifier.weight(1f), style = MaterialTheme.typography.titleLarge)
@@ -38,7 +39,7 @@ import java.time.format.DateTimeFormatter
             (0..5).forEach { week -> Row(Modifier.fillMaxWidth()) {
                 (0..6).forEach { col ->
                     val day = start.plusDays((week * 7 + col).toLong())
-                    val dayEvents = records.filter { it.occurs(day) }.map { it.kind }.distinct()
+                    val dayEvents = indicators[day].orEmpty()
                     Column(Modifier.weight(1f).heightIn(min = 48.dp).clip(CircleShape).background(if (day == selected) MaterialTheme.colorScheme.primaryContainer else androidx.compose.ui.graphics.Color.Transparent)
                         .clickable { selectedText = day.toString() }.semantics { contentDescription = "${day.format(dateFormat)}, ${dayEvents.size} event types" }.padding(vertical = 7.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(day.dayOfMonth.toString(), color = if (YearMonth.from(day) != month) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = .5f) else MaterialTheme.colorScheme.onSurface)
@@ -50,7 +51,7 @@ import java.time.format.DateTimeFormatter
         } }
         item { Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(14.dp)) { calendarKinds.forEach { kind -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) { Box(Modifier.size(6.dp).clip(CircleShape).background(kind.tint())); Text(kind.label, fontSize = 10.sp) } } } }
         item { SectionHeading(if (selected == LocalDate.now()) "Today" else selected.format(dateFormat), "Add event") { navigate("edit/REMINDER/new?date=$selected") } }
-        if (events.isEmpty()) item { EmptyState(null, "A little breathing room", "Nothing scheduled for this day. Enjoy the space, or plan something meaningful.") }
+        if (events.isEmpty()) item { EmptyState(null, "No events", "") }
         items(events, key = { it.id }) { item -> ItemRow(item, state, { navigate("detail/${item.id}") }, if (item.kind in taskKinds && selected <= LocalDate.now()) ({ vm.toggle(item, selected) }) else null, selected) }
     }
 }

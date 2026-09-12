@@ -31,6 +31,7 @@ import com.lifemate.*
 import com.lifemate.domain.*
 import com.lifemate.navigation.destinations
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,6 +40,8 @@ import java.time.LocalDate
     val busy by vm.busy.collectAsStateWithLifecycle()
     val update by vm.updates.collectAsStateWithLifecycle()
     val nav = rememberNavController()
+    val drawer = rememberDrawerState(DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
     val unlockedContent = rememberSaveableStateHolder()
     val entry by nav.currentBackStackEntryAsState()
     val route = entry?.destination?.route ?: "home"
@@ -58,11 +61,15 @@ import java.time.LocalDate
             while (true) { vm.checkUpdates(); delay(6 * 60 * 60 * 1000L) }
         }
     }
+    LaunchedEffect(state.preferences.soundEffects) { if(state.preferences.soundEffects) vm.feedback.prepare() else vm.feedback.stop() }
+    LaunchedEffect(lifecycleState,locked) { vm.feedback.foreground=lifecycleState==Lifecycle.State.RESUMED && !locked; if(!vm.feedback.foreground) vm.feedback.stop() }
     fun navigate(path: String) {
         val destination = when (path) { "list/MISSION" -> "missions"; "list/MEMORY" -> "memories"; else -> path }
+        if(destination=="posts" && route=="post/{id}") nav.popBackStack()
         nav.navigate(destination) { launchSingleTop = true }
     }
-    fun back() { if (route.startsWith("edit")) discard = true else if (!nav.popBackStack()) navigate("home") }
+    LaunchedEffect(locked, update.available) { if (locked || update.available) drawer.close() }
+    fun back() { if ((route.startsWith("edit") || route=="post/{id}")) discard = true else if (!nav.popBackStack()) navigate("home") }
     LaunchedEffect(Unit) { vm.events.collect { snackbar.showSnackbar(it) } }
     LaunchedEffect(Unit) { while (true) { today = LocalDate.now(); delay(30_000) } }
     DisposableEffect(lifecycle, lockRevision) {
@@ -84,7 +91,7 @@ import java.time.LocalDate
         val id = activity.openItem.value
         if (id != null && !state.loading && state.profile != null && !locked) { navigate("detail/$id"); activity.openItem.value = null }
     }
-    if (route.startsWith("edit") && !locked) BackHandler { discard = true }
+    if ((route.startsWith("edit") || route=="post/{id}") && !locked) BackHandler { discard = true }
     if (locked) BackHandler { activity.moveTaskToBack(true) }
     LifeTheme(state.preferences.theme) {
         val lightSystemBars = MaterialTheme.colorScheme.background.luminance() > .5f
@@ -105,10 +112,12 @@ import java.time.LocalDate
                         // Dialogs have their own Android windows; hiding semantics alone cannot lock them.
                         // Remove private UI while locked, but retain form/navigation saveable state.
                         if (!locked) unlockedContent.SaveableStateProvider("private-content") {
+                            ModalNavigationDrawer(drawerState=drawer, gesturesEnabled=!update.available,
+                                drawerContent={ SideMenu(route) { target -> scope.launch { drawer.close() }; navigate(target) } }) {
                             Scaffold(containerColor = MaterialTheme.colorScheme.background,
                                 snackbarHost = { SnackbarHost(snackbar) },
                                 topBar = {
-                                    if (route != "home") TopAppBar(title = { BrandTitle() }, navigationIcon = { IconButton({ back() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Go back") } }, actions = {
+                                    if (route != "home") TopAppBar(title = { BrandTitle() }, navigationIcon = { if (showBottom) IconButton({ scope.launch { drawer.open() } }) { Icon(Icons.Outlined.Menu,"Open menu") } else IconButton({ back() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Go back") } }, actions = {
                                         IconButton({ navigate("search") }) { Icon(Icons.Outlined.Search, "Search everything") }
                                         IconButton({ navigate("menu") }) { Icon(Icons.Outlined.GridView, "All features") }
                                     }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background))
@@ -127,9 +136,9 @@ import java.time.LocalDate
                             ) { padding ->
                                 Box(Modifier.padding(padding).fillMaxSize()) {
                                     NavHost(navController = nav, startDestination = "home") {
-                                        composable("home") { HomeScreen(state, vm, today, ::navigate) }
+                                        composable("home") { HomeScreen(state, vm, today, ::navigate) { scope.launch { drawer.open() } } }
                                         composable("missions") { FeatureTheme(Kind.MISSION) { CollectionScreen(Kind.MISSION, state, vm, ::navigate) } }
-                                        composable("memories") { FeatureTheme(Kind.MEMORY) { CollectionScreen(Kind.MEMORY, state, vm, ::navigate) } }
+                                        composable("memories") { MemoryGridScreen(state, ::navigate) }
                                         composable("list/{kind}") { backStack -> val kind = Kind.valueOf(backStack.arguments!!.getString("kind")!!); FeatureTheme(kind) { CollectionScreen(kind, state, vm, ::navigate) } }
                                         composable("calendar") { CalendarScreen(state, vm, ::navigate) }
                                         composable("profile") { ProfileScreen(state, ::navigate) }
@@ -140,6 +149,10 @@ import java.time.LocalDate
                                         composable("settings") { SettingsScreen(activity, state, vm, ::navigate, { lockRevision++ }) { nav.navigate("home") { popUpTo("home") { inclusive = true } } } }
                                         composable("updates") { UpdateScreen(state, vm) }
                                         composable("studio") { BirthdayTheme { CardStudioScreen(vm = vm) } }
+                                        composable("about") { AboutScreen(::navigate) }
+                                        composable("posts") { FacebookPostsScreen(vm, ::navigate) }
+                                        composable("post/{id}") { PostComposerScreen(it.arguments?.getString("id") ?: "new", vm, ::navigate) }
+                                        composable("post-card/{id}") { PostGraphicScreen(it.arguments?.getString("id") ?: "",vm) }
                                         composable("privacy") { PolicyScreen(true) }
                                         composable("terms") { PolicyScreen(false) }
                                         composable("notifications") { NotificationsScreen(state, vm, ::navigate) }
@@ -166,12 +179,14 @@ import java.time.LocalDate
                                 }
                             }
                         }
+                        }
                         if (locked) Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { LockScreen(activity, vm.app.secure, state.preferences.biometric) { locked = false; stoppedAt = 0 } }
                     }
                 }
                 if (adding && !locked && !update.available) ModalBottomSheet(onDismissRequest = { adding = false }, containerColor = MaterialTheme.colorScheme.background) {
                     LazyColumn(contentPadding = PaddingValues(22.dp, 0.dp, 22.dp, 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        item { PageHeading("Make a little space", "What would you like to add?"); Spacer(Modifier.height(12.dp)) }
+                        item { PageHeading("Create", ""); Spacer(Modifier.height(12.dp)) }
+                        item { TextButton({ adding=false; navigate("post/new") },Modifier.fillMaxWidth()) { Icon(Icons.Outlined.EditNote,null); Text("  Facebook Post") } }
                         items(Kind.entries) { kind -> Surface(onClick = { adding = false; navigate("edit/${kind.name}/new") }, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) { Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) { KindBadge(kind); Text("New ${kind.label.lowercase()}", style = MaterialTheme.typography.titleMedium) } } }
                     }
                 }

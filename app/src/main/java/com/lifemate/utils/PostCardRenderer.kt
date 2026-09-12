@@ -13,13 +13,13 @@ import java.util.UUID
 
 /** One local photo, composited with editable text. No network, account, or posting SDK. */
 data class PostDesign(
-    val text: String = "Make today a little brighter.", val palette: String = "Rose", val font: String = "Modern",
+    val text: String = "Make today a little brighter.", val palette: String = "White", val font: String = "Modern",
     val effect: String = "Original", val format: String = "Portrait", val position: String = "Center",
-    val ink: String = "White", val size: Float = 58f, val shade: Float = .35f, val zoom: Float = 1f,
+    val ink: String = "Ink", val size: Float = 58f, val shade: Float = .35f, val zoom: Float = 1f,
     val rotation: Int = 0, val alignment: String = "Center", val photo: String = ""
 )
 object PostCardRenderer {
-    val palettes = listOf("Rose", "Lavender", "Ocean", "Jade", "Midnight")
+    val palettes = listOf("White", "Black", "Pink", "Rose", "Lavender", "Ocean", "Jade", "Midnight")
     val fonts = listOf("Modern", "Serif", "Handwritten", "Bold", "Mono")
     val effects = listOf("Original", "Warm", "Mono", "Dreamy")
     val formats = listOf("Portrait", "Square", "Landscape")
@@ -73,8 +73,12 @@ object PostCardRenderer {
                 "Midnight" -> intArrayOf(0xFF37466E.toInt(), 0xFF10182C.toInt())
                 else -> intArrayOf(0xFFDC729D.toInt(), 0xFF7C244F.toInt())
             }
+            if(design.palette in setOf("White","Black","Pink")) {
+                canvas.drawColor(when(design.palette) {"White" -> Color.WHITE; "Black" -> 0xFF17171B.toInt(); else -> 0xFFFBE4ED.toInt()})
+            } else {
             paint.shader = LinearGradient(0f, 0f, w.toFloat(), h.toFloat(), colors[0], colors[1], Shader.TileMode.CLAMP)
             canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint); paint.shader = null
+            }
             val photo = if (design.photo.isNotBlank()) BitmapFactory.decodeFile(design.photo) else null
             if (design.photo.isNotBlank()) requireNotNull(photo) { "Photo is unavailable. Choose it again." }
             photo?.let {
@@ -95,7 +99,7 @@ object PostCardRenderer {
                     } finally { if (rotated !== it) rotated.recycle() }
                 } finally { it.recycle() }
                 canvas.drawColor(Color.argb((design.shade.coerceIn(0f, .8f)*255).toInt(), 0, 0, 0))
-            } ?: run {
+            } ?: if (design.palette !in setOf("White","Black","Pink")) run {
                 paint.color = Color.argb(24,255,255,255)
                 canvas.drawCircle(w*.9f,h*.1f,w*.38f,paint); canvas.drawCircle(w*.1f,h*.9f,w*.3f,paint)
                 paint.style = Paint.Style.STROKE; paint.strokeWidth = 2f; paint.color = Color.argb(100,255,255,255)
@@ -104,7 +108,7 @@ object PostCardRenderer {
                     paint.color = Color.argb(95,255,220,235)
                     repeat(18) { i -> canvas.drawCircle(65f + (i*173 % (w-130)), 65f + (i*239 % (h-130)), (4+i%4).toFloat(), paint) }
                 }
-            }
+            } else Unit
             val fontName = when(design.font) { "Serif" -> "serif"; "Handwritten" -> "cursive"; "Mono" -> "monospace"; else -> "sans-serif" }
             val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
                 color = when(design.ink) { "Cream" -> 0xFFFFF2DB.toInt(); "Ink" -> 0xFF19243A.toInt(); "Pink" -> 0xFFFFBBDD.toInt(); "Gold" -> 0xFFFFDF88.toInt(); else -> Color.WHITE }
