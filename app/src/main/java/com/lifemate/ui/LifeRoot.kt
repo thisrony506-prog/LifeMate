@@ -109,6 +109,8 @@ import java.time.LocalDate
                 when {
                     state.loading -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) { BrandMark(64.dp); Text("LifeMate", style = MaterialTheme.typography.displaySmall); CircularProgressIndicator() }
                     state.error != null -> Column(Modifier.padding(26.dp).align(Alignment.Center)) { EmptyState(null, "Your data is still yours", state.error!!); Button({ activity.recreate() }) { Text("Try again") } }
+                    locked -> LockScreen(activity, vm.app.secure, state.preferences.biometric) { locked = false; stoppedAt = 0 }
+                    state.profile == null && activity.flutterMode.value && update.available -> Box(Modifier.fillMaxSize())
                     state.profile == null && activity.flutterMode.value -> com.lifemate.flutter.FlutterHome(activity)
                     state.profile == null -> Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding -> Box(Modifier.padding(padding)) { ProfileEditor(null, vm) { } } }
                     else -> {
