@@ -17,6 +17,8 @@ def find(label, scroll=False, tap=False):
         for node in root.iter('node'):
             if label not in (node.get('text', '') + ' ' + node.get('content-desc', '')):
                 continue
+            if not tap:
+                return  # A visible greeting is text, not a clickable control.
             while node in parents and node.get('clickable') != 'true' and node.get('class') != 'android.widget.EditText':
                 node = parents[node]
             bounds = [int(x) for x in re.findall(r'\d+', node.get('bounds', ''))]

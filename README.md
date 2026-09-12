@@ -4,7 +4,7 @@
 
 ## Installable APKs and safe updates
 
-**Old 1.1.x downloads are unsigned and cannot be installed.** The new workflow will publish only a signed, verified APK; it fails closed if the retained signing key is missing. The current GitHub connection cannot manage Secrets (HTTP 403), so the one-time signing setup is still required. See [private setup and installation](docs/RELEASE.md).
+**Old 1.1.x downloads are unsigned and cannot be installed.** The new workflow will publish only a signed, verified APK; it fails closed if the retained signing key is missing. Compilation/lint, 26 JVM tests and the Android feature/updater tests passed in [run 34678452031](https://github.com/thisrony506-prog/LifeMate/actions/runs/34678452031). The release job correctly stopped because the signing key is missing; no APK was uploaded. The current GitHub connection still cannot manage Secrets (HTTP 403), so the one-time signing setup is required. See [private setup and installation](docs/RELEASE.md).
 
 After setup, run [LifeMate Release APK](https://github.com/thisrony506-prog/LifeMate/actions/workflows/android.yml) on `arena/01a090c4-lifemate`. Successful publication provides one **LifeMate-Release-APK** artifact containing only the versioned APK, plus the same APK in GitHub Releases for the in-app download button. Tests/reports/debug builds are never separate downloads.
 

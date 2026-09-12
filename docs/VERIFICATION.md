@@ -4,7 +4,11 @@
 
 Current work adds strictly increasing CI version codes, fixed-repository HTTPS release checks, Home update notices, a manual update page, an automatic-check preference, and fail-closed signed publication. Pure version/URL tests and UI navigation/banner tests were added. The signed-release job checks signer continuity, actual installation and profile retention across `adb install -r` before publishing.
 
-**Pending:** code/emulator verification for this change and the signed install/upgrade/publication job. The current integration cannot write repository Secrets (HTTP 403); no new private key has been created. The owner must complete secure setup described in RELEASE.md. Historical unsigned build results below do not prove the new signing path works.
+[Updater verification run 34678452031](https://github.com/thisrony506-prog/LifeMate/actions/runs/34678452031), application commit `cf65f56`: compilation, R8 assembly, lint and all **26 JVM tests** passed. Android emulator tests passed with zero failures, including the update banner, equal-version suppression, updates-page navigation and persisted automatic-check preference. Real notification delivery after process exit/reboot and next-recurrence persistence passed again.
+
+**Overall run: failed at the required signing gate**, specifically missing `LIFEMATE_KEYSTORE_BASE64`. The Actions API confirms **zero downloadable artifacts**: no unsigned APK was published. Signed APK installation, actual data-preserving upgrades and release publication remain **unverified/blocked**. A subsequent static check also verified the host smoke script can match non-clickable profile text and locate the input ancestor; that is not a substitute for running it on a signed app.
+
+Rechecking after the user's reconnect choice still returned HTTP 403 for repository Secrets access. No new private key has been created. The owner must complete the secure setup in RELEASE.md (or grant the integration the required permission). Historical unsigned build results below do not prove the new signing path works.
 
 
 ## User-supplied logo update — LifeMate 1.1.1
