@@ -25,7 +25,7 @@ import java.time.*
 @Composable fun CollectionScreen(kind: Kind, state: LifeState, vm: LifeViewModel, navigate: (String) -> Unit) {
     var query by rememberSaveable(kind) { mutableStateOf("") }
     var filter by rememberSaveable(kind) { mutableStateOf("All") }
-    var sort by rememberSaveable(kind) { mutableStateOf(if (kind in setOf(Kind.BIRTHDAY,Kind.ROUTINE)) "Date" else "Newest") }
+    var sort by rememberSaveable(kind) { mutableStateOf(if (kind==Kind.BIRTHDAY) "Date" else if(kind==Kind.ROUTINE) "Time" else "Newest") }
     val today = LocalDate.now()
     val all = state.items.filter { it.kind == kind }
     val filtered = all.filter { item ->
@@ -42,7 +42,8 @@ import java.time.*
             }
     }.let { records -> when (sort) {
         "Name" -> records.sortedBy { it.title.lowercase() }
-        "Date" -> records.sortedBy { if (kind == Kind.BIRTHDAY) Schedule.nextBirthday(LocalDate.parse(it.date), today).toString() else if(kind==Kind.ROUTINE) it.time else it.date + it.time }
+        "Time" -> records.sortedBy {it.time}
+        "Date" -> records.sortedBy { if (kind == Kind.BIRTHDAY) Schedule.nextBirthday(LocalDate.parse(it.date), today).toString() else it.date + it.time }
         else -> records.sortedWith(compareByDescending<LifeItem> { it.pinned }.thenByDescending { it.createdAt })
     } }
     val subtitle = when (kind) {
@@ -63,7 +64,7 @@ import java.time.*
         item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Eyebrow("${filtered.size} ${kind.plural}")
             var expanded by remember { mutableStateOf(false) }
-            Box { TextButton({ expanded = true }) { Icon(Icons.AutoMirrored.Outlined.Sort, null, Modifier.size(18.dp)); Text(" $sort") }; DropdownMenu(expanded, { expanded = false }) { listOf("Newest", "Name", "Date").forEach { option -> DropdownMenuItem({ Text(option) }, { sort = option; expanded = false }) } } }
+            Box { TextButton({ expanded = true }) { Icon(Icons.AutoMirrored.Outlined.Sort, null, Modifier.size(18.dp)); Text(" $sort") }; DropdownMenu(expanded, { expanded = false }) { (if(kind==Kind.ROUTINE) listOf("Newest","Name","Date","Time") else listOf("Newest", "Name", "Date")).forEach { option -> DropdownMenuItem({ Text(option) }, { sort = option; expanded = false }) } } }
         } }
         if (filtered.isEmpty()) item {
             val title = if (all.isNotEmpty()) "No matches" else "No ${kind.plural.lowercase()}"

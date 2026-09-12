@@ -21,12 +21,14 @@ import java.time.LocalDate
 /** Only visible image cells decode; videos never preload or autoplay in the grid. */
 @Composable fun MemoryGridScreen(state: LifeState,navigate: (String)->Unit) {
     var query by rememberSaveable {mutableStateOf("")}
+    var sort by rememberSaveable {mutableStateOf("Newest")}
     var filter by rememberSaveable {mutableStateOf("All")}
-    val records=remember(state.items,query,filter) {state.items.filter {it.kind==Kind.MEMORY && (if(filter=="Archived") it.archived else !it.archived) && (filter!="Pinned" || it.pinned) && (query.isBlank() || listOf(it.title,it.description,it.notes,it.tags).any {value->value.contains(query,true)})}}
+    val records=remember(state.items,query,filter,sort) {state.items.filter {it.kind==Kind.MEMORY && (if(filter=="Archived") it.archived else !it.archived) && (filter!="Pinned" || it.pinned) && (query.isBlank() || listOf(it.title,it.description,it.notes,it.tags).any {value->value.contains(query,true)})}.let { rows -> when(sort) { "Name"->rows.sortedBy {it.title.lowercase()}; "Date"->rows.sortedBy {it.date}; else->rows.sortedWith(compareByDescending<com.lifemate.database.LifeItem> {it.pinned}.thenByDescending {it.createdAt}) } }}
     LazyVerticalGrid(columns=GridCells.Adaptive(150.dp),contentPadding=PaddingValues(20.dp,16.dp,20.dp,100.dp),horizontalArrangement=Arrangement.spacedBy(12.dp),verticalArrangement=Arrangement.spacedBy(12.dp)) {
         item(span={GridItemSpan(maxLineSpan)}) {PageHeading("Memories","")}
         item(span={GridItemSpan(maxLineSpan)}) {Field(query,{query=it},"Search memories")}
         item(span={GridItemSpan(maxLineSpan)}) {ChoiceChips(listOf("All","Pinned","Archived"),filter) {filter=it}}
+        item(span={GridItemSpan(maxLineSpan)}) {ChoiceChips(listOf("Newest","Date","Name"),sort) {sort=it}}
         if(records.isEmpty()) item(span={GridItemSpan(maxLineSpan)}) {EmptyState(Kind.MEMORY,"No memories","","Add memory") {navigate("edit/MEMORY/new")}}
         items(records,key={it.id}) { memory ->
             val media=state.media(memory)

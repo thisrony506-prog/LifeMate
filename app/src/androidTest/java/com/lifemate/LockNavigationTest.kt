@@ -26,8 +26,9 @@ class LockNavigationTest {
     }
     @Test fun privateDialogIsDismissedAfterBackgroundTimeout() {
         runBlocking { app.db.dao().saveProfile(Profile(fullName = "Dialog privacy test")) }
-        compose.waitUntil(15_000) { compose.onAllNodesWithContentDescription("Settings").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithContentDescription("Settings").performClick()
+        compose.waitUntil(15_000) { compose.onAllNodesWithContentDescription("Open menu").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithContentDescription("Open menu").performClick()
+        compose.onNodeWithTag("drawer-settings").performScrollTo().performClick()
         compose.onNodeWithText("App lock").performScrollTo().performClick()
         compose.onNodeWithText("New PIN").performTextInput("839271")
         compose.onNodeWithText("Confirm PIN").performTextInput("839271")

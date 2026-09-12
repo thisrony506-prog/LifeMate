@@ -113,7 +113,7 @@ import java.time.LocalDate
                         // Remove private UI while locked, but retain form/navigation saveable state.
                         if (!locked) unlockedContent.SaveableStateProvider("private-content") {
                             ModalNavigationDrawer(drawerState=drawer, gesturesEnabled=!update.available,
-                                drawerContent={ SideMenu(route) { target -> scope.launch { drawer.close() }; navigate(target) } }) {
+                                drawerContent={ SideMenu(if(route=="list/{kind}") "list/${entry?.arguments?.getString("kind")}" else route) { target -> scope.launch { drawer.close() }; navigate(target) } }) {
                             Scaffold(containerColor = MaterialTheme.colorScheme.background,
                                 snackbarHost = { SnackbarHost(snackbar) },
                                 topBar = {
@@ -127,7 +127,7 @@ import java.time.LocalDate
                                     if (showBottom) NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                                         destinations.forEach { destination ->
                                             val actualRoute = if (route == "list/{kind}") "list/${entry?.arguments?.getString("kind")}" else route
-                                            NavigationBarItem(modifier = Modifier.testTag("nav-${destination.label}"), selected = actualRoute == destination.route, onClick = {
+                                            NavigationBarItem(colors=NavigationBarItemDefaults.colors(selectedIconColor=MaterialTheme.colorScheme.primary,selectedTextColor=MaterialTheme.colorScheme.primary,indicatorColor=MaterialTheme.colorScheme.primaryContainer), modifier = Modifier.testTag("nav-${destination.label}"), selected = actualRoute == destination.route, onClick = {
                                                 nav.navigate(destination.route) { popUpTo(nav.graph.findStartDestination().id) { saveState = true }; launchSingleTop = true; restoreState = true }
                                             }, icon = { Icon(destination.icon, null) }, label = { Text(destination.label, maxLines = 1, style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.sp)) })
                                         }
