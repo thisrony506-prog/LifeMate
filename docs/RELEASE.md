@@ -4,11 +4,11 @@ Application ID remains **`com.lifemate`**. Core organizer features remain offlin
 
 ## Current verified release
 
-**[Download signed LifeMate 1.2.55](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.55/LifeMate-100055.apk)**. [Run 34707758773](https://github.com/thisrony506-prog/LifeMate/actions/runs/34707758773) passed all three jobs and automatically published the release and one APK-only Actions artifact. A real in-place upgrade from the public 1.2.52 to 1.2.55 retained the encrypted profile. See [VERIFICATION.md](VERIFICATION.md) for evidence and manual-device limits.
+**[Download signed LifeMate 1.2.64](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.64/LifeMate-100064.apk)**. [Run 34711233177](https://github.com/thisrony506-prog/LifeMate/actions/runs/34711233177) passed all three jobs and automatically published the release and one APK-only Actions artifact. A real in-place upgrade from the public 1.2.55 to 1.2.64 retained the encrypted profile. See [VERIFICATION.md](VERIFICATION.md) for evidence and manual-device limits.
 
 **All four signing secrets are configured and working. Do not repeat setup or generate a new key.** Keep an encrypted offline backup of the original JKS and its password separately in a password manager. Future signed versions reuse this identity. If an earlier signed LifeMate is already installed, install the newer APK over it and choose Android's **Update**; do not uninstall first.
 
-The redesigned release adds feature-colored UI, pink birthday/photo cards, weekly insights and opt-in device TTS. It intentionally changes updates from an optional Home banner to a required-install dialog after verified discovery. [UX-UPDATE.md](UX-UPDATE.md) explains behavior, speech/device limitations and the studio draft backup exclusion.
+The latest release adds a unified white/black/pink interface, five bottom destinations, a direct drawer, persistent Facebook Posts, reusable flat graphics, an additive Room 1→2 migration, backward-compatible backup import and optional completion sounds. The existing mandatory browser-free updater, organizer tools, studio, weekly insights and opt-in TTS remain. [PREMIUM.md](PREMIUM.md) explains posts, privacy and the optional consent-gated backend contract; [UX-UPDATE.md](UX-UPDATE.md) covers installer/speech/device limits and studio-only backup exclusions. No live AI backend was deployed.
 
 ## Exact commands in your private Codespace — one-time reference only
 

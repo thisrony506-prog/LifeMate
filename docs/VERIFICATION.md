@@ -1,5 +1,39 @@
 # LifeMate verification
 
+## Premium white/black/pink release verified — 2026-09-13
+
+**[Download signed LifeMate 1.2.64](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.64/LifeMate-100064.apk)** · Android 8+ · `com.lifemate` · versionCode **100064**.
+
+[Run 34711233177](https://github.com/thisrony506-prog/LifeMate/actions/runs/34711233177), application source **`642089b9c2cc0c081bc4c3cee608bd539f49e59c`**, passed **all three jobs** and automatic publication. Documentation-only commits after this source do not change the shipped APK. This section supersedes historical purpose-colored UI descriptions below; the native updater from 1.2.55 is preserved.
+
+| Executed check | Result |
+| --- | --- |
+| Kotlin/Android compilation, R8, release assembly and lint | Passed |
+| JVM domain/policy tests | Passed; **54 declared test methods**, including five new post-template/input/endpoint-policy tests |
+| Python release/design regression tests | **17 passed**, locally and in CI; shell syntax and diff checks also passed |
+| Android feature suite on Android 15 x86_64 | Passed, zero failures; runner reported 41 results, with the opt-in external-alarm helper intentionally skipped in the normal suite |
+| New post/storage coverage | Actual exported schema-1 database migrated to schema 2; profile retention, post CRUD/reopen/cascade; composer save/activity recreation; saved post/photo ZIP backup roundtrip |
+| Existing feature/security coverage | Navigation, persistence, PIN/wrong PIN, background relock/private-dialog disposal, backups, card rendering/import/draft restoration, update policy/downloader and install-intent checks passed |
+| Real notification host checks | All three passed: UI/process exit, reboot, and persisted recurring next-day delivery |
+| Signing and real release upgrade | One retained signer; v2/v3 APK verification passed for both versions. Actual public **1.2.55 / 100055** installed, encrypted `UpgradeProof` profile saved, then signed **1.2.64 / 100064** installed through `adb install -r` without uninstalling. Higher version and retained encrypted profile confirmed |
+| Publication | Draft byte/asset checks, canonical published URL/digest checks, sole APK artifact upload and temporary signing-key cleanup passed |
+
+Independent public API assertions confirmed the green run, matching source/tag/version, non-draft/non-prerelease status, one uploaded APK asset, one non-expired **LifeMate-Release-APK** Actions artifact, expected canonical URL, matching size/GitHub digest/signed metadata and retained signer:
+
+- APK size: **22,873,204 bytes** (about 22.9 MB).
+- APK SHA-256: **`72be591a9c7a65ba8428aa093ccdb893dae157ee4f62867bbaf2026bd6ce2e86`**.
+- Retained public signer SHA-256: **`518aec44e1f3c230464381c6b539f411b2f317db0db80e6fa896688a3b4a97a8`**.
+
+A prior redesign test run exposed a stale test that sought Settings in the old Home header. It was corrected to enter through the drawer, retaining the complete PIN/background privacy assertions. Final tests above were rerun on the shipped source; no failing test was removed or disabled to publish.
+
+### Scope, privacy and remaining device checks
+
+[PREMIUM.md](PREMIUM.md) records the implemented navigation, compact metrics, lazy memory grid, sorting, ten persistent post types, reusable flat graphics, additive storage migration, optional sounds and performance work. Offline captions are **templates, not AI**. A bounded, text-only HTTPS adapter and explicit per-request consent are implemented, but **no live AI backend was supplied, deployed or tested end-to-end**. Provider keys must remain server-side. Privacy notices distinguish automatic/no-network core behavior from approved AI writing fields; photos and unrelated records are never included in AI requests.
+
+Signed-upgrade testing uses ADB, not a fully automated physical-phone permission/installer journey. Android's installation-source approval and final confirmation are still required. Native downloader tests use controlled transfer fixtures. Physical Android 8+ ARM/OEM phones, large-font/reduced-motion presentation, biometric hardware, installed Facebook/gallery targets, live GitHub/CDN download/install UI, audio/TTS quality, Bluetooth/DND behavior and large-library performance benchmarks remain manual. Screenshots were generated internally by tests, not independently visually reviewed.
+
+An additional attempt to retrieve the published APK into this Arena sandbox failed at its CDN TLS connection; Actions artifact transfer also returned EOF. No local post-download binary/certificate inspection is claimed. Hosted Android Build Tools signature verification, real signed installation, published-byte digest checks and the independent public-metadata assertions above did succeed. No debug APK, screenshot, report, checksum, logo or documentation artifact was uploaded.
+
 ## Browser-free in-app updater verified — 2026-09-12
 
 **[Download signed LifeMate 1.2.55](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.55/LifeMate-100055.apk)** · Android 8+ · `com.lifemate` · code **100055**.

@@ -4,26 +4,20 @@
 
 The supplied LifeMate logo, package ID, offline records, scheduling, PIN/biometric security and existing organizer functions are retained. Home keeps today's tasks, a real weekly summary, upcoming birthdays and direct Birthday/Photo studio entry points. Updates no longer occupy the Home header; Settings has a dedicated update section near the top.
 
-All Features is grouped into:
-
-- **Plan your day:** amber routines and blue reminders.
-- **Grow with intention:** purple missions, teal habits and warm terracotta goals.
-- **Keep & celebrate:** pink birthdays/wishes, ocean-colored memories and violet notes.
-
-Feature colors follow through collection headers, editor/detail controls, icons and soft surfaces. Night mode uses lighter accents. All eight light-mode primary accents pass a 4.5:1 minimum contrast regression test for white button text. Existing bottom navigation, search, empty states and accessible control labels remain.
+The latest premium redesign replaces the former eight-purpose-color palette with one **white/black/pink** system, including pink selected navigation. Bottom destinations are **Home, Missions, Calendar, Memories and Profile**; the hamburger opens secondary features directly. The original logo and all record types remain. [PREMIUM.md](PREMIUM.md) documents the compact Home, lazy Memories grid, sorting, habit/profile/statistics changes, persistent Facebook Posts, additive Room migration, optional sounds and consent-gated AI backend contract.
 
 ## Private photo and birthday studio
 
-Open **Home → Photo studio**, **All Features → Photo & card studio**, or a birthday's wishes action. Birthday creation uses the pink feature theme and editable offline wishes in the existing seven tones.
+Open **All Features → Photo & card studio**, a birthday's wishes action, or **Facebook Posts → Create image**. Birthday creation uses the pink feature theme and editable offline wishes in the existing seven tones.
 
 - Import an image with Android's system document picker; no broad gallery access and no social account are required.
 - Inputs are capped at 25 MB, decoded at a bounded size, oriented using EXIF, and normalized into a private app copy. Originals are unchanged. Exported PNGs do not contain the source location metadata.
 - Edit up to 600 characters, with Modern, Serif, Handwritten, Bold or Mono system fonts; five text colors; size, alignment and top/center/bottom placement.
-- Choose Rose, Lavender, Ocean, Jade or Midnight gradients, or a photo background with crop zoom and 90-degree rotation. Original, Warm, Mono and Dreamy effects apply to photos. Overlay darkness helps text contrast.
+- Choose flat White, Black or Pink, or the retained Rose, Lavender, Ocean, Jade and Midnight creative palettes, or a photo background with crop zoom and 90-degree rotation. Original, Warm, Mono and Dreamy effects apply to photos. Overlay darkness helps text contrast.
 - Export portrait **1080×1350**, square **1080×1080**, or landscape **1200×630** PNGs. The live preview is the same generated file that is saved/shared. Export is disabled while a changed design is still rendering. Text shrinks and may ellipsize when it cannot fit: review the preview.
 - Tap Share and select Facebook if available, or save the PNG and attach it to a Facebook post yourself. LifeMate never posts or uploads automatically.
-- One draft per birthday and one social-post draft are stored with Android-Keystore AES-GCM encryption. Private normalized photos are device-local, not separately encrypted by LifeMate. Drafts restore after activity recreation/restart; previous private copies are removed when replaced in a saved draft. Temporary previews are bounded and are not a permanent gallery.
-- **Studio drafts/photos are not included in record ZIP backups. Save completed images separately.** Settings → Delete all data clears studio drafts/private copies and previews too; it does not delete exported files or gallery originals.
+- One draft per birthday, per saved Facebook post, and a separate generic studio draft are stored with Android-Keystore AES-GCM encryption. Private normalized photos are device-local, not separately encrypted by LifeMate. Drafts restore after activity recreation/restart; previous private copies are removed when replaced in a saved draft. Temporary previews are bounded and are not a permanent gallery.
+- **Studio-only drafts/photos are not included in record ZIP backups. Saved Facebook post records and their source photos are included in format-2 backups. Save finished images separately.** Settings → Delete all data clears studio drafts/private copies and previews too; it does not delete exported files or gallery originals.
 
 ## Weekly insights
 
