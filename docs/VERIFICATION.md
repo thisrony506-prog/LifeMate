@@ -1,6 +1,12 @@
 # LifeMate verification
 
-## Latest successful automated run — LifeMate 1.1.0
+## User-supplied logo update — LifeMate 1.1.1
+
+The original uploaded `20260912_111618.png` replaces the previous mark throughout the app and on the launcher. Only the connected outer black border is removed for the in-app asset. The adaptive icon preserves the colored emblem on a pale background; Android 13 themed icons and notification icons use a matching alpha silhouette. Asset generation is reproducible with `scripts/update-brand-assets.sh` and does not use generative imagery.
+
+Local checks: resource XML parses, the foreground/themed alpha masks match, and the emblem's 154.5px radius fits inside the 156.4px adaptive safe circle at 512px resolution. The app version is 1.1.1 / code 3; features, application ID, database schema and release-only workflow are unchanged. Android build/device verification is pending for this update.
+
+## Prior successful automated run — LifeMate 1.1.0
 
 [LifeMate Release APK — run 34674504318](https://github.com/thisrony506-prog/LifeMate/actions/runs/34674504318)
 

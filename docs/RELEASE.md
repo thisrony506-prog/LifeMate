@@ -9,7 +9,7 @@
 
 The artifact contains **exactly one APK**, with no debug APK, test report, screenshot, checksum or readme file. Build reports remain internal to the runner; diagnostics appear only in ordinary Actions logs/annotations. Older runs are historical and may still have multiple artifacts.
 
-The APK is the optimized, R8-minified, non-debuggable **release** variant—not a renamed debug APK. Version 1.1.0 has versionCode 2 and the same application ID/database schema as before.
+The APK is the optimized, R8-minified, non-debuggable **release** variant—not a renamed debug APK. Version 1.1.1 has versionCode 3 and the same application ID/database schema as before.
 
 ## Optional automatic signing with your retained key
 

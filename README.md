@@ -6,7 +6,7 @@
 
 [**Download the verified LifeMate 1.1.0 Release APK**](https://github.com/thisrony506-prog/LifeMate/actions/runs/34674504318).
 
-This run passed both verification jobs and contains exactly one artifact. It was built without private signing secrets, so its APK is **unsigned**.
+This prior 1.1.0 run does not contain the newly supplied logo. The 1.1.1 update is awaiting its own verification. This prior run passed both verification jobs and contains exactly one artifact. It was built without private signing secrets, so its APK is **unsigned**.
 
 Choose a successful run for `arena/01a090c4-lifemate`, then download **LifeMate-Release-APK** under **Artifacts**. New runs publish **one artifact containing exactly one release APK**—no debug download, reports, screenshots, checksum file or readme in the download. GitHub wraps artifacts in a ZIP; extract it to get the APK.
 
@@ -17,9 +17,9 @@ Device tests must pass before the release job runs. Compilation, lint, JVM rules
 
 Artifacts are subject to GitHub retention. To rebuild, push a source change, rerun the workflow, or use **Run workflow** on the tracked branch when available. Old runs retain their historical downloads; only new runs follow the release-only layout.
 
-## LifeMate 1.1 design
+## LifeMate 1.1.1 design
 
-A bundled jade-and-ivory heart/checkmark/leaf mark now appears on the adaptive launcher icon, Android 13 themed icon, welcome/loading screens, dashboard, inner-screen header and About card. Matching small icons identify notifications. Clear sans-serif headings, coordinated light/dark colors, distinct feature badges, descriptive feature cards and an animated live progress ring make the existing offline tools easier to explore. Profile editing remains accessible through the dashboard shortcut and Profile tab. No sample records are inserted into the shipping app.
+The user-supplied blue person, green leaves and yellow rays logo now appears on the adaptive launcher icon, Android 13 themed icon, welcome/loading screens, dashboard, inner-screen header and About card. Matching single-color icons identify notifications. The original upload is retained as `20260912_111618.png`; `bash scripts/update-brand-assets.sh` reproducibly sizes it for Android without redrawing it. Clear sans-serif headings, coordinated light/dark colors, distinct feature badges, descriptive feature cards and an animated live progress ring make the existing offline tools easier to explore. Profile editing remains accessible through the dashboard shortcut and Profile tab. No sample records are inserted into the shipping app.
 
 ## Run it
 
