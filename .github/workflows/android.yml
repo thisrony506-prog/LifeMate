@@ -62,6 +62,7 @@ jobs:
         run: |
           set -o pipefail
           ./gradlew testDebugUnitTest lintDebug assembleRelease --stacktrace 2>&1 | tee compile.log
+          javac -cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" -d "$RUNNER_TEMP/lifemate-script-checks" scripts/VerifiedApkSigner.java 2>&1 | tee -a compile.log
       - name: Verification messages
         if: always()
         run: python3 scripts/report-ci.py compile.log

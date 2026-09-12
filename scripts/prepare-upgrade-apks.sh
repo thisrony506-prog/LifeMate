@@ -37,6 +37,8 @@ cp app/build/outputs/apk/release/app-release.apk "release-download/LifeMate-$LIF
 apksigner="$ANDROID_HOME/build-tools/35.0.0/apksigner"
 aapt="$ANDROID_HOME/build-tools/35.0.0/aapt"
 test -x "$apksigner" && test -x "$aapt"
+apksig_jar="$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar"
+test -f "$apksig_jar"
 echo 'Verifying with Android Build Tools 35.0.0.'
 echo 'Checking APK signatures, signer count and package identity.'
 for apk in "$RUNNER_TEMP/previous.apk" release-download/*.apk; do
@@ -47,17 +49,18 @@ for apk in "$RUNNER_TEMP/previous.apk" release-download/*.apk; do
   fi
   # Only public verification summaries/fingerprints, never keys/passwords or certificate subjects.
   grep -E '^(Verified using|Number of signers:)|^Signer .* certificate SHA-256 digest:' "$apk.certificate.txt" || true
-  python3 scripts/verify-apk-signers.py "$apk.certificate.txt" > "$RUNNER_TEMP/checked-signer.txt"
+  # Repeat verification through the official library and obtain the exact verified certificate.
+  java -cp "$apksig_jar" scripts/VerifiedApkSigner.java "$apk" > "$apk.signer.txt"
   "$aapt" dump badging "$apk" > "$RUNNER_TEMP/candidate-badging.txt"
   grep '^package:' "$RUNNER_TEMP/candidate-badging.txt"
   grep -q "package: name='com.lifemate' " "$RUNNER_TEMP/candidate-badging.txt"
 done
-old=$(python3 scripts/verify-apk-signers.py "$RUNNER_TEMP/previous.apk.certificate.txt")
-new=$(python3 scripts/verify-apk-signers.py release-download/*.certificate.txt)
+old=$(cat "$RUNNER_TEMP/previous.apk.signer.txt")
+new=$(cat release-download/*.signer.txt)
 [[ "$old" == "$new" ]] || { echo '::error::Signing key changed. Refusing to publish an incompatible upgrade.'; exit 1; }
 echo 'PASS: verified APK signer continuity and package identity'
 # Only the APK may remain in the download folder.
-rm release-download/*.certificate.txt
+rm release-download/*.certificate.txt release-download/*.signer.txt
 "$aapt" dump badging release-download/*.apk > "$RUNNER_TEMP/badging.txt"
 echo "Checking current APK versionCode=$LIFEMATE_VERSION_CODE"
 grep -q "package: name='com.lifemate' versionCode='$LIFEMATE_VERSION_CODE'" "$RUNNER_TEMP/badging.txt"
