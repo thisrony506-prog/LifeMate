@@ -88,7 +88,7 @@ import java.time.LocalDate
         Surface(Modifier.fillMaxSize().testTag("theme-${state.preferences.theme}"), color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize().safeDrawingPadding()) {
                 when {
-                    state.loading -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) { Icon(Icons.Outlined.Spa, null, Modifier.size(54.dp), tint = MaterialTheme.colorScheme.primary); Text("LifeMate", style = MaterialTheme.typography.displaySmall); CircularProgressIndicator() }
+                    state.loading -> Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(18.dp)) { BrandMark(64.dp); Text("LifeMate", style = MaterialTheme.typography.displaySmall); CircularProgressIndicator() }
                     state.error != null -> Column(Modifier.padding(26.dp).align(Alignment.Center)) { EmptyState(null, "Your data is still yours", state.error!!); Button({ activity.recreate() }) { Text("Try again") } }
                     state.profile == null -> Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding -> Box(Modifier.padding(padding)) { ProfileEditor(null, vm) { } } }
                     else -> {
@@ -99,7 +99,7 @@ import java.time.LocalDate
                             Scaffold(containerColor = MaterialTheme.colorScheme.background,
                                 snackbarHost = { SnackbarHost(snackbar) },
                                 topBar = {
-                                    if (route != "home") TopAppBar(title = { Text("LifeMate", style = MaterialTheme.typography.titleLarge) }, navigationIcon = { IconButton({ back() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Go back") } }, actions = {
+                                    if (route != "home") TopAppBar(title = { BrandTitle() }, navigationIcon = { IconButton({ back() }) { Icon(Icons.AutoMirrored.Outlined.ArrowBack, "Go back") } }, actions = {
                                         IconButton({ navigate("search") }) { Icon(Icons.Outlined.Search, "Search everything") }
                                         IconButton({ navigate("menu") }) { Icon(Icons.Outlined.GridView, "All features") }
                                     }, colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background))

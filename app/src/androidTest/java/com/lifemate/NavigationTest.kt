@@ -51,6 +51,19 @@ class NavigationTest {
         compose.onNodeWithTag("appearance-settings").performScrollTo()
         compose.onNodeWithText("Light").performClick()
     }
+    @Test fun brandedHeaderProfileShortcutAndEveryFeatureCardWork() {
+        compose.onNodeWithContentDescription("LifeMate logo").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Open your profile").performClick()
+        compose.onNodeWithText("Rony Test").assertIsDisplayed()
+        compose.onNodeWithContentDescription("All features").performClick()
+        Kind.entries.forEachIndexed { index, kind ->
+            compose.onNode(hasScrollToNodeAction()).performScrollToIndex(index + 1)
+            compose.onNodeWithTag("feature-${kind.name}").assertIsDisplayed().performClick()
+            compose.onNodeWithTag("page-title").assertTextEquals(kind.plural)
+            compose.onNodeWithContentDescription("Go back").performClick()
+            compose.onNodeWithContentDescription("LifeMate logo").assertIsDisplayed()
+        }
+    }
     @Test fun missionCheckinIsPersistedAndUnique() {
         val item = LifeItem(kind = Kind.MISSION, title = "Reading journey", date = LocalDate.now().toString(), duration = 7, notifications = false)
         runBlocking { app.db.dao().save(item) }

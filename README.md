@@ -4,24 +4,20 @@
 
 ## APK downloads & verification
 
-[**Open the verified GitHub Actions build**](https://github.com/thisrony506-prog/LifeMate/actions/runs/34618393752).
+[**Open LifeMate Release APK in GitHub Actions**](https://github.com/thisrony506-prog/LifeMate/actions/workflows/android.yml).
 
-Under **Artifacts**, choose:
+Choose a successful run for `arena/01a090c4-lifemate`, then download **LifeMate-Release-APK** under **Artifacts**. New runs publish **one artifact containing exactly one release APK**—no debug download, reports, screenshots, checksum file or readme in the download. GitHub wraps artifacts in a ZIP; extract it to get the APK.
 
-- **LifeMate-Release-APK** — optimized release APK plus SHA-256 checksum. **Unsigned**: sign with your own retained key before installation/distribution.
-- **LifeMate-Debug-APK** — installable immediately for device testing.
-- **LifeMate-build-and-reports** — both APK variants, build/lint/unit-test reports, and the Room schema.
-- **device-test-reports** — Android emulator results and real light/dark screenshots.
+- With the four private signing secrets configured: `LifeMate-release.apk`, signed with your retained key.
+- Without them: `LifeMate-release-unsigned.apk`, which **must be signed before installation**. There is no fallback to a debug or temporary signing key.
 
-The verified run passed compilation, Android lint, all JVM tests, the Compose/database/backup/PIN emulator suite, and actual notification delivery after process termination and emulator reboot. It also checked the next recurring alarm after both deliveries. See [verification scope](docs/VERIFICATION.md) and [release/signing instructions](docs/RELEASE.md).
+Device tests must pass before the release job runs. Compilation, lint, JVM rules, encrypted storage, UI navigation, PIN/backup behavior, and real process-exit/reboot notification delivery are still tested internally; they are not separate downloads. See [verification scope](docs/VERIFICATION.md) and [release/signing instructions](docs/RELEASE.md).
 
-Artifacts are subject to GitHub retention. To rebuild, push a change on the tracked branch, rerun its workflow from GitHub Actions, or use **Run workflow** on `arena/01a090c4-lifemate` when available.
+Artifacts are subject to GitHub retention. To rebuild, push a source change, rerun the workflow, or use **Run workflow** on the tracked branch when available. Old runs retain their historical downloads; only new runs follow the release-only layout.
 
-## Actual Android screens
+## LifeMate 1.1 design
 
-<img src="docs/screenshots/home-light.jpg" width="240" alt="LifeMate home screen in light mode" /> <img src="docs/screenshots/home-dark.jpg" width="240" alt="LifeMate home screen in dark mode" />
-
-Captured from the native Compose application on an Android 15 emulator. Sample records are test-only; a fresh installation starts with your profile setup and no fictional tasks.
+A bundled jade-and-ivory heart/checkmark/leaf mark now appears on the adaptive launcher icon, Android 13 themed icon, welcome/loading screens, dashboard, inner-screen header and About card. Matching small icons identify notifications. Clear sans-serif headings, coordinated light/dark colors, distinct feature badges, descriptive feature cards and an animated live progress ring make the existing offline tools easier to explore. Profile editing remains accessible through the dashboard shortcut and Profile tab. No sample records are inserted into the shipping app.
 
 ## Run it
 
@@ -39,7 +35,7 @@ The checked-in Gradle wrapper downloads Gradle 8.10.2. Dependencies come from Go
 
 **Build outputs:** `app/build/outputs/apk/debug/app-debug.apk` is installable for testing. `app/build/outputs/apk/release/app-release-unsigned.apk` is an optimized **unsigned** release; sign it with your own retained production key before distribution. Never commit signing keys. Updates must retain the application ID and signing key.
 
-GitHub Actions runs compilation, lint, JVM tests, release/debug assembly, and Android 15 emulator tests. APKs and reports are attached to each workflow run. See [verification notes](docs/VERIFICATION.md) for the exact tested scope and remaining device checks.
+GitHub Actions runs compilation, lint, JVM tests and Android 15 emulator tests internally, then publishes only the release APK. See [verification notes](docs/VERIFICATION.md) for the exact tested scope and remaining device checks.
 
 ## Working features
 

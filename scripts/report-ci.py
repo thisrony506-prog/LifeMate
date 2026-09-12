@@ -11,13 +11,6 @@ for index, line in enumerate(lines):
 summary = "\n".join(errors[:100] + ["--- Last log lines ---"] + lines[-65:])[-18000:]
 summary = summary.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
 print(f"::notice title=Android diagnostics::{summary}")
-if "compile" in str(log):
-    import base64
-    for file in Path("app/schemas").rglob("*.json"):
-        encoded = base64.b64encode(file.read_bytes()).decode()
-        for index in range(0, len(encoded), 2800):
-            print(f"::notice title=Room schema {file.name} part {index // 2800}::{encoded[index:index+2800]}")
-
 import xml.etree.ElementTree as ET
 for file in Path("app/build").rglob("TEST-*.xml"):
     try:

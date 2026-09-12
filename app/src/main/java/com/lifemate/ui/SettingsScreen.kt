@@ -78,7 +78,10 @@ import java.time.*
         }
         SoftCard(Modifier.fillMaxWidth()) {
             SectionHeading("About LifeMate")
-            Text("Your Personal Life Assistant.\nVersion ${BuildConfig.VERSION_NAME}")
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                BrandMark(44.dp)
+                Text("Your Personal Life Assistant.\nVersion ${BuildConfig.VERSION_NAME}")
+            }
             TextButton({ navigate("privacy") }) { Text("Privacy policy & data security") }
             TextButton({ navigate("terms") }) { Text("Terms & reliability notes") }
             TextButton({ try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/thisrony506-prog/LifeMate/issues"))) } catch (_: Exception) { vm.message("Open github.com/thisrony506-prog/LifeMate/issues in a browser for support.") } }) { Text("Contact / support on GitHub") }

@@ -1,6 +1,8 @@
 package com.lifemate.ui
 
 import androidx.compose.foundation.*
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,6 +33,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
     val tasks = state.items.filter { it.kind in taskKinds && it.occurs(today) }.sortedBy { it.time }
     val completed = tasks.count { state.done(it, today) }
     val progress = if (tasks.isEmpty()) 0f else completed.toFloat() / tasks.size
+    val animatedProgress by animateFloatAsState(targetValue = progress, animationSpec = tween(600), label = "Daily progress")
     val missions = state.items.filter { it.kind == Kind.MISSION && !it.archived && state.progress(it) < 1f }.take(2)
     val birthday = state.items.filter { it.kind == Kind.BIRTHDAY && !it.archived }.minByOrNull { Schedule.nextBirthday(LocalDate.parse(it.date), today) }
     val comingUp = state.items.filter { !it.archived && it.kind in setOf(Kind.REMINDER, Kind.GOAL) && !state.completed(it) }
@@ -40,7 +43,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 20.dp)) {
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Box(Modifier.clip(CircleShape).clickable { navigate("profile") }) { Avatar(state.profile) }
+                BrandMark(40.dp)
                 Text("LifeMate", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 IconButton(onClick = { navigate("search") }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Search, "Search everything") }
                 IconButton(onClick = { navigate("notifications") }) { Icon(Icons.Outlined.Notifications, "Notifications") }
@@ -49,7 +52,10 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Eyebrow(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM")))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) { Eyebrow(today.format(DateTimeFormatter.ofPattern("EEEE, d MMMM"))) }
+                    Box(Modifier.size(48.dp).clip(CircleShape).clickable { navigate("profile") }.semantics { contentDescription = "Open your profile" }, contentAlignment = Alignment.Center) { Avatar(state.profile, 36.dp) }
+                }
                 Text("$greeting,\n${state.profile?.displayName ?: "friend"}.", style = if (compact) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge)
                 if (!compact) Text("A little intention. A little progress. A better you.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -70,7 +76,7 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
                         Box(Modifier.size(ringSize).semantics { contentDescription = "Today's progress ${(progress * 100).toInt()} percent" }, contentAlignment = Alignment.Center) {
                             Canvas(Modifier.fillMaxSize()) {
                                 drawArc(Color.White.copy(alpha = .14f), -90f, 360f, false, style = Stroke(9.dp.toPx(), cap = StrokeCap.Round))
-                                if (progress > 0) drawArc(Lime, -90f, 360 * progress, false, style = Stroke(9.dp.toPx(), cap = StrokeCap.Round))
+                                if (animatedProgress > 0) drawArc(Lime, -90f, 360 * animatedProgress, false, style = Stroke(9.dp.toPx(), cap = StrokeCap.Round))
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) { Text("${(progress * 100).toInt()}%", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.SemiBold); Text("of today", color = Lime, fontSize = 11.sp) }
                         }

@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material.icons.automirrored.outlined.Sort
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -14,6 +15,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
 import coil.compose.AsyncImage
 import com.lifemate.database.*
 import com.lifemate.domain.*
@@ -93,9 +95,21 @@ import java.time.*
     }
 }
 @Composable fun MenuScreen(navigate: (String) -> Unit) {
-    LazyColumn(contentPadding = PaddingValues(22.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 22.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { PageHeading("Your life, organized", "Everything you need, in one gentle space.") }
-        items(Kind.entries) { kind -> Surface(onClick = { navigate("list/${kind.name}") }, shape = RoundedCornerShape(20.dp)) { Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) { KindBadge(kind); Text(kind.plural, style = MaterialTheme.typography.titleMedium) } } }
+        items(Kind.entries) { kind ->
+            Surface(onClick = { navigate("list/${kind.name}") }, modifier = Modifier.testTag("feature-${kind.name}"), shape = RoundedCornerShape(22.dp), color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = .65f))) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                    KindBadge(kind, 48.dp)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(kind.plural, style = MaterialTheme.typography.titleMedium)
+                        Text(kind.summary(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
         item { OutlinedButton({ navigate("statistics") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Insights, null); Text("  Your statistics") } }
         item { OutlinedButton({ navigate("settings") }, Modifier.fillMaxWidth()) { Icon(Icons.Outlined.Settings, null); Text("  Settings & privacy") } }
     }

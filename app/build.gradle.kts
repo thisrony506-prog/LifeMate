@@ -11,15 +11,26 @@ android {
         applicationId = "com.lifemate"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    val releaseKeystore = providers.environmentVariable("LIFEMATE_KEYSTORE_PATH").orNull
+    if (!releaseKeystore.isNullOrBlank()) {
+        signingConfigs.create("privateRelease") {
+            storeFile = file(releaseKeystore)
+            storePassword = requireNotNull(providers.environmentVariable("LIFEMATE_STORE_PASSWORD").orNull)
+            keyAlias = requireNotNull(providers.environmentVariable("LIFEMATE_KEY_ALIAS").orNull)
+            keyPassword = requireNotNull(providers.environmentVariable("LIFEMATE_KEY_PASSWORD").orNull)
+        }
     }
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Production signing is deliberately supplied outside source control.
+            isDebuggable = false
+            if (!releaseKeystore.isNullOrBlank()) signingConfig = signingConfigs.getByName("privateRelease")
+            // No fallback to a debug or disposable key. Private signing material is never in source.
         }
     }
     buildFeatures { compose = true; buildConfig = true }

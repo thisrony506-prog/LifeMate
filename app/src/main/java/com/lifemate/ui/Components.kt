@@ -32,7 +32,26 @@ fun Kind.icon(): ImageVector = when (this) {
     Kind.REMINDER -> Icons.Outlined.Notifications; Kind.BIRTHDAY -> Icons.Outlined.Cake; Kind.NOTE -> Icons.Outlined.Description
     Kind.MEMORY -> Icons.Outlined.PhotoLibrary; Kind.GOAL -> Icons.Outlined.TrackChanges
 }
-fun Kind.tint() = when (this) { Kind.MISSION, Kind.GOAL -> Color(0xFFAA7A4B); Kind.BIRTHDAY -> Color(0xFFAE7186); Kind.NOTE -> Color(0xFF8175AC); Kind.MEMORY -> Color(0xFF628AAC); else -> Jade }
+fun Kind.tint() = when (this) {
+    Kind.ROUTINE -> Jade
+    Kind.MISSION -> Color(0xFFAA7A4B)
+    Kind.HABIT -> Color(0xFF43877C)
+    Kind.REMINDER -> Color(0xFF587CB1)
+    Kind.BIRTHDAY -> Color(0xFFAE7186)
+    Kind.NOTE -> Color(0xFF8175AC)
+    Kind.MEMORY -> Color(0xFF628AAC)
+    Kind.GOAL -> Color(0xFFA56950)
+}
+fun Kind.summary() = when (this) {
+    Kind.ROUTINE -> "Give your day a simple, reliable rhythm"
+    Kind.MISSION -> "Turn small daily actions into real progress"
+    Kind.HABIT -> "Build consistency and celebrate your streaks"
+    Kind.REMINDER -> "Remember appointments, tasks and important dates"
+    Kind.BIRTHDAY -> "Remember your people and create a personal wish"
+    Kind.NOTE -> "Keep ideas, checklists and voice notes together"
+    Kind.MEMORY -> "A private home for your photos and videos"
+    Kind.GOAL -> "Plan milestones and see how far you've come"
+}
 val dateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("EEE, d MMM")
 val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mm a")
 @Composable fun Eyebrow(text: String) { Text(text.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }

@@ -1,19 +1,36 @@
-# Build and download LifeMate
+# Download LifeMate Release APK
 
-## GitHub Actions
+## One download only
 
-1. Open **Actions → Android verification**.
-2. Select a run for branch `arena/01a090c4-lifemate` (or use **Run workflow** on that branch when available).
-3. Wait for **build** to finish. The independent **device-tests** job reports verification separately.
-4. Download **LifeMate-Release-APK** from **Artifacts** and extract the ZIP.
+1. Open **Actions → LifeMate Release APK**.
+2. Select a successful run for `arena/01a090c4-lifemate` (or use **Run workflow** on that branch when available).
+3. Both **Verify app features** and **Build Release APK** must pass.
+4. Under **Artifacts**, download **LifeMate-Release-APK** and extract GitHub's ZIP.
 
-The download contains `LifeMate-release-unsigned.apk` and its SHA-256 checksum. It is the optimized, R8-minified **release** build, not a renamed debug APK. It must be signed before installation. **LifeMate-Debug-APK** is separately available for immediate device testing.
+The artifact contains **exactly one APK**, with no debug APK, test report, screenshot, checksum or readme file. Build reports remain internal to the runner; diagnostics appear only in ordinary Actions logs/annotations. Older runs are historical and may still have multiple artifacts.
 
-Do not install an unsigned APK expecting Android to accept it. Keep a stable private signing key for production updates; replacing that key prevents updates to existing installations.
+The APK is the optimized, R8-minified, non-debuggable **release** variant—not a renamed debug APK. Version 1.1.0 has versionCode 2 and the same application ID/database schema as before.
 
-## Signing your release
+## Optional automatic signing with your retained key
 
-Use Android Studio **Build → Generate Signed App Bundle / APK → APK**, selecting your own existing key or creating one securely. Do not send the key or its passwords in chat, commit it, or upload it as an artifact.
+In GitHub **Settings → Secrets and variables → Actions**, configure these four **repository secrets** privately:
+
+| Secret | Value |
+| --- | --- |
+| `LIFEMATE_KEYSTORE_BASE64` | Base64 encoding of your retained production keystore |
+| `LIFEMATE_STORE_PASSWORD` | Keystore password |
+| `LIFEMATE_KEY_ALIAS` | Existing signing key alias |
+| `LIFEMATE_KEY_PASSWORD` | Signing key password |
+
+Encode the keystore locally, without printing its content into chat or public logs. Do not commit the keystore, its base64 encoding or passwords. Keep a secure backup of the original key.
+
+When all four secrets are present, the job decodes the keystore into the private runner's temporary directory, signs with it, and removes the temporary file in an always-run cleanup step. The only downloadable file is `LifeMate-release.apk`. Partial signing configuration fails explicitly rather than silently releasing unsigned. Signing material is never uploaded as an artifact.
+
+Without any signing secrets, the only file is `LifeMate-release-unsigned.apk`. **Android will not install it until it is signed.** CI does not create a disposable key or use a debug key. Builds from fork pull requests normally do not receive repository secrets and therefore remain unsigned.
+
+## Sign locally instead
+
+Use Android Studio **Build → Generate Signed App Bundle / APK → APK**, selecting your own retained key or creating one securely. Do not send the key or its passwords in chat.
 
 Alternatively, use Android SDK Build Tools:
 
@@ -23,6 +40,6 @@ apksigner sign --ks /private/path/lifemate.jks --out LifeMate-release.apk LifeMa
 apksigner verify --verbose LifeMate-release.apk
 ```
 
-`apksigner` will prompt locally for the keystore credentials. Retain a secure backup of the signing key. For Google Play, use Play App Signing and retain the appropriate upload key.
+`apksigner` prompts locally for credentials. Updates must keep the application ID and signing key, and use an appropriate versionCode. For Google Play, use Play App Signing and retain the appropriate upload key.
 
-No production signing material is included in this repository. A successful APK build does not replace the device acceptance checklist in `VERIFICATION.md`.
+A successful unsigned build does not test secret-based signing, real signed upgrades or every physical device. See `VERIFICATION.md` for acceptance boundaries.

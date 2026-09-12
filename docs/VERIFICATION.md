@@ -1,6 +1,12 @@
 # LifeMate verification
 
-## Latest successful automated run
+## Release-only / branding update (1.1.0)
+
+The current update adds adaptive/themed branding, professional typography, richer feature cards, an accessible profile shortcut and animated real progress. A new device regression test opens the profile shortcut and all eight feature cards. Release publication is gated on emulator tests, JVM tests and lint; only one APK artifact is uploaded. CI can use retained private signing secrets, but does not create keys or substitute debug signing.
+
+Verification of this update is pending its new Actions run. The results below refer to the prior verified baseline, not the unverified 1.1.0 update.
+
+## Prior successful automated run
 
 [Android verification — run 34618393752](https://github.com/thisrony506-prog/LifeMate/actions/runs/34618393752)
 
@@ -42,7 +48,7 @@ Test fixture names and records exist only in `androidTest`; fresh installations 
 
 ## Release boundaries
 
-The release APK is **unsigned**. A retained production signing key is necessary for installation/distribution and safe future updates. Do not substitute an ephemeral CI signing key for a production identity.
+Without configured private signing secrets, the release APK is **unsigned**. A retained production signing key is necessary for installation/distribution and safe future updates. Do not substitute an ephemeral CI signing key for a production identity.
 
 Passing an emulator suite does not certify all OEMs, hardware features, accessibility settings, or store requirements. Camera/media picker, microphone interruptions, strong biometric hardware, custom audio, manufacturer battery restrictions, and real signed upgrades still need physical-device acceptance. Full-screen intents, cloud sync, and network AI are intentionally not shipped; important reminders use high-priority Android notifications.
 

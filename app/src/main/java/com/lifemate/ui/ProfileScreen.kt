@@ -27,7 +27,7 @@ import java.time.LocalDate
         if (onboarding) {
             Spacer(Modifier.height(24.dp))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.size(92.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Outlined.Spa, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary) } }
+                BrandMark(92.dp)
             }
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("LifeMate", style = MaterialTheme.typography.displaySmall)
