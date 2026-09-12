@@ -4,7 +4,9 @@
 
 ## APK downloads & verification
 
-[**Open LifeMate Release APK in GitHub Actions**](https://github.com/thisrony506-prog/LifeMate/actions/workflows/android.yml).
+[**Download the verified LifeMate 1.1.0 Release APK**](https://github.com/thisrony506-prog/LifeMate/actions/runs/34674504318).
+
+This run passed both verification jobs and contains exactly one artifact. It was built without private signing secrets, so its APK is **unsigned**.
 
 Choose a successful run for `arena/01a090c4-lifemate`, then download **LifeMate-Release-APK** under **Artifacts**. New runs publish **one artifact containing exactly one release APK**—no debug download, reports, screenshots, checksum file or readme in the download. GitHub wraps artifacts in a ZIP; extract it to get the APK.
 
