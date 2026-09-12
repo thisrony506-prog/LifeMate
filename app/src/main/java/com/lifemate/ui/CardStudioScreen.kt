@@ -51,6 +51,7 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
     var tab by rememberSaveable { mutableStateOf("Text") }
     var card by remember { mutableStateOf<File?>(null) }
     var readyDesign by remember { mutableStateOf<PostDesign?>(null) }
+    var renderRevision by remember { mutableIntStateOf(0) }
     var importing by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     val ready = card != null && readyDesign == design && !importing
@@ -71,7 +72,7 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
             finally { importing = false }
         }
     }
-    LaunchedEffect(design) {
+    LaunchedEffect(design, renderRevision) {
         saved = design.json(); error = null
         delay(450)
         try {
@@ -99,7 +100,7 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
             card?.let { AsyncImage(it,"Your card preview: ${design.text}",Modifier.fillMaxSize(),contentScale = ContentScale.Fit) }
             if (!ready && error == null) CircularProgressIndicator()
         }
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error); TextButton({ renderRevision++ }) { Text("Try preview again") } }
         Text("$width × $height PNG · Live preview. Long text shrinks to fit and may be shortened; review before sharing.", style = MaterialTheme.typography.bodyMedium)
         ChoiceChips(listOf("Text","Photo","Style","Layout"),tab) { tab = it }
         SoftCard(Modifier.fillMaxWidth()) {

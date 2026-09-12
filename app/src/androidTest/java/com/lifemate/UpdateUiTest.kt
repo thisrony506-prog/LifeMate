@@ -2,7 +2,8 @@ package com.lifemate
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.test.espresso.Espresso
+import android.view.KeyEvent
+import androidx.test.platform.app.InstrumentationRegistry
 import com.lifemate.ui.*
 import com.lifemate.updates.*
 import org.junit.Assert.assertTrue
@@ -16,7 +17,7 @@ class UpdateUiTest {
         val release = ReleaseInfo(BuildConfig.VERSION_CODE + 1,"test-newer","https://github.com/thisrony506-prog/LifeMate/releases")
         compose.setContent { LifeTheme("Light") { RequiredUpdateDialog(UpdateState(release),{ download=true },{ backup=true },{ closed=true }) } }
         compose.onNodeWithTag("required-update").assertIsDisplayed()
-        Espresso.pressBack()
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
         compose.onNodeWithTag("required-update").assertIsDisplayed()
         compose.onNodeWithTag("required-download").performClick(); assertTrue(download)
         compose.onNodeWithText("Export a private backup").performScrollTo().performClick(); assertTrue(backup)

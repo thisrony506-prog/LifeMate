@@ -16,3 +16,10 @@ data class ReleaseInfo(val code: Int, val version: String, val downloadUrl: Stri
         }
     }
 }
+
+/** Both inputs must already have passed installed-certificate verification. Never forget a known required update on a stale response. */
+fun retainNewestRelease(known: ReleaseInfo?, incoming: ReleaseInfo?): ReleaseInfo? = when {
+    incoming == null -> known
+    known != null && known.code > incoming.code -> known
+    else -> incoming
+}

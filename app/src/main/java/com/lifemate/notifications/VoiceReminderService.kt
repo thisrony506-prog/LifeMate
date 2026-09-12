@@ -93,10 +93,11 @@ class VoiceReminderService : Service() {
         fun permitted(context: Context): Boolean {
             val audio = context.getSystemService(AudioManager::class.java)
             val notifications = context.getSystemService(NotificationManager::class.java)
-            return audio.ringerMode == AudioManager.RINGER_MODE_NORMAL && audio.getStreamVolume(AudioManager.STREAM_NOTIFICATION) > 0 &&
-                notifications.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL &&
-                !context.getSystemService(KeyguardManager::class.java).isKeyguardLocked &&
-                !(context.applicationContext as LifeMateApp).secure.hasPin() && NotificationManagerCompat.from(context).areNotificationsEnabled()
+            return com.lifemate.domain.VoicePolicy.allowed(
+                audio.ringerMode == AudioManager.RINGER_MODE_NORMAL, audio.getStreamVolume(AudioManager.STREAM_NOTIFICATION),
+                notifications.currentInterruptionFilter == NotificationManager.INTERRUPTION_FILTER_ALL,
+                context.getSystemService(KeyguardManager::class.java).isKeyguardLocked,
+                (context.applicationContext as LifeMateApp).secure.hasPin(), NotificationManagerCompat.from(context).areNotificationsEnabled())
         }
         fun speak(context: Context, text: String) {
             if (!permitted(context)) return

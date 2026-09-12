@@ -10,7 +10,7 @@ class WeeklyProgressTest {
     private fun mission() = LifeItem(id="mission",kind=Kind.MISSION,date=monday.toString(),duration=7)
     @Test fun emptyWeekHasNoInventedProgress() {
         val result = WeeklyProgress.calculate(emptyList(),emptyList(),monday)
-        assertEquals(0,result.rate); assertEquals(0,result.scheduled); assertEquals(0f,result.fraction)
+        assertEquals(0,result.rate); assertEquals(0,result.scheduled); assertEquals(0f,result.fraction,0.001f)
     }
     @Test fun futureDaysAreNotMissedAndDuplicateCheckinsDoNotInflateTotals() {
         val done = listOf(Completion("mission",monday.toString()),Completion("mission",monday.toString()))

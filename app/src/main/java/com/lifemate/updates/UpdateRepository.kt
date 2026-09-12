@@ -53,7 +53,7 @@ class UpdateRepository(
             val text = bytes.toString(Charsets.UTF_8)
             val info = parse(text) ?: error("No compatible signed release is published yet.")
             val known = cached()
-            if (known != null && known.code > info.code) return@withContext known
+            if (retainNewestRelease(known, info) != info) return@withContext known
             cache.edit().putString("metadata", text).apply()
             info
         } finally { connection.disconnect() }

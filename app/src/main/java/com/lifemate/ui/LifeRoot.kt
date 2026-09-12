@@ -54,7 +54,9 @@ import java.time.LocalDate
     val lifecycleState by lifecycle.lifecycle.currentStateFlow.collectAsState()
     LaunchedEffect(state.loading, locked, lifecycleState) {
         if (!state.loading && !locked &&
-            lifecycleState == Lifecycle.State.RESUMED && !BuildConfig.DEBUG) vm.checkUpdates()
+            lifecycleState == Lifecycle.State.RESUMED && !BuildConfig.DEBUG) {
+            while (true) { vm.checkUpdates(); delay(6 * 60 * 60 * 1000L) }
+        }
     }
     fun navigate(path: String) {
         val destination = when (path) { "list/MISSION" -> "missions"; "list/MEMORY" -> "memories"; else -> path }
