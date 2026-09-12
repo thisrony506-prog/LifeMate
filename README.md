@@ -12,7 +12,7 @@ The release workflow retains `com.lifemate`, assigns `100000 + GITHUB_RUN_NUMBER
 
 The existing Home update notice/manual update page now requires metadata signed by the **installed app's signing key** and a matching GitHub APK digest. Foreign/malformed/unsigned/unverified assets are rejected. Automatic checks start in the foreground at most every six hours and can be disabled. Manual checks are available; errors are never "up to date". Download opens the official HTTPS APK in the browser; Android asks before installation. Core features remain offline-capable.
 
-See [verification results and remaining device/signing checks](docs/VERIFICATION.md). Until the final signed job passes, this is a prepared release pipeline—not a verified installable production release.
+Latest [run 34680342469](https://github.com/thisrony506-prog/LifeMate/actions/runs/34680342469) passed compilation/lint, 34 JVM tests, 11 script tests and Android emulator tests. The final job stopped on the missing private signing key and published zero artifacts. See [verification results and remaining device/signing checks](docs/VERIFICATION.md). Until the final signed job passes, this is a prepared release pipeline—not a verified installable production release.
 
 ## LifeMate 1.1.1 design
 

@@ -5,7 +5,9 @@
 This revision repairs the interactive signing setup (JDK 17, owner authentication/access checks, locally entered password, fixed private backup path, no plaintext password file, no overwrite) and authenticates update metadata with the installed app's retained signing certificate. It also pins the Gradle distribution SHA-256 and makes APK signing schemes explicit. No unrelated profile, database, reminder or media behavior was changed.
 
 - Local: 11 Python/PTY safety checks passed using fake tools and inert fixtures; Bash syntax and whitespace checks passed. These tests never create a production signing identity.
-- Pending: hosted compilation/lint/JVM/emulator checks for this revision.
+- Hosted: [run 34680342469](https://github.com/thisrony506-prog/LifeMate/actions/runs/34680342469), source `c2ee94f`, passed both **Compile, lint and unit tests** and **Verify app features**. Gradle/R8, lint, all **34 JVM tests**, **11 Python safety tests**, and JDK 17 compilation of `SignReleaseMetadata.java` passed.
+- Android 15 emulator: zero test failures, including authentic/forged release metadata, asset digest/type/URL/state validation, duplicate-proof rejection, HTTP/offline error behavior, updater UI, navigation, persistence, backup and PIN checks. The opt-in alarm helper was deliberately skipped in the normal suite, then three host-invoked checks passed for actual process-exit/reboot delivery and next recurring alarm persistence.
+- Overall run **failed at the signing gate** because `LIFEMATE_KEYSTORE_BASE64` is missing. The Actions API confirms **0 downloadable artifacts**. This is not a signed-build success.
 - Requires owner secrets: real JKS signing, `apksigner` continuity, signed installation/upgrade smoke, signed metadata generation, digest-checked draft publication, and final download. No production signing key/password was generated here.
 
 ### Signing setup and backups
@@ -21,7 +23,7 @@ CI publishes only after tests/lint, `apksigner` verification, same-package/same-
 In addition to the full checklist below: install the first signed APK on an Android 8+ ARM phone, create records/media, update to a higher version with the same key without uninstalling, and verify records, PIN/Keystore access and reminders survive. Test denied unknown-source permission, failed/cancelled downloads, offline/403/429/malformed update responses, forged metadata, older/equal release suppression, disabled automatic checks, six-hour throttling and explicit Android confirmation. Test real 16KB page-size hardware/emulation and OEM background restrictions. Signed pipeline success alone does not certify all of these.
 
 
-## Signed installation and updater work (1.2 series)
+## Earlier updater verification (historical 1.2 baseline)
 
 Current work adds strictly increasing CI version codes, fixed-repository HTTPS release checks, Home update notices, a manual update page, an automatic-check preference, and fail-closed signed publication. Pure version/URL tests and UI navigation/banner tests were added. The signed-release job checks signer continuity, actual installation and profile retention across `adb install -r` before publishing.
 
@@ -106,3 +108,30 @@ Passing an emulator suite does not certify all OEMs, hardware features, accessib
 - [ ] PIN attempts/cooldown, rotation/process death, >30-second background lock, strong biometric success/cancel/unenrolled.
 - [ ] ZIP round trip with media, corrupt/oversized/traversal/duplicate-path backup rejection, low storage, cancel document picker.
 - [ ] Upgrade an installed signed release without data loss; verify explicit migrations for any future schema version.
+
+## Exact project files changed in this request
+
+Relative to `67b4e57`; `A` = created, `M` = modified. No unrelated app functionality files were changed.
+
+```text
+M	.github/workflows/android.yml
+M	README.md
+M	app/build.gradle.kts
+A	app/src/androidTest/java/com/lifemate/UpdateMetadataTest.kt
+M	app/src/main/java/com/lifemate/updates/ReleaseInfo.kt
+A	app/src/main/java/com/lifemate/updates/ReleaseMetadata.kt
+A	app/src/main/java/com/lifemate/updates/ReleaseProof.kt
+M	app/src/main/java/com/lifemate/updates/UpdateRepository.kt
+M	app/src/test/java/com/lifemate/updates/ReleaseInfoTest.kt
+A	app/src/test/java/com/lifemate/updates/ReleaseProofTest.kt
+M	docs/RELEASE.md
+M	docs/VERIFICATION.md
+M	gradle/wrapper/gradle-wrapper.properties
+A	scripts/SignReleaseMetadata.java
+M	scripts/prepare-signing.sh
+M	scripts/prepare-upgrade-apks.sh
+M	scripts/publish-release.sh
+M	scripts/setup-release-signing.sh
+A	scripts/tests/test_release_pipeline.py
+A	scripts/tests/test_signing_setup.py
+```
