@@ -2,7 +2,13 @@
 
 Application ID remains **`com.lifemate`**. Core organizer features remain offline-capable. The old 1.1.x unsigned APKs are not installable; no unsigned APK is published by the current workflow.
 
-## Exact commands in your private Codespace
+## Current verified release
+
+**[Download signed LifeMate 1.2.43](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.43/LifeMate-100043.apk)**. [Run 34703966887](https://github.com/thisrony506-prog/LifeMate/actions/runs/34703966887) passed all three jobs and automatically published the release and one APK-only Actions artifact. A real in-place upgrade from the public 1.2.41 retained the encrypted profile. See [VERIFICATION.md](VERIFICATION.md) for evidence and manual-device limits.
+
+**All four signing secrets are configured and working. Do not repeat setup or generate a new key.** Keep an encrypted offline backup of the original JKS and its password separately in a password manager. Future signed versions reuse this identity. If 1.2.41 is already installed, install the newer APK over it and choose Android's **Update**; do not uninstall first.
+
+## Exact commands in your private Codespace — one-time reference only
 
 Open a private Codespace for **`arena/01a090c4-lifemate`** in this repository. Do not share its terminal or record password entry. The commands below assume the standard Ubuntu/Debian Codespaces image and repository path.
 
@@ -70,13 +76,13 @@ Watch the new run in Actions. It must pass **all three jobs**, including **Signe
 
 ## Build and publication gates
 
-1. Run Android feature/security/update tests, script safety tests, Java helper compilation, Kotlin/JVM tests, lint, and R8 release compilation. Gradle 8.10.2's distribution is SHA-256 pinned; JDK 17, AGP 8.7.3, Kotlin 2.0.21 and SDK 35 are configured.
+1. Run Android feature/security/update tests, script safety tests, Java helper compilation, Kotlin/JVM tests, lint, and R8 release compilation. Gradle 8.10.2's distribution is SHA-256 pinned; JDK 17, AGP 8.7.3, Kotlin 2.0.21, SDK 35 and Android Build Tools **35.0.0** are configured.
 2. Require all four retained-key secrets. There is no debug-key/unsigned fallback. Secrets are not printed or cached; Gradle configuration caching is disabled during signed builds, and the temporary CI keystore is removed in an always-run cleanup.
-3. Verify both previous/current APK signatures with Android `apksigner` for API 26+, require one signer, compare signer SHA-256 fingerprints, validate the application ID and release version, and reject debuggable APKs.
+3. Verify both previous/current APK signatures with Android `apksigner` for API 26+, extract the verified certificate using the official `ApkVerifier` Java API (not CLI-label parsing), require one signer, compare signer SHA-256 fingerprints, validate the application ID and release version, and reject debuggable APKs.
 4. Use the previous official signed APK when available. For the first signed release only, build an internal lower-version fixture with the same retained key. Never publish that fixture.
 5. In an emulator, install the earlier signed APK, create a real encrypted profile through visible UI, then use `adb install -r` on the new non-debuggable APK without uninstalling. Confirm the higher version and retained profile.
 6. Sign public update metadata using the same RSA private key. Metadata includes version, URL, size, SHA-256 and signer identity. It is release-body text, not an additional downloadable file.
-7. Create a **draft** GitHub Release; require its sole APK asset to have the expected name/URL/size and GitHub SHA-256 digest. Only then publish it and mark it Latest. Never overwrite an existing version or move Latest backwards.
+7. Create a **draft** GitHub Release; require its sole APK asset to have the expected name, size, uploaded state, stable official API asset ID/URL and GitHub SHA-256 digest. Draft browser URLs may legitimately contain `/untagged-.../`; they are never offered for downloading. Only then publish and mark Latest, fetch the published metadata again, and require the canonical official browser URL and unchanged digest. Never overwrite an existing version or move Latest backwards.
 8. Upload one **LifeMate-Release-APK** Actions artifact containing one APK. No debug APK, reports, certificates, keystores, metadata files or passwords are uploaded. GitHub itself wraps Actions artifacts in ZIPs and adds standard source archives to Release pages.
 
 ## Version contract

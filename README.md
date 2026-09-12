@@ -4,17 +4,17 @@
 
 ## Installable APKs and safe updates
 
-**Old 1.1.x downloads are unsigned and cannot be installed.** New publication fails closed unless the retained signing key is configured and all install/upgrade checks pass.
+**[Download signed LifeMate 1.2.43 (Android 8+)](https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.43/LifeMate-100043.apk)** — versionCode `100043`, approximately 22.8 MB. Old unsigned 1.1.x downloads cannot be installed; use this signed release instead.
 
-Use the [exact private Codespace setup commands](docs/RELEASE.md). The setup script prompts locally for your password, requires JDK 17/OpenSSL/GitHub CLI, refuses existing identities, and writes the JKS only to `$HOME/lifemate-private-signing-backup/`. No password file is saved. Back up the JKS and password separately; never send either into chat.
+Signing is configured and verified. **Do not generate a replacement key or repeat initial setup.** Keep an encrypted offline backup of the original JKS and its password separately. [Release maintenance and one-time setup reference](docs/RELEASE.md) explains recovery; never send private signing material into chat.
 
 The release workflow retains `com.lifemate`, assigns `100000 + GITHUB_RUN_NUMBER` / `1.2.<run number>`, verifies `apksigner` continuity, and checks a signed data-preserving upgrade before publication. Successful runs expose one signed `LifeMate-<versionCode>.apk`, not debug/report/signing downloads.
 
-The existing Home update notice/manual update page now requires metadata signed by the **installed app's signing key** and a matching GitHub APK digest. Foreign/malformed/unsigned/unverified assets are rejected. Automatic checks start in the foreground at most every six hours and can be disabled. Manual checks are available; errors are never "up to date". Download opens the official HTTPS APK in the browser; Android asks before installation. Core features remain offline-capable.
+The Home update notice/manual update page requires metadata signed by the **installed app's signing key** and a matching GitHub APK digest. Foreign/malformed/unsigned/unverified assets are rejected. Automatic checks start in the foreground at most every six hours and can be disabled. Manual checks are available; errors are never "up to date". Download opens the official HTTPS APK in the browser; Android asks before installation. Core features remain offline-capable.
 
-Latest [run 34680342469](https://github.com/thisrony506-prog/LifeMate/actions/runs/34680342469) passed compilation/lint, 34 JVM tests, 11 script tests and Android emulator tests. The final job stopped on the missing private signing key and published zero artifacts. See [verification results and remaining device/signing checks](docs/VERIFICATION.md). Until the final signed job passes, this is a prepared release pipeline—not a verified installable production release.
+**Verified:** [run 34703966887](https://github.com/thisrony506-prog/LifeMate/actions/runs/34703966887), source `cf2d7ad`, passed all three jobs: compilation/lint, 34 JVM tests, 16 script tests, Android feature tests, and the signed installation/upgrade/publication gates. The emulator installed the actual published **1.2.41**, saved an encrypted profile, and retained it through an in-place **1.2.43** upgrade. Publication completed automatically; Actions contains exactly one **LifeMate-Release-APK** artifact. See [verification evidence and remaining physical-device checks](docs/VERIFICATION.md).
 
-## LifeMate 1.1.1 design
+## Design and branding
 
 The user-supplied blue person, green leaves and yellow rays logo now appears on the adaptive launcher icon, Android 13 themed icon, welcome/loading screens, dashboard, inner-screen header and About card. Matching single-color icons identify notifications. The original upload is retained as `20260912_111618.png`; `bash scripts/update-brand-assets.sh` reproducibly sizes it for Android without redrawing it. Clear sans-serif headings, coordinated light/dark colors, distinct feature badges, descriptive feature cards and an animated live progress ring make the existing offline tools easier to explore. Profile editing remains accessible through the dashboard shortcut and Profile tab. No sample records are inserted into the shipping app.
 
@@ -30,7 +30,7 @@ The user-supplied blue person, green leaves and yellow rays logo now appears on 
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-The checked-in Gradle wrapper downloads Gradle 8.10.2. Dependencies come from Google and Maven Central. No API key, backend, account, or internet connection is needed at runtime.
+The checked-in Gradle wrapper downloads Gradle 8.10.2. Dependencies come from Google and Maven Central. No API key, backend, account, or internet connection is needed for core offline features. Optional update checks and APK downloads require a connection.
 
 **Build outputs:** `app/build/outputs/apk/debug/app-debug.apk` is installable for testing. `app/build/outputs/apk/release/app-release-unsigned.apk` is an optimized **unsigned** release; sign it with your own retained production key before distribution. Never commit signing keys. Updates must retain the application ID and signing key.
 
