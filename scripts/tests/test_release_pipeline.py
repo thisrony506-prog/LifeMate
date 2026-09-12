@@ -37,3 +37,18 @@ class ReleasePipelineTest(unittest.TestCase):
         self.assertLess(script.index('--draft '),script.index("a.get('digest')"))
         self.assertLess(script.index("a.get('digest')"),script.index('--draft=false'))
         self.assertNotIn('--clobber',script)
+
+    def test_wrapped_base64_and_bad_encoding(self):
+        import base64
+        with tempfile.TemporaryDirectory() as d:
+            env=dict(os.environ,RUNNER_TEMP=d,GITHUB_ENV=d+'/env',
+                     LIFEMATE_STORE_PASSWORD='INERT-TEST-INPUT',LIFEMATE_KEY_PASSWORD='INERT-TEST-INPUT',LIFEMATE_KEY_ALIAS='lifemate')
+            encoded=base64.b64encode(b'INERT-FIXTURE-NOT-A-KEY').decode()
+            env['LIFEMATE_KEYSTORE_BASE64']=' \r\n'.join(encoded[i:i+4] for i in range(0,len(encoded),4))
+            subprocess.run(['bash',str(ROOT/'scripts/prepare-signing.sh')],env=env,check=True,capture_output=True)
+            self.assertEqual(Path(d+'/lifemate-release.jks').read_bytes(),b'INERT-FIXTURE-NOT-A-KEY')
+            for invalid in ('%%%not-base64%%%',' \r\n '):
+                env['LIFEMATE_KEYSTORE_BASE64']=invalid
+                result=subprocess.run(['bash',str(ROOT/'scripts/prepare-signing.sh')],env=env,capture_output=True)
+                self.assertNotEqual(result.returncode,0)
+                self.assertFalse(Path(d+'/lifemate-release.jks').exists())

@@ -10,6 +10,15 @@ for name in LIFEMATE_KEYSTORE_BASE64 LIFEMATE_STORE_PASSWORD LIFEMATE_KEY_ALIAS 
   fi
 done
 umask 077
-printf '%s' "$LIFEMATE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/lifemate-release.jks"
-test -s "$RUNNER_TEMP/lifemate-release.jks"
+# Accept line wrapping/CRLF introduced by private copy-paste, but never ignore invalid characters.
+if ! printf '%s' "$LIFEMATE_KEYSTORE_BASE64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/lifemate-release.jks" 2>/dev/null; then
+  rm -f "$RUNNER_TEMP/lifemate-release.jks"
+  echo '::error::The keystore secret is not valid Base64. Use the complete encoding of your retained JKS file; do not use an APK, path or password.'
+  exit 1
+fi
+if [[ ! -s "$RUNNER_TEMP/lifemate-release.jks" ]]; then
+  rm -f "$RUNNER_TEMP/lifemate-release.jks"
+  echo '::error::The decoded keystore is empty. Restore the encoding of your retained JKS file.'
+  exit 1
+fi
 echo "LIFEMATE_KEYSTORE_PATH=$RUNNER_TEMP/lifemate-release.jks" >> "$GITHUB_ENV"
