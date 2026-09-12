@@ -68,6 +68,11 @@ jobs:
           set -o pipefail
           bash scripts/setup-flutter.sh 2>&1 | tee compile.log device.log
       - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Type-check optional backend
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix backend/functions && npm test --prefix backend/functions
       - name: Signing and release script tests
         run: |
           set -o pipefail

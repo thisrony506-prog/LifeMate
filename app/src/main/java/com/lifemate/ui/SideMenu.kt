@@ -33,7 +33,7 @@ import com.lifemate.domain.Kind
     }
 }
 @Composable private fun DrawerEntry(label: String, icon: ImageVector, destination: String, route: String, navigate: (String)->Unit) {
-    NavigationDrawerItem(colors=NavigationDrawerItemDefaults.colors(selectedContainerColor=MaterialTheme.colorScheme.primaryContainer,selectedIconColor=MaterialTheme.colorScheme.primary,selectedTextColor=MaterialTheme.colorScheme.primary),label={Text(label)},icon={Icon(icon,null)},selected=route==destination,onClick={navigate(destination)},modifier=Modifier.testTag("drawer-$destination"))
+    NavigationDrawerItem(colors=NavigationDrawerItemDefaults.colors(selectedContainerColor=MaterialTheme.colorScheme.primaryContainer,selectedIconColor=MaterialTheme.colorScheme.onPrimaryContainer,selectedTextColor=MaterialTheme.colorScheme.onPrimaryContainer),label={Text(label)},icon={Icon(icon,null)},selected=route==destination,onClick={navigate(destination)},modifier=Modifier.testTag("drawer-$destination"))
 }
 @Composable fun AboutScreen(navigate: (String)->Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),verticalArrangement=Arrangement.spacedBy(18.dp)) {

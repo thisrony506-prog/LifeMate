@@ -57,3 +57,5 @@ int streak(Iterable<Entry> entries, DateTime now) {
   while (days.contains(dayKey(cursor))) { result++; cursor = cursor.subtract(const Duration(days: 1)); }
   return result;
 }
+
+String latinDigits(String text) { const digits='০১২৩৪৫৬৭৮৯'; var result=text; for(var i=0;i<10;i++){result=result.replaceAll(digits[i],'$i');} return result; }

@@ -10,6 +10,8 @@ import com.lifemate.ui.LifeRoot
 
 class MainActivity : FragmentActivity() {
     val flutterMode = mutableStateOf(!BuildConfig.DEBUG)
+    var pendingFlutterRecord: String? = null
+    fun refreshFlutter() { bridge?.refresh() }
     val nativeRoute = mutableStateOf<String?>(null)
     private var bridge: com.lifemate.flutter.FlutterBridge? = null
     fun lifeFlutter() = bridge ?: com.lifemate.flutter.FlutterBridge(this).also { bridge=it }

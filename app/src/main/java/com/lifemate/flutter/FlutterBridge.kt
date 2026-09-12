@@ -32,7 +32,8 @@ class FlutterBridge(private val activity: MainActivity) {
                     when (call.method) {
                         "snapshot" -> result.success(withContext(Dispatchers.IO) {
                             val profile=app.db.dao().getProfile()
-                            mapOf("name" to (profile?.displayName ?: ""), "hasPin" to app.secure.hasPin(),
+                            val pending=activity.pendingFlutterRecord;activity.pendingFlutterRecord=null
+                            mapOf("openId" to pending,"name" to (profile?.displayName ?: ""), "hasPin" to app.secure.hasPin(),
                                 "theme" to app.preferences.flow.first().theme,
                                 "notificationsAllowed" to androidx.core.app.NotificationManagerCompat.from(activity).areNotificationsEnabled(),
                                 "items" to app.db.dao().allItems().filter { !it.archived && it.tags != "life-mate-hive" }.map { mapOf("id" to it.id,"title" to it.title,"kind" to it.kind.name,"date" to it.date) })

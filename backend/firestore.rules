@@ -16,7 +16,7 @@ service cloud.firestore {
       allow get: if request.auth != null && resource.data.expiresAt > request.time;
       allow list: if false;
       allow create: if request.auth != null && request.resource.data.owner == request.auth.uid && validShare();
-      allow update: if request.auth != null && resource.data.owner == request.auth.uid && request.resource.data.owner == resource.data.owner && validShare();
+      allow update: if request.auth != null && resource.data.owner == request.auth.uid && request.resource.data.owner == resource.data.owner && request.resource.data.expiresAt == resource.data.expiresAt && validShare();
       allow delete: if request.auth != null && resource.data.owner == request.auth.uid;
       function validShare() { return request.resource.data.keys().hasOnly(['owner','ciphertext','expiresAt','updatedAt']) && request.resource.data.ciphertext is string && request.resource.data.ciphertext.size() < 4000 && request.resource.data.expiresAt > request.time && request.resource.data.expiresAt <= request.time + duration.value(15,'m') && request.resource.data.updatedAt == request.time; }
     }

@@ -5,7 +5,9 @@ flutter pub get
 python3 - <<'LOCK'
 import base64,gzip
 from pathlib import Path
-print('::notice title=Flutter dependency lock::'+base64.b64encode(gzip.compress(Path('pubspec.lock').read_bytes())).decode())
+encoded=base64.b64encode(gzip.compress(Path('pubspec.lock').read_bytes())).decode()
+chunks=[encoded[i:i+3000] for i in range(0,len(encoded),3000)]
+for i,chunk in enumerate(chunks): print(f'::notice title=Flutter lock {i+1}/{len(chunks)}::{chunk}')
 LOCK
 # Generated iOS development host: same public identity, explicit permission purpose.
 python3 - <<'PY'

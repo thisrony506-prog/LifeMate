@@ -13,6 +13,7 @@ class LifeStore extends ChangeNotifier {
   String language = 'en', appearance = 'System', name = '', wakeTime = '07:00';
   bool onboarded = false, demo = false, ready = false;
   String? reminderIssue;
+  String? pendingEntry;
   LifeStore(this.vault);
   LifeStore.memory({this.language = 'en'}) : vault = null { ready = true; onboarded = true; }
   String t(String en, String bn) => language == 'bn' ? bn : en;
@@ -21,6 +22,7 @@ class LifeStore extends ChangeNotifier {
   List<Entry> get pending => _records.where((e) => e.syncable && e.dirty).toList();
   Future<void> load() async {
     final data = await NativeBridge.snapshot();
+    pendingEntry=data['openId']?.toString()??pendingEntry;
     _records = vault?.entries ?? [];
     language = vault?.settingValue('language', 'en') ?? 'en';
     appearance = vault?.settingValue('appearance', data['theme']?.toString() ?? 'System') ?? 'System';
@@ -31,6 +33,7 @@ class LifeStore extends ChangeNotifier {
   }
   Future<void> refreshNative() async {
     final data = await NativeBridge.snapshot();
+    pendingEntry=data['openId']?.toString()??pendingEntry;
     if (data['name'] != null) name = data['name'].toString();
     if (data['notificationsAllowed']==true) reminderIssue=null;
     legacy = ((data['items'] as List?) ?? []).map((v) => Map<String, dynamic>.from(v as Map)).toList();
@@ -64,7 +67,13 @@ class LifeStore extends ChangeNotifier {
     }
     notifyListeners();
   }
-  Future<void> toggle(Entry e) => save(e.copy(fields: {...e.fields, 'done': !e.done, 'completedDay': !e.done ? dayKey(DateTime.now()) : ''}, dirty: true));
+  Future<void> toggle(Entry e) async {
+    final changed=e.copy(fields: {...e.fields, 'done': !e.done, 'completedDay': !e.done ? dayKey(DateTime.now()) : ''}, dirty: true);
+    await save(changed);
+    if(e.text('time').isNotEmpty) {
+      if(changed.done) { await reminders.cancel(e); } else { await reminders.schedule(changed); }
+    }
+  }
   Future<void> delete(Entry e) async {
     if (demo) throw StateError(t('Demo is read-only', 'ডেমো শুধু দেখার জন্য'));
     await reminders.cancel(e);

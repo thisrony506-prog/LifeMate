@@ -14,6 +14,7 @@ class VaultBackup {
   }
   static Future<Uint8List> export(LifeStore store,String phrase) async {
     if(store.demo)throw StateError('Demo cannot be exported');
+    var recordSize=0;for(final e in store.all){recordSize+=utf8.encode(jsonEncode(e.toJson())).length;if(recordSize>limit)throw const FormatException('Record backup limit');}
     final media=<String,String>{};var size=0;
     for(final e in store.all.where((v)=>!v.deleted&&v.text('photo').isNotEmpty)){
       final id=e.text('photo');if(media.containsKey(id))continue;

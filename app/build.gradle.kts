@@ -11,6 +11,7 @@ android {
     defaultConfig {
         applicationId = "com.lifemate"
         minSdk = 26
+        ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64") }
         targetSdk = 35
         versionCode = providers.environmentVariable("LIFEMATE_VERSION_CODE").orNull?.toInt() ?: 100000
         versionName = providers.environmentVariable("LIFEMATE_VERSION_NAME").orNull ?: "1.2.0"
@@ -40,7 +41,7 @@ android {
         }
     }
     buildFeatures { compose = true; buildConfig = true }
-    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+    compileOptions { isCoreLibraryDesugaringEnabled = true; sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
@@ -48,6 +49,7 @@ android {
 }
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation(project(":flutter"))
     implementation("androidx.fragment:fragment-compose:1.8.5")
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))

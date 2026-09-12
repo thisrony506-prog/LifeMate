@@ -5,6 +5,14 @@ import 'data/vault.dart';
 import 'services/native.dart';
 import 'ui/common.dart';
 import 'ui/shell.dart';
+import 'ui/entries.dart';
+final lifeNavigator=GlobalKey<NavigatorState>();
+void openPending(LifeStore store) {
+  final id=store.pendingEntry; if(id==null||store.demo)return; store.pendingEntry=null;
+  final entry=store.all.where((e)=>e.id==id&&!e.deleted).firstOrNull;
+  if(entry!=null) lifeNavigator.currentState?.push(MaterialPageRoute<void>(builder:(_)=>EntryEditor(entry.kind,entry:entry)));
+}
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,11 +20,12 @@ Future<void> main() async {
     final store=LifeStore(await Vault.open());
     NativeBridge.channel.setMethodCallHandler((call) async {
       if(call.method=='erase') { await store.erase(); return true; }
-      if(call.method=='refresh') { await store.refreshNative(); return true; }
+      if(call.method=='refresh') { await store.refreshNative(); WidgetsBinding.instance.addPostFrameCallback((_)=>openPending(store)); return true; }
       return null;
     });
     await store.load();
     runApp(LifeMateApp(store: store));
+    WidgetsBinding.instance.addPostFrameCallback((_)=>openPending(store));
   } catch (_) {
     runApp(MaterialApp(theme: lifeTheme(false), home: const Scaffold(body: SafeArea(child: Center(child: Padding(padding: EdgeInsets.all(28), child: Text('Your encrypted data could not be opened. It has not been replaced. Restart Life Mate or restore a backup.\n\nএনক্রিপ্ট করা তথ্য খোলা যায়নি। কোনো তথ্য মুছে ফেলা হয়নি। Life Mate আবার খোলো বা ব্যাকআপ ফিরিয়ে আনো।')))))));
   }
@@ -25,7 +34,7 @@ class LifeMateApp extends StatelessWidget {
   final LifeStore store;
   const LifeMateApp({super.key, required this.store});
   @override Widget build(BuildContext context) => AnimatedBuilder(animation: store, builder: (_,__) => LifeScope(store: store, child: MaterialApp(
-    title: 'Life Mate', debugShowCheckedModeBanner: false, theme: lifeTheme(false), darkTheme: lifeTheme(true),
+    navigatorKey:lifeNavigator, title: 'Life Mate', debugShowCheckedModeBanner: false, theme: lifeTheme(false), darkTheme: lifeTheme(true),
     themeMode: store.appearance=='Dark' ? ThemeMode.dark : store.appearance=='Light' ? ThemeMode.light : ThemeMode.system,
     locale: Locale(store.language), supportedLocales: const [Locale('en'),Locale('bn')],
     localizationsDelegates: GlobalMaterialLocalizations.delegates,

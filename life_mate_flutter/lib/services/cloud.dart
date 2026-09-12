@@ -26,6 +26,7 @@ class CloudService {
     final result = create ? await auth.createUserWithEmailAndPassword(email: email.trim(), password: password) : await auth.signInWithEmailAndPassword(email: email.trim(), password: password);
     return result.user!;
   }
+  static Future<void> signOut() async { await init(); await FirebaseAuth.instance.signOut(); }
   static Future<User> session() async {
     await init();
     return FirebaseAuth.instance.currentUser ?? (await FirebaseAuth.instance.signInAnonymously()).user!;

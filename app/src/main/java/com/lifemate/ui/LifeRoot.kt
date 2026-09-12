@@ -92,7 +92,7 @@ import java.time.LocalDate
     }
     LaunchedEffect(activity.openItem.value, state.loading, state.profile, locked) {
         val id = activity.openItem.value
-        if (id != null && !state.loading && state.profile != null && !locked) { activity.flutterMode.value=false; navigate("detail/$id"); activity.openItem.value = null }
+        if (id != null && !state.loading && state.profile != null && !locked) { if(state.items.any {it.id==id && it.tags=="life-mate-hive"}) {activity.pendingFlutterRecord=id;activity.flutterMode.value=true;activity.refreshFlutter()} else {activity.flutterMode.value=false;navigate("detail/$id")}; activity.openItem.value = null }
     }
     if ((route.startsWith("edit") || route=="post/{id}") && !locked) BackHandler { discard = true }
     if (locked) BackHandler { activity.moveTaskToBack(true) }
@@ -136,7 +136,7 @@ import java.time.LocalDate
                                     if (showBottom) NavigationBar(containerColor = MaterialTheme.colorScheme.surface, tonalElevation = 0.dp) {
                                         destinations.forEach { destination ->
                                             val actualRoute = if (route == "list/{kind}") "list/${entry?.arguments?.getString("kind")}" else route
-                                            NavigationBarItem(colors=NavigationBarItemDefaults.colors(selectedIconColor=MaterialTheme.colorScheme.primary,selectedTextColor=MaterialTheme.colorScheme.primary,indicatorColor=MaterialTheme.colorScheme.primaryContainer), modifier = Modifier.testTag("nav-${destination.label}"), selected = actualRoute == destination.route, onClick = {
+                                            NavigationBarItem(colors=NavigationBarItemDefaults.colors(selectedIconColor=MaterialTheme.colorScheme.onPrimaryContainer,selectedTextColor=MaterialTheme.colorScheme.onPrimaryContainer,indicatorColor=MaterialTheme.colorScheme.primaryContainer), modifier = Modifier.testTag("nav-${destination.label}"), selected = actualRoute == destination.route, onClick = {
                                                 nav.navigate(destination.route) { popUpTo(nav.graph.findStartDestination().id) { saveState = true }; launchSingleTop = true; restoreState = true }
                                             }, icon = { Icon(destination.icon, null) }, label = { Text(destination.label, maxLines = 1, style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.sp)) })
                                         }
