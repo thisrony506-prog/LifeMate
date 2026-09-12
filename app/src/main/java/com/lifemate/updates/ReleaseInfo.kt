@@ -1,7 +1,7 @@
 package com.lifemate.updates
 
 /** Only immutable, versioned APK assets in the official public repository are accepted. */
-data class ReleaseInfo(val code: Int, val version: String, val downloadUrl: String) {
+data class ReleaseInfo(val code: Int, val version: String, val downloadUrl: String, val bytes: Long = 0, val sha256: String = "", val signerSha256: String = "") {
     fun newerThan(installed: Int) = code > installed
     companion object {
         const val REPOSITORY = "thisrony506-prog/LifeMate"

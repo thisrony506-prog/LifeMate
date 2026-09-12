@@ -24,7 +24,7 @@ object ReleaseMetadata {
                         asset.optString("digest") != "sha256:$sha" ||
                         proof.optLong("code", -1) != info.code.toLong() || proof.optString("version") != info.version ||
                         proof.optString("url") != info.downloadUrl || proof.optLong("size", -1) != size) continue
-                    if (ReleaseProof.verify(info, size, sha, proof.optString("signer"), proof.optString("signature"), installedSigner, publicKey)) valid.add(info)
+                    if (ReleaseProof.verify(info, size, sha, proof.optString("signer"), proof.optString("signature"), installedSigner, publicKey)) valid.add(info.copy(bytes = size, sha256 = sha, signerSha256 = installedSigner))
                 }
                 valid.singleOrNull()
             }

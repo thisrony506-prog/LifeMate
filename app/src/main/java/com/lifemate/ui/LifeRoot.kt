@@ -67,7 +67,7 @@ import java.time.LocalDate
     LaunchedEffect(Unit) { while (true) { today = LocalDate.now(); delay(30_000) } }
     DisposableEffect(lifecycle, lockRevision) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_STOP) stoppedAt = SystemClock.elapsedRealtime()
+            if (event == Lifecycle.Event.ON_STOP) { stoppedAt = SystemClock.elapsedRealtime(); vm.stopUpdateDownload() }
             if (event == Lifecycle.Event.ON_START) {
                 if (vm.app.secure.hasPin() && stoppedAt != 0L && SystemClock.elapsedRealtime() - stoppedAt >= 30_000) locked = true
                 today = LocalDate.now()
@@ -175,7 +175,7 @@ import java.time.LocalDate
                         items(Kind.entries) { kind -> Surface(onClick = { adding = false; navigate("edit/${kind.name}/new") }, shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface) { Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) { KindBadge(kind); Text("New ${kind.label.lowercase()}", style = MaterialTheme.typography.titleMedium) } } }
                     }
                 }
-                if (!state.loading && !locked && state.profile != null && update.available) RequiredUpdateGate(update, vm) { activity.moveTaskToBack(true) }
+                if (!state.loading && !locked && update.available) RequiredUpdateGate(update, vm) { activity.moveTaskToBack(true) }
                 if (discard && !locked && !update.available) ConfirmDialog("Leave without saving?", "Unsaved edits on this screen will be discarded.", "Discard edits", { discard = false }) { discard = false; nav.popBackStack() }
             }
         }

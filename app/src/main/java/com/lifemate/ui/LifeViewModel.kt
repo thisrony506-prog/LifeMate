@@ -31,6 +31,38 @@ class LifeViewModel(application: Application) : AndroidViewModel(application) {
     private val updateRepository = com.lifemate.updates.UpdateRepository(application)
     private val updateState = MutableStateFlow(com.lifemate.updates.UpdateState(release = updateRepository.cached()))
     val updates = updateState.asStateFlow()
+    private val apkDownloader = com.lifemate.updates.ApkUpdateDownloader(application)
+    private val downloadState = MutableStateFlow(com.lifemate.updates.ApkDownloadState())
+    val apkDownload = downloadState.asStateFlow()
+    private var downloadJob: Job? = null
+    fun downloadUpdate() {
+        val release = updateState.value.release ?: return
+        if (downloadJob?.isCompleted == false || !release.newerThan(com.lifemate.BuildConfig.VERSION_CODE)) return
+        downloadState.value = com.lifemate.updates.ApkDownloadState(release.code,com.lifemate.updates.DownloadPhase.DOWNLOADING,total=release.bytes)
+        downloadJob = viewModelScope.launch {
+            try {
+                apkDownloader.download(release) { downloadState.value = it }
+                downloadState.value = com.lifemate.updates.ApkDownloadState(release.code,com.lifemate.updates.DownloadPhase.READY,release.bytes,release.bytes,"Verified and ready to install.")
+            } catch (_: TimeoutCancellationException) {
+                downloadState.value = com.lifemate.updates.ApkDownloadState(release.code,com.lifemate.updates.DownloadPhase.ERROR,message="Download timed out. Reconnect and retry.")
+            } catch (e: CancellationException) {
+                downloadState.value = com.lifemate.updates.ApkDownloadState(release.code,message="Download stopped. Tap Download update to restart; the required update is still in force.")
+                throw e
+            } catch (e: Exception) {
+                downloadState.value = com.lifemate.updates.ApkDownloadState(release.code,com.lifemate.updates.DownloadPhase.ERROR,message=if (e is IllegalStateException) e.message else "Download failed. Check your connection and storage, then retry.")
+            } finally { downloadJob = null }
+        }
+    }
+    fun stopUpdateDownload() { downloadJob?.cancel() }
+    suspend fun verifiedUpdateFile(): java.io.File {
+        val release = updateState.value.release ?: error("Check for updates first.")
+        try { return apkDownloader.verifyReady(release) }
+        catch (e: CancellationException) { throw e }
+        catch (e: Exception) {
+            downloadState.value = com.lifemate.updates.ApkDownloadState(release.code,com.lifemate.updates.DownloadPhase.ERROR,message="The saved update is unavailable or failed verification. Download it again.")
+            throw e
+        }
+    }
     fun checkUpdates(manual: Boolean = false) {
         if (updateState.value.checking || (!manual && !updateRepository.due())) return
         updateState.value = updateState.value.copy(checking = true, message = null)

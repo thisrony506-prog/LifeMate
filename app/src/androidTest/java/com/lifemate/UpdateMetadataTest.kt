@@ -34,7 +34,7 @@ class UpdateMetadataTest {
             .put("body","<!-- lifemate-update-v1\n$proof\n-->").put("assets",JSONArray().put(asset))
     }
     private fun parse(json: JSONObject) = ReleaseMetadata.parse(json.toString(),signer,pair.public)
-    @Test fun acceptsSignedOfficialMetadata() { assertEquals(info,parse(metadata())) }
+    @Test fun acceptsSignedOfficialMetadata() { assertEquals(info.copy(bytes=1234,sha256=sha,signerSha256=signer),parse(metadata())) }
     @Test fun rejectsMissingProofMalformedJsonAndUnpublishedRelease() {
         assertNull(parse(metadata().put("body","Unsigned release")))
         assertNull(ReleaseMetadata.parse("not JSON",signer,pair.public))

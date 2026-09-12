@@ -1,6 +1,7 @@
 package com.lifemate
 
 import androidx.compose.ui.test.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import android.view.KeyEvent
 import androidx.test.platform.app.InstrumentationRegistry
@@ -23,6 +24,20 @@ class UpdateUiTest {
         compose.onNodeWithText("Export a private backup").performScrollTo().performClick(); assertTrue(backup)
         compose.onNodeWithText("Close app").performClick(); assertTrue(closed)
         compose.onNodeWithTag("required-update").assertIsDisplayed()
+    }
+    @Test fun downloadProgressAndInstallButtonKeepTheGateInPlace() {
+        val release = ReleaseInfo(BuildConfig.VERSION_CODE+1,"newer","official-verified")
+        var state by mutableStateOf(ApkDownloadState(release.code,DownloadPhase.DOWNLOADING,50,100))
+        var install = false
+        compose.setContent { LifeTheme("Light") { RequiredUpdateDialog(UpdateState(release),{},{},{},download=state,onInstall={ install=true }) } }
+        compose.onNodeWithTag("apk-download-percent").performScrollTo().assertTextContains("50%",substring=true)
+        compose.onNodeWithTag("required-download").assertIsNotEnabled()
+        compose.runOnIdle { state=ApkDownloadState(release.code,DownloadPhase.READY,100,100) }
+        compose.onNodeWithTag("install-update").performClick()
+        assertTrue(install)
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        compose.onNodeWithTag("required-update").assertIsDisplayed()
+        compose.onNodeWithText("Continue").assertDoesNotExist()
     }
     @Test fun equalVersionNeverBlocksUse() {
         val release = ReleaseInfo(BuildConfig.VERSION_CODE,"current","https://github.com/thisrony506-prog/LifeMate/releases")
