@@ -1,6 +1,7 @@
 package com.lifemate.ui
 
 import androidx.compose.foundation.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
@@ -28,6 +29,7 @@ import java.time.format.DateTimeFormatter
 
 val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
 @Composable fun HomeScreen(state: LifeState, vm: LifeViewModel, today: LocalDate, navigate: (String) -> Unit) {
+    val update by vm.updates.collectAsStateWithLifecycle()
     val compact = LocalConfiguration.current.screenWidthDp < 360
     val ringSize = if (compact) 80.dp else 96.dp
     val tasks = state.items.filter { it.kind in taskKinds && it.occurs(today) }.sortedBy { it.time }
@@ -42,12 +44,15 @@ val taskKinds = setOf(Kind.ROUTINE, Kind.MISSION, Kind.HABIT, Kind.REMINDER)
     val greeting = when (LocalTime.now().hour) { in 5..11 -> "Good morning"; in 12..17 -> "Good afternoon"; else -> "Good evening" }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(start = 22.dp, end = 22.dp, top = 12.dp, bottom = 110.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 16.dp else 20.dp)) {
         item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                BrandMark(40.dp)
-                Text("LifeMate", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                IconButton(onClick = { navigate("search") }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Search, "Search everything") }
-                IconButton(onClick = { navigate("notifications") }) { Icon(Icons.Outlined.Notifications, "Notifications") }
-                IconButton(onClick = { navigate("settings") }, modifier = Modifier.size(40.dp)) { Icon(Icons.Outlined.Settings, "Settings") }
+            Column {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    BrandMark(40.dp)
+                    Text("LifeMate", Modifier.weight(1f), style = MaterialTheme.typography.titleLarge.copy(fontSize = 18.sp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    IconButton(onClick = { navigate("search") }, modifier = Modifier.size(48.dp)) { Icon(Icons.Outlined.Search, "Search everything") }
+                    IconButton(onClick = { navigate("notifications") }) { Icon(Icons.Outlined.Notifications, "Notifications") }
+                    IconButton(onClick = { navigate("settings") }, modifier = Modifier.size(40.dp)) { Icon(Icons.Outlined.Settings, "Settings") }
+                }
+                UpdateBanner(update) { navigate("updates") }
             }
         }
         item {

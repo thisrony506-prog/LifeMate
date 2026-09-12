@@ -11,8 +11,8 @@ android {
         applicationId = "com.lifemate"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.1.1"
+        versionCode = providers.environmentVariable("LIFEMATE_VERSION_CODE").orNull?.toInt() ?: 100000
+        versionName = providers.environmentVariable("LIFEMATE_VERSION_NAME").orNull ?: "1.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     val releaseKeystore = providers.environmentVariable("LIFEMATE_KEYSTORE_PATH").orNull

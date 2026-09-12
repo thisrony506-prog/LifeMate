@@ -8,3 +8,13 @@ local.properties
 .externalNativeBuild/
 .cxx/
 .DS_Store
+
+# Private signing backups must never be committed
+*.p12
+*.pfx
+*.pem
+*password*.txt
+release-download/
+
+__pycache__/
+*.pyc

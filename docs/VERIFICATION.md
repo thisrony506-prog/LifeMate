@@ -1,5 +1,12 @@
 # LifeMate verification
 
+## Signed installation and updater work (1.2 series)
+
+Current work adds strictly increasing CI version codes, fixed-repository HTTPS release checks, Home update notices, a manual update page, an automatic-check preference, and fail-closed signed publication. Pure version/URL tests and UI navigation/banner tests were added. The signed-release job checks signer continuity, actual installation and profile retention across `adb install -r` before publishing.
+
+**Pending:** code/emulator verification for this change and the signed install/upgrade/publication job. The current integration cannot write repository Secrets (HTTP 403); no new private key has been created. The owner must complete secure setup described in RELEASE.md. Historical unsigned build results below do not prove the new signing path works.
+
+
 ## User-supplied logo update — LifeMate 1.1.1
 
 The original uploaded `20260912_111618.png` replaces the previous mark throughout the app and on the launcher. Only the connected outer black border is removed for the in-app asset. The adaptive icon preserves the colored emblem on a pale background; Android 13 themed icons and notification icons use a matching alpha silhouette. Asset generation is reproducible with `scripts/update-brand-assets.sh` and does not use generative imagery.

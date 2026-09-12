@@ -82,6 +82,7 @@ import java.time.*
                 BrandMark(44.dp)
                 Text("Your Personal Life Assistant.\nVersion ${BuildConfig.VERSION_NAME}")
             }
+            TextButton({ navigate("updates") }) { Text("App updates") }
             TextButton({ navigate("privacy") }) { Text("Privacy policy & data security") }
             TextButton({ navigate("terms") }) { Text("Terms & reliability notes") }
             TextButton({ try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/thisrony506-prog/LifeMate/issues"))) } catch (_: Exception) { vm.message("Open github.com/thisrony506-prog/LifeMate/issues in a browser for support.") } }) { Text("Contact / support on GitHub") }
@@ -110,7 +111,7 @@ import java.time.*
 }
 @Composable fun PolicyScreen(privacy: Boolean) {
     val sections = if (privacy) listOf(
-        "Local by design" to "LifeMate does not include analytics, advertising, tracking, a cloud account, or an internet permission. Core features work offline. Personal information is never sent to AI services. Birthday wishes and cards use offline templates.",
+        "Local by design" to "LifeMate does not include analytics, advertising, tracking, or a cloud account. The internet permission is used only to check public GitHub release metadata. Automatic checks can be disabled in App updates; manual checks and downloading an APK require a connection. GitHub receives normal connection information and the app version, never your personal records. Core features work offline. Personal information is never sent to AI services. Birthday wishes and cards use offline templates.",
         "Protected storage" to "Profile data, notes, schedules, and metadata are stored in a SQLCipher-encrypted Room database. Its random key is encrypted using Android Keystore. Media and audio are stored in the app's private internal directory, protected by Android's sandbox and device encryption; they are not separately encrypted by LifeMate. Use a device screen lock for stronger protection.",
         "App lock" to "Optional PINs are salted and hashed with PBKDF2-HMAC-SHA256, then encrypted with a Keystore key. Five failed attempts cause a one-minute cooldown. Strong Android biometrics can unlock the app when enabled. The app locks after 30 seconds in the background; notification details may remain visible according to Android lock-screen settings.",
         "Permissions" to "Notification permission is requested when you enable reminders. Precise alarms are optional. Microphone access is requested only when recording. Photos and videos are selected through Android's system picker; no broad gallery permission is used. LifeMate never records in a background service.",

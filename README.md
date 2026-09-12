@@ -2,20 +2,13 @@
 
 **Your Personal Life Assistant.** A native, offline-first Android app built with Kotlin, Jetpack Compose, and Material 3. Calm jade-and-cream light styling, a coordinated dark theme, and real local data—no static screens or seeded production demo records.
 
-## APK downloads & verification
+## Installable APKs and safe updates
 
-[**Download the verified LifeMate 1.1.1 Release APK**](https://github.com/thisrony506-prog/LifeMate/actions/runs/34677197968).
+**Old 1.1.x downloads are unsigned and cannot be installed.** The new workflow will publish only a signed, verified APK; it fails closed if the retained signing key is missing. The current GitHub connection cannot manage Secrets (HTTP 403), so the one-time signing setup is still required. See [private setup and installation](docs/RELEASE.md).
 
-This run includes the user-supplied logo, passed both verification jobs and contains exactly one artifact. It was built without private signing secrets, so its APK is **unsigned**.
+After setup, run [LifeMate Release APK](https://github.com/thisrony506-prog/LifeMate/actions/workflows/android.yml) on `arena/01a090c4-lifemate`. Successful publication provides one **LifeMate-Release-APK** artifact containing only the versioned APK, plus the same APK in GitHub Releases for the in-app download button. Tests/reports/debug builds are never separate downloads.
 
-Choose a successful run for `arena/01a090c4-lifemate`, then download **LifeMate-Release-APK** under **Artifacts**. New runs publish **one artifact containing exactly one release APK**—no debug download, reports, screenshots, checksum file or readme in the download. GitHub wraps artifacts in a ZIP; extract it to get the APK.
-
-- With the four private signing secrets configured: `LifeMate-release.apk`, signed with your retained key.
-- Without them: `LifeMate-release-unsigned.apk`, which **must be signed before installation**. There is no fallback to a debug or temporary signing key.
-
-Device tests must pass before the release job runs. Compilation, lint, JVM rules, encrypted storage, UI navigation, PIN/backup behavior, and real process-exit/reboot notification delivery are still tested internally; they are not separate downloads. See [verification scope](docs/VERIFICATION.md) and [release/signing instructions](docs/RELEASE.md).
-
-Artifacts are subject to GitHub retention. To rebuild, push a source change, rerun the workflow, or use **Run workflow** on the tracked branch when available. Old runs retain their historical downloads; only new runs follow the release-only layout.
+The Home header and App updates page show installed/new versions. Optional foreground checks fetch only official public GitHub release metadata; download opens your browser and Android asks before installing. Offline use is unaffected. Each new publishing run increases the version code; the same signing key and app ID are retained. CI checks actual signed installation and an encrypted-profile-preserving upgrade before publication. This signing/upgrade stage cannot run until the private secrets exist.
 
 ## LifeMate 1.1.1 design
 
@@ -83,7 +76,7 @@ A singleton profile owns typed `LifeItem` records through a Room foreign key. Co
 
 ## Privacy & security
 
-- No INTERNET permission, analytics, ad SDK, account requirement, automatic media upload, or automatic cloud backup.
+- No analytics, ad SDK, account requirement, automatic media upload or automatic cloud backup. INTERNET is limited to public update metadata; automatic checks can be disabled. No personal records are sent.
 - SQLCipher encrypts structured data. A random database key is AES-GCM wrapped with Android Keystore.
 - PINs use random salts and PBKDF2-HMAC-SHA256 (120,000 iterations), with encrypted storage and a 60-second lockout after five failures. Optional strong biometrics use Android's BiometricPrompt. PIN protection enables screenshot blocking and relocks after 30 seconds away.
 - Media/audio live in private internal storage, relying on Android sandbox/device encryption rather than separate file encryption. Exported/shared files leave that protection only after an explicit user action.

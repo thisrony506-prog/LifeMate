@@ -22,6 +22,14 @@ class NavigationTest {
         }
         compose.waitUntil(15_000) { compose.onAllNodesWithContentDescription("Search everything").fetchSemanticsNodes().isNotEmpty() }
     }
+    @Test fun updateScreenAndOfflinePreferenceWork() {
+        compose.onNodeWithTag("open-updates").performClick()
+        compose.onNodeWithText("Keep LifeMate up to date").assertIsDisplayed()
+        compose.onNodeWithText("Automatic update checks").performScrollTo().performClick()
+        compose.waitUntil(10_000) { !runBlocking { app.preferences.flow.first().automaticUpdates } }
+        compose.onNodeWithText("Automatic update checks").performScrollTo().performClick()
+        compose.waitUntil(10_000) { runBlocking { app.preferences.flow.first().automaticUpdates } }
+    }
     @Test fun noteCreationPersistsAcrossActivityRecreation() {
         compose.onNodeWithContentDescription("Create something new").performClick()
         compose.onAllNodes(hasScrollToNodeAction()).onLast().performScrollToNode(hasText("New note"))

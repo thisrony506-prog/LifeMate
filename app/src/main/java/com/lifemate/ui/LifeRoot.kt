@@ -49,6 +49,12 @@ import java.time.LocalDate
     var today by remember { mutableStateOf(LocalDate.now()) }
     var discard by remember { mutableStateOf(false) }
     val lifecycle = LocalLifecycleOwner.current
+    // Only public release metadata is requested; debug/instrumentation runs never auto-fetch.
+    val lifecycleState by lifecycle.lifecycle.currentStateFlow.collectAsState()
+    LaunchedEffect(state.loading, state.preferences.automaticUpdates, locked, lifecycleState) {
+        if (!state.loading && !locked && state.preferences.automaticUpdates &&
+            lifecycleState == Lifecycle.State.RESUMED && !BuildConfig.DEBUG) vm.checkUpdates()
+    }
     fun navigate(path: String) {
         val destination = when (path) { "list/MISSION" -> "missions"; "list/MEMORY" -> "memories"; else -> path }
         nav.navigate(destination) { launchSingleTop = true }
@@ -129,6 +135,7 @@ import java.time.LocalDate
                                         composable("search") { SearchScreen(state, ::navigate) }
                                         composable("statistics") { StatisticsScreen(state) }
                                         composable("settings") { SettingsScreen(activity, state, vm, ::navigate, { lockRevision++ }) { nav.navigate("home") { popUpTo("home") { inclusive = true } } } }
+                                        composable("updates") { UpdateScreen(state, vm) }
                                         composable("privacy") { PolicyScreen(true) }
                                         composable("terms") { PolicyScreen(false) }
                                         composable("notifications") { NotificationsScreen(state, vm, ::navigate) }

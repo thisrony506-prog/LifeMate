@@ -28,6 +28,25 @@ data class LifeState(val loading: Boolean = true, val profile: Profile? = null, 
 class LifeViewModel(application: Application) : AndroidViewModel(application) {
     val app = application as LifeMateApp
     val repo = app.repository
+    private val updateRepository = com.lifemate.updates.UpdateRepository(application)
+    private val updateState = MutableStateFlow(com.lifemate.updates.UpdateState(release = updateRepository.cached()))
+    val updates = updateState.asStateFlow()
+    fun checkUpdates(manual: Boolean = false) {
+        if (updateState.value.checking || (!manual && !updateRepository.due())) return
+        updateState.value = updateState.value.copy(checking = true, message = null)
+        viewModelScope.launch {
+            try {
+                val release = updateRepository.fetch()
+                val message = when {
+                    release == null -> "No signed update has been published yet. Please check again later."
+                    release.newerThan(com.lifemate.BuildConfig.VERSION_CODE) -> "A new official release is available."
+                    else -> "You already have this release or a newer version."
+                }
+                updateState.value = com.lifemate.updates.UpdateState(release, message = message)
+            } catch (e: CancellationException) { updateState.value = updateState.value.copy(checking = false); throw e }
+            catch (_: Exception) { updateState.value = updateState.value.copy(checking = false, message = "Couldn't check for updates. Check your connection or try again later. Your offline features still work.") }
+        }
+    }
     private val messages = Channel<String>(Channel.BUFFERED)
     val events = messages.receiveAsFlow()
     val busy = MutableStateFlow(false)
