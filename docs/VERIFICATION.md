@@ -1,5 +1,26 @@
 # LifeMate verification
 
+## Current signing hardening audit
+
+This revision repairs the interactive signing setup (JDK 17, owner authentication/access checks, locally entered password, fixed private backup path, no plaintext password file, no overwrite) and authenticates update metadata with the installed app's retained signing certificate. It also pins the Gradle distribution SHA-256 and makes APK signing schemes explicit. No unrelated profile, database, reminder or media behavior was changed.
+
+- Local: 11 Python/PTY safety checks passed using fake tools and inert fixtures; Bash syntax and whitespace checks passed. These tests never create a production signing identity.
+- Pending: hosted compilation/lint/JVM/emulator checks for this revision.
+- Requires owner secrets: real JKS signing, `apksigner` continuity, signed installation/upgrade smoke, signed metadata generation, digest-checked draft publication, and final download. No production signing key/password was generated here.
+
+### Signing setup and backups
+
+Run the exact private Codespace commands in [RELEASE.md](RELEASE.md). The interactive script writes only `$HOME/lifemate-private-signing-backup/lifemate-release.jks`; retain an encrypted offline JKS backup and the locally chosen password separately before deleting the Codespace. It uploads four Actions secrets through stdin and refuses existing identities. Never share credentials in chat. Partial upload preserves the original key and must be recovered without regeneration.
+
+### Release and signed update verification
+
+CI publishes only after tests/lint, `apksigner` verification, same-package/same-signer checks, higher version code, and a real `adb install -r` test retaining an encrypted profile. Update metadata is RSA-signed by that same key; the app verifies it against its installed certificate, canonical URL/version and the GitHub asset digest. Only the APK is attached to a draft release, whose uploaded digest is checked before publication. Android—not LifeMate—verifies/installs the downloaded APK. The release tag/file/version formulas and failure recovery are documented in RELEASE.md.
+
+### Physical-device acceptance
+
+In addition to the full checklist below: install the first signed APK on an Android 8+ ARM phone, create records/media, update to a higher version with the same key without uninstalling, and verify records, PIN/Keystore access and reminders survive. Test denied unknown-source permission, failed/cancelled downloads, offline/403/429/malformed update responses, forged metadata, older/equal release suppression, disabled automatic checks, six-hour throttling and explicit Android confirmation. Test real 16KB page-size hardware/emulation and OEM background restrictions. Signed pipeline success alone does not certify all of these.
+
+
 ## Signed installation and updater work (1.2 series)
 
 Current work adds strictly increasing CI version codes, fixed-repository HTTPS release checks, Home update notices, a manual update page, an automatic-check preference, and fail-closed signed publication. Pure version/URL tests and UI navigation/banner tests were added. The signed-release job checks signer continuity, actual installation and profile retention across `adb install -r` before publishing.
@@ -17,7 +38,7 @@ The original uploaded `20260912_111618.png` replaces the previous mark throughou
 
 Local checks: resource XML parses, the foreground/themed alpha masks match, and the emblem's 154.5px radius fits inside the 156.4px adaptive safe circle at 512px resolution. The app version is 1.1.1 / code 3; features, application ID, database schema and release-only workflow are unchanged. Android build/device verification passed in the run below.
 
-## Latest successful automated run — LifeMate 1.1.1
+## Historical unsigned build — LifeMate 1.1.1
 
 [LifeMate Release APK — run 34677197968](https://github.com/thisrony506-prog/LifeMate/actions/runs/34677197968)
 

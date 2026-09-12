@@ -19,6 +19,11 @@ android {
     if (!releaseKeystore.isNullOrBlank()) {
         signingConfigs.create("privateRelease") {
             storeFile = file(releaseKeystore)
+            storeType = "JKS"
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = false
             storePassword = requireNotNull(providers.environmentVariable("LIFEMATE_STORE_PASSWORD").orNull)
             keyAlias = requireNotNull(providers.environmentVariable("LIFEMATE_KEY_ALIAS").orNull)
             keyPassword = requireNotNull(providers.environmentVariable("LIFEMATE_KEY_PASSWORD").orNull)

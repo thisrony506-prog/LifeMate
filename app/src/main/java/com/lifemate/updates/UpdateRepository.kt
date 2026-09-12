@@ -4,21 +4,28 @@ import android.content.Context
 import com.lifemate.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
+import android.content.pm.PackageManager
+import android.os.Build
+import java.io.ByteArrayInputStream
+import java.security.MessageDigest
+import java.security.cert.CertificateFactory
 import java.net.HttpURLConnection
 import java.net.URL
 
 /** No record/profile access, auth token, identifier or analytics. HTTPS metadata only. */
-class UpdateRepository(context: Context) {
+class UpdateRepository(
+    private val context: Context,
+    private val connect: () -> HttpURLConnection = { URL(ReleaseInfo.API).openConnection() as HttpURLConnection }
+) {
     private val cache = context.getSharedPreferences("release_updates", Context.MODE_PRIVATE)
     fun cached(): ReleaseInfo? = try { parse(cache.getString("metadata", null) ?: "") } catch (_: Exception) { null }
     fun due(now: Long = System.currentTimeMillis()): Boolean {
         val last = cache.getLong("attempt", 0)
-        return now < last || now - last >= 6 * 60 * 60 * 1000L
+        return UpdateCadence.due(now, last)
     }
     suspend fun fetch(): ReleaseInfo? = withContext(Dispatchers.IO) {
         cache.edit().putLong("attempt", System.currentTimeMillis()).apply()
-        val connection = URL(ReleaseInfo.API).openConnection() as HttpURLConnection
+        val connection = connect()
         try {
             connection.connectTimeout = 12_000
             connection.readTimeout = 12_000
@@ -49,17 +56,16 @@ class UpdateRepository(context: Context) {
             info
         } finally { connection.disconnect() }
     }
+    @Suppress("DEPRECATION")
     private fun parse(text: String): ReleaseInfo? {
-        val release = JSONObject(text)
-        if (release.optBoolean("draft", true) || release.optBoolean("prerelease", true)) return null
-        val tag = release.optString("tag_name")
-        val assets = release.optJSONArray("assets") ?: return null
-        for (i in 0 until assets.length()) {
-            val asset = assets.getJSONObject(i)
-            if (asset.optLong("size") !in 1..209_715_200L) continue
-            ReleaseInfo.validated(tag, asset.optString("name"), asset.optString("browser_download_url"))?.let { return it }
-        }
-        return null
+        val manager = context.packageManager
+        val signatures = if (Build.VERSION.SDK_INT >= 28) {
+            manager.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES).signingInfo?.apkContentsSigners
+        } else manager.getPackageInfo(context.packageName, PackageManager.GET_SIGNATURES).signatures
+        val bytes = signatures?.singleOrNull()?.toByteArray() ?: return null
+        val certificate = CertificateFactory.getInstance("X.509").generateCertificate(ByteArrayInputStream(bytes))
+        val signer = MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+        return ReleaseMetadata.parse(text, signer, certificate.publicKey)
     }
 }
 

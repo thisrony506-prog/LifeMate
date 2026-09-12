@@ -7,7 +7,7 @@ data class ReleaseInfo(val code: Int, val version: String, val downloadUrl: Stri
         const val REPOSITORY = "thisrony506-prog/LifeMate"
         const val API = "https://api.github.com/repos/$REPOSITORY/releases/latest"
         fun validated(tag: String, assetName: String, url: String): ReleaseInfo? {
-            val build = Regex("v1\\.2\\.([0-9]{1,7})").matchEntire(tag)?.groupValues?.get(1)?.toIntOrNull() ?: return null
+            val build = Regex("v1\\.2\\.([1-9][0-9]{0,6})").matchEntire(tag)?.groupValues?.get(1)?.toIntOrNull() ?: return null
             if (build < 1) return null
             val code = 100_000 + build
             if (assetName != "LifeMate-$code.apk") return null

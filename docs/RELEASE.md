@@ -1,54 +1,105 @@
-# Installable LifeMate releases and updates
+# LifeMate: private signing setup and signed updates
 
-## Why the old APK would not install
+Application ID remains **`com.lifemate`**. Core organizer features remain offline-capable. The old 1.1.x unsigned APKs are not installable; no unsigned APK is published by the current workflow.
 
-The earlier 1.1.x downloads were unsigned. Android cannot install unsigned APKs. They have not been repaired retroactively; do not use them. The new workflow **refuses publication without retained signing secrets**. Debug or disposable keys are never substituted.
+## Exact commands in your private Codespace
 
-Supported phones require Android 8.0 (API 26) or newer. A different already-installed signing identity, insufficient storage, or a damaged download can also prevent installation. Do not uninstall an app holding important data just to bypass a conflict; export a private backup first.
+Open a private Codespace for **`arena/01a090c4-lifemate`** in this repository. Do not share its terminal or record password entry. The commands below assume the standard Ubuntu/Debian Codespaces image and repository path.
 
-## One-time private signing setup (owner action currently required)
+```bash
+cd /workspaces/LifeMate
+# Stop if this is not the session branch; open a Codespace on that branch instead.
+test "$(git branch --show-current)" = 'arena/01a090c4-lifemate' || exit 1
+git pull --ff-only origin arena/01a090c4-lifemate
 
-The Arena GitHub integration currently returns HTTP 403 for repository Secrets management. No key was created in the shared workspace, because it could not be stored safely as repository secrets. Reconnect/configure the GitHub integration with the required repository Secrets permission, or use your own authenticated GitHub CLI on a trusted computer/private Codespace.
+sudo apt-get update
+sudo apt-get install -y openjdk-17-jdk openssl gh
+export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-$(dpkg --print-architecture)"
+export PATH="$JAVA_HOME/bin:$PATH"
+java -version
+javac -version
 
-With JDK 17, OpenSSL and GitHub CLI available, and your own GitHub session authorized to manage this repository's Actions secrets:
+# Codespaces' default token may not have permission to manage Actions secrets.
+# Authenticate your own owner account via GitHub's browser flow, not chat.
+unset GH_TOKEN GITHUB_TOKEN
+gh auth login --hostname github.com --git-protocol https --web --scopes repo,workflow
+gh auth status --hostname github.com
 
-```sh
-bash scripts/setup-release-signing.sh "$HOME/lifemate-private-signing-backup"
+bash scripts/setup-release-signing.sh
 ```
 
-The script checks permission and existing secrets FIRST, refuses to overwrite an identity, creates one 3072-bit RSA JKS key, and privately uploads four repository secrets:
+The script accepts **no path/password arguments**. It requires JDK 17 (`java`, `javac`, `keytool`), OpenSSL and authenticated GitHub CLI. It checks repository/Secrets access, existing signing secrets and previously published APKs before requesting a password or creating files. It refuses CI, existing backup folders/symlinks, existing secrets (including partial setup), and any attempt to replace a previously released identity.
+
+Enter and confirm your strong password **only at the local hidden terminal prompts** (minimum 12 characters). The same password protects the keystore and its `lifemate` key; it is not your GitHub password. The script creates one RSA **3072-bit JKS** keystore:
+
+```text
+$HOME/lifemate-private-signing-backup/lifemate-release.jks
+```
+
+Directory permissions are `700`; file permissions are `600`. No plaintext password file, private-key export or Base64 file is written. The script disables tracing, keeps passwords off command arguments, uploads values through stdin, and removes password variables on exit. It uploads exactly these repository secrets:
 
 - `LIFEMATE_KEYSTORE_BASE64`
 - `LIFEMATE_STORE_PASSWORD`
-- `LIFEMATE_KEY_ALIAS`
+- `LIFEMATE_KEY_ALIAS` (`lifemate`)
 - `LIFEMATE_KEY_PASSWORD`
 
-The original keystore and password remain in that **private folder outside the repository**. Make an encrypted offline backup before deleting a Codespace or computer copy. GitHub cannot reveal secret values later. If uploading one secret fails, retain the same folder/key and finish configuring the remaining secrets—do not generate a replacement identity.
+**Never send a password, token, keystore, Base64 value, or secret-bearing screenshot into chat.** GitHub login/device authorization happens only in your private terminal/browser.
 
-Never send keys, passwords, tokens or backup files in chat; never commit them or publish them as Actions artifacts. An existing signed installation must use its existing key instead of this new-key setup.
+### Backup is mandatory
 
-## Publish and install
+Before deleting the Codespace, store an **encrypted offline backup of the JKS** and retain its password separately in a password manager. Codespaces storage is not an independent backup; GitHub cannot reveal secret values later. Never commit these files or upload them as Actions artifacts. Retain the same key for every future update.
 
-After secrets are configured, start a **new** run of **LifeMate Release APK** on `arena/01a090c4-lifemate` using Run workflow, or push a source change.
+If generation/upload fails after the backup folder is created, the script preserves it and refuses regeneration. Recover/finish setup with that exact key. Do not delete the folder or replace existing secrets just to make a rerun succeed. For an already-published application, recover the original identity; a new unrelated key cannot update existing installs.
 
-1. Emulator feature/security tests, compilation, lint and JVM tests run.
-2. The release is signed with the retained key, and verified with `apksigner`.
-3. If a prior official release exists, CI downloads it and verifies signer continuity. For the first release, a lower-version signed test fixture is generated internally.
-4. An emulator installs the earlier APK, creates a real encrypted profile through the UI, then performs `adb install -r` with the new non-debuggable APK and checks the profile survives.
-5. Only after these checks, a versioned APK is published to GitHub Releases and one **LifeMate-Release-APK** Actions artifact. No reports, debug APKs, companion JSON, checksums, or readme downloads are generated. GitHub's normal artifact ZIP and automatic release source archives are platform packaging.
+If permission checks return **403**, no key is generated. Your GitHub account/token must have repository Actions Secrets read/write permission. Reconnecting an integration without adding that permission does not resolve the restriction.
 
-Open the APK from your browser/Downloads and confirm Android's install prompt. Android may ask you to allow installs from that browser. Future official versions should show **Update**, not require uninstalling.
+## Start a signed release
 
-## Versions and in-app update notice
+After the setup script succeeds and you have backed up the key:
 
-This single workflow assigns `versionCode = 100000 + GITHUB_RUN_NUMBER` and `versionName = 1.2.<run number>`. Every new run advances the version. A rerun retains its original identity: published versions cannot be overwritten, and an older run cannot move Latest backwards. Starting a new workflow run is the way to publish another update. Do not replace/delete the workflow's version history or reduce this version offset without a migration plan.
+```bash
+gh workflow run android.yml \
+  --repo thisrony506-prog/LifeMate \
+  --ref arena/01a090c4-lifemate
 
-Releases use immutable tags `v1.2.<run number>` and assets `LifeMate-<versionCode>.apk`, at the fixed official repository. App updates compare numeric versionCode, reject foreign/malformed URLs and old unsigned assets, and only offer a strictly newer release.
+gh run list --repo thisrony506-prog/LifeMate \
+  --workflow android.yml --branch arena/01a090c4-lifemate --limit 5
+```
 
-The Home header opens App updates and shows a notice when a newer release is found. Automatic metadata checks run in the foreground at most every six hours and can be disabled. Manual checks remain available. GitHub receives the public app version and ordinary connection data, not personal records. Core functions remain offline. Debug/instrumentation builds do not check automatically.
+Watch the new run in Actions. It must pass **all three jobs**, including **Signed APK and safe upgrade**. A successful compile-only job is not proof of an installable release.
 
-Download opens the official HTTPS APK in the browser; Android owns the final installation prompt and verifies the app signature. There is no silent installer, root command, or permission to install packages in LifeMate. An offline/API error is reported, not mistaken for "up to date".
+## Build and publication gates
 
-## Verification boundary
+1. Run Android feature/security/update tests, script safety tests, Java helper compilation, Kotlin/JVM tests, lint, and R8 release compilation. Gradle 8.10.2's distribution is SHA-256 pinned; JDK 17, AGP 8.7.3, Kotlin 2.0.21 and SDK 35 are configured.
+2. Require all four retained-key secrets. There is no debug-key/unsigned fallback. Secrets are not printed or cached; Gradle configuration caching is disabled during signed builds, and the temporary CI keystore is removed in an always-run cleanup.
+3. Verify both previous/current APK signatures with Android `apksigner` for API 26+, require one signer, compare signer SHA-256 fingerprints, validate the application ID and release version, and reject debuggable APKs.
+4. Use the previous official signed APK when available. For the first signed release only, build an internal lower-version fixture with the same retained key. Never publish that fixture.
+5. In an emulator, install the earlier signed APK, create a real encrypted profile through visible UI, then use `adb install -r` on the new non-debuggable APK without uninstalling. Confirm the higher version and retained profile.
+6. Sign public update metadata using the same RSA private key. Metadata includes version, URL, size, SHA-256 and signer identity. It is release-body text, not an additional downloadable file.
+7. Create a **draft** GitHub Release; require its sole APK asset to have the expected name/URL/size and GitHub SHA-256 digest. Only then publish it and mark it Latest. Never overwrite an existing version or move Latest backwards.
+8. Upload one **LifeMate-Release-APK** Actions artifact containing one APK. No debug APK, reports, certificates, keystores, metadata files or passwords are uploaded. GitHub itself wraps Actions artifacts in ZIPs and adds standard source archives to Release pages.
 
-Until private signing secrets are actually configured, only code/emulator checks can complete: signed installation, upgrade continuity and release publication remain blocked. Do not describe this as a successful installable release until the final signing job passes. Physical-device/OEM and signed-update acceptance still matters; see VERIFICATION.md.
+## Version contract
+
+```text
+versionCode = 100000 + GITHUB_RUN_NUMBER
+versionName = 1.2.<run number>
+tag         = v1.2.<run number>
+APK         = LifeMate-<versionCode>.apk
+```
+
+A **new workflow run** increases the version. A rerun retains its identity, so already-published versions are never overwritten. If publication leaves a draft on failure, inspect it privately; do not turn an unverified draft into a published release. Start a new run after correcting the failure. Do not reset workflow history or reduce the version offset; retain this application ID, key, and Room migration discipline.
+
+## Update trust and installation
+
+The Home notice / App updates screen compares numeric version codes and only offers strictly newer, canonical official assets. It rejects malformed/foreign/non-HTTPS URLs, leading-zero/malformed versions, draft/prerelease releases, duplicate assets/proofs, missing digests, invalid asset types/states/sizes, and missing/forged signatures. The metadata signature must verify against the **installed app's certificate**, not an arbitrary key supplied by the server. The signed APK digest must match GitHub's asset digest.
+
+This authenticates the release metadata and binds the approved APK bytes to the retained key. The app does not fetch APK bytes itself: the browser performs the download, and **Android validates the actual APK signature and handles installation**. Metadata checking is not a claim that the app has inspected a browser's downloaded file. GitHub HTTPS, the signed publisher and Android's installer remain part of the trust chain.
+
+Automatic checks start only in the foreground, at most once per six hours. Clock rollback does not trigger a request loop. Manual checks intentionally bypass that automatic interval. Offline, timeout, rate-limit, API and invalid-proof errors are not reported as "up to date". Automatic checks can be disabled; only public version/connection information reaches GitHub, not profile, notes or media. Debug/instrumentation builds do not auto-check production releases.
+
+Download opens the canonical official HTTPS APK in your browser. Android asks you to confirm installation/update; if needed, allow installs from that browser. LifeMate has no root operation, silent installer, or `REQUEST_INSTALL_PACKAGES` permission. Do not uninstall to update—uninstalling deletes local data. Back up before important updates and stop on a signature conflict rather than bypassing it.
+
+## Acceptance limits
+
+A signed APK is not automatically store-approved or physically tested on every phone. Android 8.0+ is required. Verify ARM hardware, 16KB page-size devices, OEM restrictions, biometrics, media and real signed upgrades using the checklist in VERIFICATION.md. Until signing secrets exist and the signed job passes, no production-ready install/upgrade claim is made.

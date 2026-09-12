@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set +x
+set +v
 set -euo pipefail
 repo=thisrony506-prog/LifeMate
 mkdir -p release-download "$RUNNER_TEMP/previous-release"
@@ -8,7 +10,7 @@ previous_tag=$(python3 - "$RUNNER_TEMP/releases.json" <<'PY'
 import json, re, sys
 releases=[]
 for release in json.load(open(sys.argv[1])):
-    m=re.fullmatch(r'v1\.2\.([0-9]+)', release['tag_name'])
+    m=re.fullmatch(r'v1\.2\.([1-9][0-9]{0,6})', release['tag_name'])
     if m and not release['draft'] and not release['prerelease']:
         releases.append((int(m[1]),release['tag_name']))
 print(max(releases)[1] if releases else '')
@@ -25,18 +27,21 @@ if [[ -n "$previous_tag" ]]; then
 else
   # First-ever signed publication: make a lower-version fixture with this retained key.
   # It stays on the runner and is never published or uploaded.
-  LIFEMATE_VERSION_CODE=$((LIFEMATE_VERSION_CODE - 1)) LIFEMATE_VERSION_NAME=1.2.0-upgrade-test ./gradlew assembleRelease --stacktrace
+  LIFEMATE_VERSION_CODE=$((LIFEMATE_VERSION_CODE - 1)) LIFEMATE_VERSION_NAME=1.2.0-upgrade-test ./gradlew assembleRelease --no-configuration-cache --stacktrace
   cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/previous.apk"
 fi
-./gradlew assembleRelease --stacktrace
+./gradlew assembleRelease --no-configuration-cache --stacktrace
 cp app/build/outputs/apk/release/app-release.apk "release-download/LifeMate-$LIFEMATE_VERSION_CODE.apk"
 apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
 aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -1)
 for apk in "$RUNNER_TEMP/previous.apk" release-download/*.apk; do
-  "$apksigner" verify --verbose --print-certs "$apk" > "$apk.certificate.txt"
+  "$apksigner" verify --min-sdk-version 26 --verbose --print-certs "$apk" > "$apk.certificate.txt"
+  test "$(grep -c '^Signer #[0-9]* certificate SHA-256 digest:' "$apk.certificate.txt")" -eq 1
+  "$aapt" dump badging "$apk" > "$RUNNER_TEMP/candidate-badging.txt"
+  grep -q "package: name='com.lifemate' " "$RUNNER_TEMP/candidate-badging.txt"
 done
-old=$(grep 'Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/previous.apk.certificate.txt")
-new=$(grep 'Signer #1 certificate SHA-256 digest:' release-download/*.certificate.txt)
+old=$(grep '^Signer #1 certificate SHA-256 digest:' "$RUNNER_TEMP/previous.apk.certificate.txt")
+new=$(grep '^Signer #1 certificate SHA-256 digest:' release-download/*.certificate.txt)
 [[ "$old" == "$new" ]] || { echo '::error::Signing key changed. Refusing to publish an incompatible upgrade.'; exit 1; }
 # Only the APK may remain in the download folder.
 rm release-download/*.certificate.txt
@@ -46,3 +51,8 @@ if grep -q application-debuggable "$RUNNER_TEMP/badging.txt"; then
   echo '::error::Release must not be debuggable.'; exit 1
 fi
 test "$(find release-download -type f | wc -l)" -eq 1
+
+java scripts/SignReleaseMetadata.java "release-download/LifeMate-$LIFEMATE_VERSION_CODE.apk" \
+  "$LIFEMATE_VERSION_CODE" "$LIFEMATE_VERSION_NAME" \
+  "https://github.com/$repo/releases/download/v$LIFEMATE_VERSION_NAME/LifeMate-$LIFEMATE_VERSION_CODE.apk" \
+  "$RUNNER_TEMP/release-notes.md" "${new##* }"

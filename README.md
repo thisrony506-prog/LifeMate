@@ -4,11 +4,15 @@
 
 ## Installable APKs and safe updates
 
-**Old 1.1.x downloads are unsigned and cannot be installed.** The new workflow will publish only a signed, verified APK; it fails closed if the retained signing key is missing. Compilation/lint, 26 JVM tests and the Android feature/updater tests passed in [run 34678452031](https://github.com/thisrony506-prog/LifeMate/actions/runs/34678452031). The release job correctly stopped because the signing key is missing; no APK was uploaded. The current GitHub connection still cannot manage Secrets (HTTP 403), so the one-time signing setup is required. See [private setup and installation](docs/RELEASE.md).
+**Old 1.1.x downloads are unsigned and cannot be installed.** New publication fails closed unless the retained signing key is configured and all install/upgrade checks pass.
 
-After setup, run [LifeMate Release APK](https://github.com/thisrony506-prog/LifeMate/actions/workflows/android.yml) on `arena/01a090c4-lifemate`. Successful publication provides one **LifeMate-Release-APK** artifact containing only the versioned APK, plus the same APK in GitHub Releases for the in-app download button. Tests/reports/debug builds are never separate downloads.
+Use the [exact private Codespace setup commands](docs/RELEASE.md). The setup script prompts locally for your password, requires JDK 17/OpenSSL/GitHub CLI, refuses existing identities, and writes the JKS only to `$HOME/lifemate-private-signing-backup/`. No password file is saved. Back up the JKS and password separately; never send either into chat.
 
-The Home header and App updates page show installed/new versions. Optional foreground checks fetch only official public GitHub release metadata; download opens your browser and Android asks before installing. Offline use is unaffected. Each new publishing run increases the version code; the same signing key and app ID are retained. CI checks actual signed installation and an encrypted-profile-preserving upgrade before publication. This signing/upgrade stage cannot run until the private secrets exist.
+The release workflow retains `com.lifemate`, assigns `100000 + GITHUB_RUN_NUMBER` / `1.2.<run number>`, verifies `apksigner` continuity, and checks a signed data-preserving upgrade before publication. Successful runs expose one signed `LifeMate-<versionCode>.apk`, not debug/report/signing downloads.
+
+The existing Home update notice/manual update page now requires metadata signed by the **installed app's signing key** and a matching GitHub APK digest. Foreign/malformed/unsigned/unverified assets are rejected. Automatic checks start in the foreground at most every six hours and can be disabled. Manual checks are available; errors are never "up to date". Download opens the official HTTPS APK in the browser; Android asks before installation. Core features remain offline-capable.
+
+See [verification results and remaining device/signing checks](docs/VERIFICATION.md). Until the final signed job passes, this is a prepared release pipeline—not a verified installable production release.
 
 ## LifeMate 1.1.1 design
 

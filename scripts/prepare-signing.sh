@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Keys/passwords are never printed, cached or uploaded. No unsigned publication.
+set +x
+set +v
 set -euo pipefail
 for name in LIFEMATE_KEYSTORE_BASE64 LIFEMATE_STORE_PASSWORD LIFEMATE_KEY_ALIAS LIFEMATE_KEY_PASSWORD; do
   if [[ -z "${!name:-}" ]]; then

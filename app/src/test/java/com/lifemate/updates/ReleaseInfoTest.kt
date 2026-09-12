@@ -21,7 +21,7 @@ class ReleaseInfoTest {
     }
     @Test fun rejectsMismatchingCodeAndMalformedTags() {
         assertNull(ReleaseInfo.validated("v1.2.2", "LifeMate-100001.apk", "${base}v1.2.2/LifeMate-100001.apk"))
-        for (tag in listOf("v1.2.0", "v1.2.-1", "v1.2.99999999999", "v1.2.1-beta", "../v1.2.1"))
+        for (tag in listOf("v1.2.01", "v1.2.0", "v1.2.-1", "v1.2.99999999999", "v1.2.1-beta", "../v1.2.1"))
             assertNull(ReleaseInfo.validated(tag, "LifeMate-100001.apk", "${base}$tag/LifeMate-100001.apk"))
     }
 }
