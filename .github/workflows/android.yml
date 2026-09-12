@@ -51,9 +51,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Signing and release script tests
         run: |
-          python3 -m unittest discover -s scripts/tests -v
+          set -o pipefail
+          python3 -m unittest discover -s scripts/tests -v 2>&1 | tee compile.log
           mkdir -p "$RUNNER_TEMP/lifemate-script-checks"
-          javac -d "$RUNNER_TEMP/lifemate-script-checks" scripts/SignReleaseMetadata.java
+          javac -d "$RUNNER_TEMP/lifemate-script-checks" scripts/SignReleaseMetadata.java 2>&1 | tee -a compile.log
       - name: Assign version
         run: python3 scripts/release-version.py
       - name: Verify all code (no unsigned download)

@@ -90,7 +90,7 @@ class SigningSetupTest(unittest.TestCase):
             if p.poll() is None: os.killpg(p.pid, signal.SIGKILL);p.wait()
             os.close(master)
         text=output.decode(errors='replace')
-        self.assertNotIn(self.password, text)
+        self.assertTrue(self.password not in text, "PTY echoed inert password input")
         return p.returncode, text
 
     @property

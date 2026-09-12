@@ -7,7 +7,7 @@ umask 077
 repo=thisrony506-prog/LifeMate
 [[ $# -eq 0 ]] || { echo 'Usage: bash scripts/setup-release-signing.sh (no arguments)'; exit 1; }
 [[ "${CI:-false}" != true && "${GITHUB_ACTIONS:-false}" != true ]] || { echo 'Run locally in a private terminal, not CI.'; exit 1; }
-for tool in java javac keytool openssl gh git base64 realpath; do
+for tool in java javac keytool openssl gh git base64 realpath stty; do
   command -v "$tool" >/dev/null || { echo "Required tool missing: $tool"; exit 1; }
 done
 java -version 2>&1 | grep -Eq 'version "17([."]|$)' || { echo 'Select JDK 17 (JAVA_HOME and PATH) first.'; exit 1; }
@@ -32,18 +32,24 @@ case "$physical_folder/" in "$root/"*) echo 'The private backup folder must be o
 # /dev/tty keeps password input out of pipelines, argv, shell history and CI logs.
 exec 3<>/dev/tty || { echo 'An interactive private terminal is required.'; exit 1; }
 created=false
+tty_state=$(stty -g <&3)
 cleanup() {
   status=$?
+  if [[ -n "${tty_state:-}" ]]; then stty "$tty_state" <&3 || true; fi
   unset LIFEMATE_STORE_PASSWORD LIFEMATE_KEY_PASSWORD password confirmation
   if [[ $status -ne 0 && "$created" == true ]]; then
     echo 'Setup did not finish. KEEP the private backup folder and the same key; never regenerate to recover a partial upload.' >&2
   fi
 }
 trap cleanup EXIT
+# Disable echo BEFORE displaying prompts, including the gap before read -s starts.
+stty -echo <&3
 printf 'Choose a strong password for BOTH the keystore and key (at least 12 characters): ' >&3
 IFS= read -r -s password <&3; printf '\n' >&3
 printf 'Confirm password: ' >&3
 IFS= read -r -s confirmation <&3; printf '\n' >&3
+stty "$tty_state" <&3
+tty_state=''
 [[ ${#password} -ge 12 && "$password" == "$confirmation" ]] || { echo 'Password too short or confirmation did not match. Nothing was created.'; exit 1; }
 unset confirmation
 export LIFEMATE_STORE_PASSWORD="$password" LIFEMATE_KEY_PASSWORD="$password"
