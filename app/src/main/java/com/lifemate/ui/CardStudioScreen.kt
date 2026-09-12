@@ -44,8 +44,13 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
     val draftId = post?.let { "post-${it.id}" } ?: birthday?.id ?: "social-post"
     val person = birthday?.nickname?.ifBlank { birthday.title } ?: "friend"
     val default = remember(draftId) { PostDesign(text = if(post!=null) com.lifemate.domain.PostTemplates.graphic(post) else if (birthday != null) Wishes.generate(person,birthday.relationship,"Short") else "Make today\na little brighter.", palette="White", ink=if(post?.photo.isNullOrBlank()) "Ink" else "White", photo=post?.photo.orEmpty(), format = if (birthday != null) "Portrait" else "Square") }
+    val sourceKey = post?.let { com.lifemate.domain.PostTemplates.graphic(it) + "\u001f" + it.photo }.orEmpty()
     var saved by rememberSaveable(draftId) { mutableStateOf(runCatching { vm.app.secure.readStudioDraft(draftId) }.getOrNull() ?: default.json()) }
-    var design by remember(draftId) { mutableStateOf(designFromJson(saved, default)) }
+    var design by remember(draftId) {
+        val previous=designFromJson(saved,default)
+        val changed=post!=null && runCatching { JSONObject(saved).optString("_source") }.getOrDefault("")!=sourceKey
+        mutableStateOf(if(changed) previous.copy(text=default.text,photo=default.photo) else previous)
+    }
     var tone by rememberSaveable(draftId) { mutableStateOf("Short") }
     var name by rememberSaveable(draftId) { mutableStateOf(person) }
     var tab by rememberSaveable { mutableStateOf("Text") }
@@ -76,7 +81,7 @@ private fun designFromJson(json: String, fallback: PostDesign): PostDesign = run
         }
     }
     LaunchedEffect(design, renderRevision) {
-        saved = design.json(); error = null
+        saved = JSONObject(design.json()).put("_source",sourceKey).toString(); error = null
         delay(450)
         try {
             withContext(Dispatchers.IO) {
