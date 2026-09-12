@@ -67,3 +67,22 @@ class ReleasePipelineTest(unittest.TestCase):
         pipeline=(ROOT/'scripts/prepare-upgrade-apks.sh').read_text()
         self.assertIn('scripts/VerifiedApkSigner.java',pipeline)
         self.assertNotIn('verify-apk-signers.py',pipeline)
+
+    def test_release_smoke_only_presses_back_when_keyboard_is_visible(self):
+        import runpy
+        scope=runpy.run_path(str(ROOT/'scripts/verify-release-install.py'))
+        hide=scope['hide_keyboard_if_shown']
+        calls=[]
+        def adb_hidden(*args):
+            calls.append(args)
+            return 'mInputShown=false'
+        hide.__globals__['adb']=adb_hidden
+        hide()
+        self.assertEqual(calls,[('shell','dumpsys','input_method')])
+        calls.clear()
+        def adb_shown(*args):
+            calls.append(args)
+            return 'mInputShown=true'
+        hide.__globals__['adb']=adb_shown
+        hide()
+        self.assertIn(('shell','input','keyevent','4'),calls)

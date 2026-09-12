@@ -108,7 +108,7 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          script: python3 scripts/verify-release-install.py
+          script: bash -o pipefail -c 'python3 -u scripts/verify-release-install.py 2>&1 | tee -a compile.log'
       - name: Publish versioned APK for in-app updates
         run: bash scripts/publish-release.sh
       - name: Upload only installable LifeMate Release APK
