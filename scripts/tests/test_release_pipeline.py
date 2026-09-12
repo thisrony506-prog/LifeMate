@@ -62,3 +62,9 @@ class ReleasePipelineTest(unittest.TestCase):
         with self.assertRaises(ValueError): parse('Number of signers: 2\n')
         with self.assertRaises(ValueError): parse('Number of signers: 1\nSource Stamp Signer certificate SHA-256 digest: '+digest+'\n')
         with self.assertRaises(ValueError): parse('Number of signers: 1\nSigner #1 certificate SHA-256 digest: '+digest+'\nSigner #1 certificate SHA-256 digest: '+'cd'*32+'\n')
+
+    def test_release_verifier_uses_pinned_stable_build_tools(self):
+        script=(ROOT/'scripts/prepare-upgrade-apks.sh').read_text()
+        self.assertIn('$ANDROID_HOME/build-tools/35.0.0/apksigner',script)
+        self.assertIn('buildToolsVersion = "35.0.0"',(ROOT/'app/build.gradle.kts').read_text())
+        self.assertNotIn('sort -V',script)

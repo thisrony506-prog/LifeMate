@@ -33,8 +33,11 @@ else
 fi
 ./gradlew assembleRelease --no-configuration-cache --stacktrace
 cp app/build/outputs/apk/release/app-release.apk "release-download/LifeMate-$LIFEMATE_VERSION_CODE.apk"
-apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
-aapt=$(find "$ANDROID_HOME/build-tools" -name aapt | sort -V | tail -1)
+# Match the pinned AGP toolchain, not whichever newer/preview tool happens to be on the runner.
+apksigner="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+aapt="$ANDROID_HOME/build-tools/35.0.0/aapt"
+test -x "$apksigner" && test -x "$aapt"
+echo 'Verifying with Android Build Tools 35.0.0.'
 echo 'Checking APK signatures, signer count and package identity.'
 for apk in "$RUNNER_TEMP/previous.apk" release-download/*.apk; do
   if ! "$apksigner" verify --min-sdk-version 26 --verbose --print-certs "$apk" > "$apk.certificate.txt"; then
