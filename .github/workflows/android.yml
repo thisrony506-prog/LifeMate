@@ -89,7 +89,7 @@ jobs:
   build:
     name: Signed APK and safe upgrade
     needs: [device-tests, verify]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate' && vars.LIFEMATE_RELEASE_READY != 'false'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate' && false # Publication held until Flutter migration verification is complete
     permissions:
       contents: write
     runs-on: ubuntu-latest
