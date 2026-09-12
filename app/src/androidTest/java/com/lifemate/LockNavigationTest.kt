@@ -33,7 +33,13 @@ class LockNavigationTest {
         compose.onNodeWithText("Confirm PIN").performTextInput("839271")
         compose.onNodeWithText("Save PIN").performClick()
         compose.waitUntil(10_000) { app.secure.hasPin() }
-        compose.onNodeWithText("Change PIN").performScrollTo().performClick()
+        // The IO write completes before onSaved dismisses the dialog and updates
+        // settings semantics. Wait for the actual actionable UI, not just storage.
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Save PIN").fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodes(hasText("Change PIN") and hasClickAction()).fetchSemanticsNodes().size == 1
+        }
+        compose.onNode(hasText("Change PIN") and hasClickAction()).performScrollTo().performClick()
         compose.onNodeWithText("Current PIN").assertIsDisplayed()
         compose.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
         Thread.sleep(31_000)
