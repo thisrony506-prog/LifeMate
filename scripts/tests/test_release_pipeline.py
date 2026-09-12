@@ -34,8 +34,8 @@ class ReleasePipelineTest(unittest.TestCase):
         self.assertEqual(workflow.count('uses: actions/upload-artifact@'),1)
         self.assertIn('path: release-download/*.apk',workflow)
         script=(ROOT/'scripts/publish-release.sh').read_text()
-        self.assertLess(script.index('--draft '),script.index("a.get('digest')"))
-        self.assertLess(script.index("a.get('digest')"),script.index('--draft=false'))
+        self.assertLess(script.index('--draft '),script.index("verify-release-publication.py draft"))
+        self.assertLess(script.index("verify-release-publication.py draft"),script.index('--draft=false'))
         self.assertNotIn('--clobber',script)
 
     def test_wrapped_base64_and_bad_encoding(self):
@@ -86,3 +86,21 @@ class ReleasePipelineTest(unittest.TestCase):
         hide.__globals__['adb']=adb_shown
         hide()
         self.assertIn(('shell','input','keyevent','4'),calls)
+
+    def test_draft_temporary_url_and_final_canonical_url_are_checked_separately(self):
+        import runpy
+        validate=runpy.run_path(str(ROOT/'scripts/verify-release-publication.py'))['validate']
+        sha='ab'*32
+        asset={'id':17,'name':'LifeMate-100001.apk','size':1234,'state':'uploaded','digest':'sha256:'+sha,
+               'url':'https://api.github.com/repos/thisrony506-prog/LifeMate/releases/assets/17',
+               'browser_download_url':'https://github.com/thisrony506-prog/LifeMate/releases/download/untagged-example/LifeMate-100001.apk'}
+        release={'tag_name':'v1.2.1','draft':True,'prerelease':False,'assets':[asset]}
+        validate(release,100001,'1.2.1',asset['name'],1234,sha,True)
+        release['draft']=False
+        with self.assertRaises(ValueError): validate(release,100001,'1.2.1',asset['name'],1234,sha,False)
+        asset['browser_download_url']='https://github.com/thisrony506-prog/LifeMate/releases/download/v1.2.1/LifeMate-100001.apk'
+        validate(release,100001,'1.2.1',asset['name'],1234,sha,False)
+        for field,value in [('digest','sha256:bad'),('url','https://api.github.com/repos/foreign/repo/releases/assets/17'),('browser_download_url','https://evil.example/app.apk')]:
+            old=asset[field];asset[field]=value
+            with self.assertRaises(ValueError): validate(release,100001,'1.2.1',asset['name'],1234,sha,False)
+            asset[field]=old

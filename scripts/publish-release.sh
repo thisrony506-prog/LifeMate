@@ -29,17 +29,7 @@ gh release create "$tag" "$apk" --repo "$repo" --target "$GITHUB_SHA" --draft \
 gh api "repos/$repo/releases?per_page=100" --jq ".[] | select(.tag_name == \"$tag\") | .id" > "$RUNNER_TEMP/release-id"
 grep -Eq '^[0-9]+$' "$RUNNER_TEMP/release-id"
 gh api "repos/$repo/releases/$(cat "$RUNNER_TEMP/release-id")" > "$RUNNER_TEMP/uploaded-release.json"
-python3 - <<'PYVERIFY'
-import hashlib, json, os, pathlib
-root = pathlib.Path(os.environ['RUNNER_TEMP'])
-r = json.loads((root / 'uploaded-release.json').read_text())
-assets = r['assets']
-assert len(assets) == 1, 'Release must contain exactly one APK asset'
-a = assets[0]
-p = pathlib.Path('release-download') / f"LifeMate-{os.environ['LIFEMATE_VERSION_CODE']}.apk"
-sha = hashlib.sha256(p.read_bytes()).hexdigest()
-assert a['name'] == p.name and a['size'] == p.stat().st_size and a['state'] == 'uploaded'
-assert a.get('digest') == 'sha256:' + sha, 'Uploaded APK digest mismatch or unavailable'
-assert a['browser_download_url'] == f"https://github.com/thisrony506-prog/LifeMate/releases/download/v{os.environ['LIFEMATE_VERSION_NAME']}/{p.name}"
-PYVERIFY
+python3 scripts/verify-release-publication.py draft "$RUNNER_TEMP/uploaded-release.json"
 gh release edit "$tag" --repo "$repo" --draft=false --latest
+gh api "repos/$repo/releases/$(cat "$RUNNER_TEMP/release-id")" > "$RUNNER_TEMP/published-release.json"
+python3 scripts/verify-release-publication.py published "$RUNNER_TEMP/published-release.json"

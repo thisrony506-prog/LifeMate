@@ -110,7 +110,9 @@ jobs:
           arch: x86_64
           script: bash -o pipefail -c 'python3 -u scripts/verify-release-install.py 2>&1 | tee -a compile.log'
       - name: Publish versioned APK for in-app updates
-        run: bash scripts/publish-release.sh
+        run: |
+          set -o pipefail
+          bash scripts/publish-release.sh 2>&1 | tee -a compile.log
       - name: Upload only installable LifeMate Release APK
         uses: actions/upload-artifact@v4
         with:
