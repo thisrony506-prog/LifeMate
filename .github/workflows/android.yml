@@ -1,3 +1,4 @@
+# PR checks never publish APKs. Push/manual runs on the release branch also verify private signing and upgrades.
 name: LifeMate Release APK
 on:
   push:
