@@ -20,7 +20,7 @@ class FlutterHostTest {
         ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
             fun locate(label: String): UiObject2 {
                 repeat(60) {
-                    (device.findObject(By.textContains(label)) ?: device.findObject(By.descContains(label)))?.let { return it }
+                    (device.findObject(By.textContains(label).pkg(context.packageName)) ?: device.findObject(By.descContains(label).pkg(context.packageName)))?.let { return it }
                     SystemClock.sleep(500)
                 }
                 val bytes = java.io.ByteArrayOutputStream()
@@ -31,7 +31,7 @@ class FlutterHostTest {
                 error("Flutter did not expose $label. Visible test labels: ${visible.take(2400)}")
             }
             locate("Continue").click()
-            val field = device.wait(Until.findObject(By.clazz("android.widget.EditText")),10000)
+            val field = device.wait(Until.findObject(By.clazz("android.widget.EditText").pkg(context.packageName)),10000)
             assertNotNull(field); field!!.text = "FreshStartProof"
             device.executeShellCommand("input keyevent 111") // ESC hides the IME without navigating back.
             for (attempt in 0..3) {
