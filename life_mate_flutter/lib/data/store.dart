@@ -28,12 +28,15 @@ class LifeStore extends ChangeNotifier {
     if (demo && _demoDay != today) { _invalidate(); _demoDay = today; }
     return _snapshot ??= List.unmodifiable(demo ? demoEntries(DateTime.now(), language == 'bn') : _records);
   }
-  List<Entry> entries(EntryKind kind) => List.of(_kindIndex.putIfAbsent(kind, () =>
-      all.where((e) => e.kind == kind && !e.deleted).toList()..sort((a,b) => b.date.compareTo(a.date))));
+  List<Entry> entries(EntryKind kind) {
+    final records = all; // Check demo day rollover even when this kind is cached.
+    return List.of(_kindIndex.putIfAbsent(kind, () => records.where((e) => e.kind == kind && !e.deleted).toList()..sort((a,b) => b.date.compareTo(a.date))));
+  }
   List<Entry> get pending =>
       _records.where((e) => e.syncable && e.dirty).toList();
   Future<void> load() async {
     _records = vault?.entries ?? [];
+    _invalidate();
     language = vault?.settingValue('language', 'en') ?? 'en';
     appearance = vault?.settingValue('appearance', 'System') ?? 'System';
     name = vault?.settingValue('name') ?? '';

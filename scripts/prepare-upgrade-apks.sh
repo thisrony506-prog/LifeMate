@@ -31,6 +31,10 @@ else
   LIFEMATE_VERSION_CODE=$((LIFEMATE_VERSION_CODE - 1)) LIFEMATE_VERSION_NAME=1.2.0-upgrade-test ./gradlew :app:assembleRelease --no-configuration-cache --stacktrace
   cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/previous.apk"
 fi
+# An unpublished same-source lower-version Flutter APK proves that only the
+# native-to-Personal-OS transition resets data; the next Flutter update retains it.
+LIFEMATE_VERSION_CODE=$((LIFEMATE_VERSION_CODE - 1)) LIFEMATE_VERSION_NAME=1.2.0-retention-test ./gradlew :app:assembleRelease --no-configuration-cache --stacktrace
+cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/flutter-retention.apk"
 ./gradlew :app:assembleRelease --no-configuration-cache --stacktrace
 cp app/build/outputs/apk/release/app-release.apk "release-download/LifeMate-$LIFEMATE_VERSION_CODE.apk"
 # Match the pinned AGP toolchain, not whichever newer/preview tool happens to be on the runner.
@@ -41,7 +45,7 @@ apksig_jar="$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar"
 test -f "$apksig_jar"
 echo 'Verifying with Android Build Tools 35.0.0.'
 echo 'Checking APK signatures, signer count and package identity.'
-for apk in "$RUNNER_TEMP/previous.apk" release-download/*.apk; do
+for apk in "$RUNNER_TEMP/previous.apk" "$RUNNER_TEMP/flutter-retention.apk" release-download/*.apk; do
   if ! "$apksigner" verify --min-sdk-version 26 --verbose --print-certs "$apk" > "$apk.certificate.txt"; then
     grep -E '^(DOES NOT VERIFY|ERROR|WARNING|Verified using|Number of signers:)' "$apk.certificate.txt" || true
     echo '::error::Android apksigner rejected the APK.'
@@ -58,6 +62,7 @@ done
 old=$(cat "$RUNNER_TEMP/previous.apk.signer.txt")
 new=$(cat release-download/*.signer.txt)
 [[ "$old" == "$new" ]] || { echo '::error::Signing key changed. Refusing to publish an incompatible upgrade.'; exit 1; }
+[[ "$(cat "$RUNNER_TEMP/flutter-retention.apk.signer.txt")" == "$new" ]] || { echo '::error::Retention fixture signer differs'; exit 1; }
 echo 'PASS: verified APK signer continuity and package identity'
 # Only the APK may remain in the download folder.
 rm release-download/*.certificate.txt release-download/*.signer.txt
@@ -68,6 +73,7 @@ if grep -q application-debuggable "$RUNNER_TEMP/badging.txt"; then
   echo '::error::Release must not be debuggable.'; exit 1
 fi
 test "$(find release-download -type f | wc -l)" -eq 1
+python3 scripts/apk-metrics.py release-download/*.apk
 
 echo 'Signing public update metadata with the verified retained key.'
 java scripts/SignReleaseMetadata.java "release-download/LifeMate-$LIFEMATE_VERSION_CODE.apk" \

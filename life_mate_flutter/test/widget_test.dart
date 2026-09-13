@@ -45,7 +45,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Wake-up time'), findsOneWidget);
   });
-  testWidgets('app lock hides real content without device authentication', (tester) async {
+  testWidgets('app lock hides real content without device authentication', (
+    tester,
+  ) async {
     final s = LifeStore.memory();
     s.name = 'PrivateLockedName';
     s.appLock = true;
@@ -54,16 +56,22 @@ void main() {
     expect(find.textContaining('PrivateLockedName'), findsNothing);
     expect(find.text('Unlock'), findsOneWidget);
   });
-  testWidgets('My Life does not expose removed organizer tools', (tester) async {
+  testWidgets('My Life does not expose removed organizer tools', (
+    tester,
+  ) async {
     final s = LifeStore.memory();
     await tester.pumpWidget(LifeMateApp(store: s));
     await tester.pumpAndSettle();
     await tester.tap(find.text('My Life'));
     await tester.pumpAndSettle();
-    for (final removed in ['All retained tools', 'Missions', 'Facebook Posts', 'Card Studio']) {
+    for (final removed in [
+      'All retained tools',
+      'Missions',
+      'Facebook Posts',
+      'Card Studio',
+    ]) {
       expect(find.text(removed), findsNothing);
     }
     expect(find.text('Mind Mate'), findsOneWidget);
   });
-
 }

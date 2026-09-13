@@ -68,10 +68,23 @@ def start():
 def labels():
     return ' '.join(n.get('text','') + ' ' + n.get('content-desc','') for n in tree().iter('node'))
 
+def focus_name_field():
+    for _ in range(18):
+        try:
+            for node in tree().iter('node'):
+                if node.get('package') == 'com.lifemate' and node.get('class') == 'android.widget.EditText':
+                    x1,y1,x2,y2=map(int,re.findall(r'\d+',node.get('bounds','')))
+                    adb('shell','input','tap',str((x1+x2)//2),str((y1+y2)//2))
+                    return
+        except UIUnavailable: pass
+        time.sleep(1)
+    raise AssertionError('Editable name field not found')
+
 def onboard_new(name):
     find('Continue', tap=True)
-    find('What should we call you?', scroll=True, tap=True)
+    focus_name_field()
     adb('shell', 'input', 'text', name)
+    find(name)
     hide_keyboard_if_shown()
     find('Organize my day', scroll=True, tap=True)
     find('Money')
@@ -103,10 +116,15 @@ def main():
         hide_keyboard_if_shown()
         find('Make yourself at home', scroll=True, tap=True)
         find('OldResetProof')
+        adb('shell', 'am', 'force-stop', 'com.lifemate')
+        start()
+        find('OldResetProof')
+        assert 'Make yourself at home' not in labels(), 'Old profile was not saved before reset'
     else:
         onboard_new('NewDataProof')
     adb('shell', 'am', 'force-stop', 'com.lifemate')
-    assert 'Success' in adb('install', '-r', current)
+    target = os.path.join(os.environ['RUNNER_TEMP'], 'flutter-retention.apk') if legacy else current
+    assert 'Success' in adb('install', '-r', target)
     adb('shell', 'pm', 'grant', 'com.lifemate', 'android.permission.POST_NOTIFICATIONS')
     start()
     if legacy:
@@ -122,6 +140,13 @@ def main():
     adb('shell', 'am', 'force-stop', 'com.lifemate')
     start()
     find(expected)
+    if legacy:
+        adb('shell', 'am', 'force-stop', 'com.lifemate')
+        assert 'Success' in adb('install', '-r', current)
+        start()
+        find('Money')
+        find(expected)
+        print('PASS: subsequent higher-version Flutter install preserves the new profile')
     package = adb('shell', 'dumpsys', 'package', 'com.lifemate')
     assert f"versionCode={os.environ['LIFEMATE_VERSION_CODE']} " in package
     print('PASS: retained-key higher-version install; new profile survives process restart')

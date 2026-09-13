@@ -12,10 +12,14 @@ import 'crypto_tasks.dart';
 
 class CloudService {
   static const project = String.fromEnvironment('FIREBASE_PROJECT_ID');
-  static bool get configured => project.isNotEmpty &&
+  static bool get configured =>
+      project.isNotEmpty &&
       (const String.fromEnvironment('FIREBASE_API_KEY')).isNotEmpty &&
       (const String.fromEnvironment('FIREBASE_SENDER_ID')).isNotEmpty &&
-      (Platform.isIOS ? const String.fromEnvironment('FIREBASE_IOS_APP_ID') : const String.fromEnvironment('FIREBASE_ANDROID_APP_ID')).isNotEmpty;
+      (Platform.isIOS
+              ? const String.fromEnvironment('FIREBASE_IOS_APP_ID')
+              : const String.fromEnvironment('FIREBASE_ANDROID_APP_ID'))
+          .isNotEmpty;
   static Future<void> init() async {
     if (!configured) throw StateError('Firebase is not configured');
     if (Firebase.apps.isEmpty)
@@ -195,12 +199,20 @@ class CloudService {
 
   static Future<String> sathi(String text, String language) async {
     await session();
-    final result = await FirebaseFunctions.instanceFor(region: const String.fromEnvironment('FIREBASE_FUNCTIONS_REGION', defaultValue: 'asia-south1'))
-        .httpsCallable(
-          'sathi',
-          options: HttpsCallableOptions(timeout: const Duration(seconds: 30)),
-        )
-        .call({'message': text, 'language': language});
+    final result =
+        await FirebaseFunctions.instanceFor(
+              region: const String.fromEnvironment(
+                'FIREBASE_FUNCTIONS_REGION',
+                defaultValue: 'asia-south1',
+              ),
+            )
+            .httpsCallable(
+              'sathi',
+              options: HttpsCallableOptions(
+                timeout: const Duration(seconds: 30),
+              ),
+            )
+            .call({'message': text, 'language': language});
     final answer = (result.data as Map)['reply'];
     if (answer is! String || answer.isEmpty || answer.length > 6000)
       throw const FormatException('Invalid response');

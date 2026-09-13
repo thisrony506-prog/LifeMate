@@ -43,7 +43,8 @@ Future<void> main() async {
     runApp(LifeMateApp(store: store));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       openPending(store);
-      if (NativeBridge.android) NativeBridge.channel.invokeMethod('performance.ready');
+      if (NativeBridge.android)
+        NativeBridge.channel.invokeMethod('performance.ready');
     });
   } catch (_) {
     runApp(
