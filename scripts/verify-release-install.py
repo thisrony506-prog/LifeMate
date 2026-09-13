@@ -1,4 +1,4 @@
-"""Exercise actual non-debuggable, signed APK installation and encrypted-profile upgrade.
+"""Exercise actual non-debuggable, signed APK installation and fresh replacement and subsequent persistence.
 Uses Android's visible UI; no app backdoors, run-as access, or shipping test fixtures.
 """
 import os, re, subprocess, time, xml.etree.ElementTree as ET
@@ -62,29 +62,68 @@ def find(label, scroll=False, tap=False):
     print(adb('logcat', '-d', '-t', '80', '-s', 'AndroidRuntime'), flush=True)
     raise AssertionError('Release UI did not show: ' + label)
 
+def start():
+    adb('shell', 'am', 'start', '-W', '-n', 'com.lifemate/.MainActivity')
+
+def labels():
+    return ' '.join(n.get('text','') + ' ' + n.get('content-desc','') for n in tree().iter('node'))
+
+def onboard_new(name):
+    find('Continue', tap=True)
+    find('What should we call you?', scroll=True, tap=True)
+    adb('shell', 'input', 'text', name)
+    hide_keyboard_if_shown()
+    find('Organize my day', scroll=True, tap=True)
+    find(name)
+
 def main():
     previous = os.path.join(os.environ['RUNNER_TEMP'], 'previous.apk')
     current = f"release-download/LifeMate-{os.environ['LIFEMATE_VERSION_CODE']}.apk"
-    print('Installing earlier signed APK', flush=True)
     assert 'Success' in adb('install', previous)
-    print('PASS: earlier signed APK installed', flush=True)
-    adb('shell', 'am', 'start', '-W', '-n', 'com.lifemate/.MainActivity')
-    print('Entering encrypted profile through onboarding', flush=True)
-    find('Full name', scroll=True, tap=True)
-    adb('shell', 'input', 'text', 'UpgradeProof')
-    hide_keyboard_if_shown()
-    find('Make yourself at home', scroll=True, tap=True)
-    find('UpgradeProof')
-    print('PASS: profile saved before upgrade', flush=True)
+    adb('shell', 'pm', 'grant', 'com.lifemate', 'android.permission.POST_NOTIFICATIONS')
+    start()
+    legacy = None
+    for _ in range(25):
+        try:
+            text = labels()
+            if 'Full name' in text:
+                legacy = True
+                break
+            if 'Continue' in text and 'Life Mate' in text:
+                legacy = False
+                break
+        except UIUnavailable:
+            pass
+        time.sleep(1)
+    assert legacy is not None, 'Previous signed APK onboarding was not recognized'
+    if legacy:
+        find('Full name', scroll=True, tap=True)
+        adb('shell', 'input', 'text', 'OldResetProof')
+        hide_keyboard_if_shown()
+        find('Make yourself at home', scroll=True, tap=True)
+        find('OldResetProof')
+    else:
+        onboard_new('NewDataProof')
     adb('shell', 'am', 'force-stop', 'com.lifemate')
-    print('Installing newer signed APK without uninstalling', flush=True)
-    assert 'Success' in adb('install', '-r', current)  # No uninstall or downgrade override.
-    print('PASS: Android accepted the signed in-place upgrade', flush=True)
-    adb('shell', 'am', 'start', '-W', '-n', 'com.lifemate/.MainActivity')
-    find('UpgradeProof')
+    assert 'Success' in adb('install', '-r', current)
+    adb('shell', 'pm', 'grant', 'com.lifemate', 'android.permission.POST_NOTIFICATIONS')
+    start()
+    if legacy:
+        find('Continue')
+        assert 'OldResetProof' not in labels(), 'Old profile leaked into the fresh app'
+        onboard_new('FreshStartProof')
+        expected = 'FreshStartProof'
+        print('PASS: requested clean replacement starts new onboarding, not the old profile')
+    else:
+        expected = 'NewDataProof'
+        find(expected)
+        print('PASS: a subsequent Personal Life OS update does not reset new data')
+    adb('shell', 'am', 'force-stop', 'com.lifemate')
+    start()
+    find(expected)
     package = adb('shell', 'dumpsys', 'package', 'com.lifemate')
     assert f"versionCode={os.environ['LIFEMATE_VERSION_CODE']} " in package
-    print('PASS: signed release installs and higher-version update preserves the encrypted profile')
+    print('PASS: retained-key higher-version install; new profile survives process restart')
 
 if __name__ == '__main__':
     main()

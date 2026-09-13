@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../data/store.dart';
 import '../data/entry.dart';
 
@@ -18,7 +19,7 @@ ThemeData lifeTheme(bool dark) {
     error: dark ? const Color(0xFFE9CA9A) : const Color(0xFF785F32));
   return ThemeData(useMaterial3: true, colorScheme: scheme, scaffoldBackgroundColor: scheme.surface,
     visualDensity: VisualDensity.standard,
-    appBarTheme: AppBarTheme(backgroundColor: scheme.surface, foregroundColor: scheme.onSurface, surfaceTintColor: Colors.transparent),
+    appBarTheme: AppBarTheme(systemOverlayStyle: SystemUiOverlayStyle(statusBarColor: Colors.transparent, statusBarIconBrightness: dark ? Brightness.light : Brightness.dark, systemNavigationBarColor: scheme.surface, systemNavigationBarIconBrightness: dark ? Brightness.light : Brightness.dark), backgroundColor: scheme.surface, foregroundColor: scheme.onSurface, surfaceTintColor: Colors.transparent),
     inputDecorationTheme: InputDecorationTheme(filled: true, fillColor: scheme.primaryContainer.withValues(alpha: .5), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none), contentPadding: const EdgeInsets.all(16)),
     filledButtonTheme: FilledButtonThemeData(style: FilledButton.styleFrom(minimumSize: const Size(48, 50), foregroundColor: ink, backgroundColor: sage, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)))),
     navigationBarTheme: NavigationBarThemeData(indicatorColor: scheme.primaryContainer, backgroundColor: scheme.surface, surfaceTintColor: Colors.transparent),

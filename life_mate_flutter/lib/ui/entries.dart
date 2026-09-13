@@ -6,25 +6,18 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import '../data/store.dart';
 import '../data/entry.dart';
-import '../services/native.dart';
 import 'common.dart';
 
 Future<void> openEntries(BuildContext context, EntryKind kind) async {
-  final s=LifeScope.of(context);
-  if(kind==EntryKind.journal && !s.demo) {
-    try {
-      if(NativeBridge.android) {
-        final snapshot=await NativeBridge.snapshot();
-        if(snapshot['hasPin'] != true) {
-          if(context.mounted) {message(context,s.t('Set an app PIN before opening your secret journal.','গোপন ডায়েরি খোলার আগে অ্যাপ পিন দাও।')); await NativeBridge.open('settings');}
-          return;
-        }
-      }
-    } catch(_){if(context.mounted)message(context,s.t('Set up a device lock to use the secret journal.','গোপন ডায়েরির জন্য ডিভাইস লক চালু করো।'));return;}
-  }
-  if(context.mounted) await Navigator.push(context,MaterialPageRoute<void>(builder:(_)=>kind==EntryKind.journal&&!NativeBridge.android&&!s.demo?DeviceLock(child:EntryList(kind)):EntryList(kind)));
+  final s = LifeScope.of(context);
+  await Navigator.push<void>(context, MaterialPageRoute<void>(builder: (_) =>
+    kind == EntryKind.journal && !s.demo ? DeviceLock(child: EntryList(kind)) : EntryList(kind)));
 }
-Future<void> editEntry(BuildContext context, EntryKind kind, [Entry? entry]) => Navigator.push<void>(context,MaterialPageRoute<void>(builder:(_)=>EntryEditor(kind,entry:entry)));
+Future<void> editEntry(BuildContext context, EntryKind kind, [Entry? entry]) {
+  final s = LifeScope.of(context);
+  return Navigator.push<void>(context, MaterialPageRoute<void>(builder: (_) =>
+    kind == EntryKind.journal && !s.demo ? DeviceLock(child: EntryEditor(kind, entry: entry)) : EntryEditor(kind, entry: entry)));
+}
 class EntryPhoto extends StatelessWidget {
   final String id; final double height;
   const EntryPhoto(this.id,{super.key,this.height=180});

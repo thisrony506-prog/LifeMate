@@ -1,23 +1,14 @@
 package com.lifemate
 
 import android.app.Application
-import androidx.room.Room
-import com.lifemate.database.LifeDatabase
-import com.lifemate.data.*
-import com.lifemate.notifications.ReminderScheduler
-import com.lifemate.utils.SecureStore
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
+import com.lifemate.reset.FreshStartReset
 
+/** No legacy database, profile, posts, workers or native feature screens. */
 class LifeMateApp : Application() {
-    var clearFlutterData: (suspend () -> Unit)? = null
-    val secure by lazy { SecureStore(this) }
-    val db by lazy {
-        System.loadLibrary("sqlcipher")
-        Room.databaseBuilder(this, LifeDatabase::class.java, "lifemate.db")
-            .openHelperFactory(SupportOpenHelperFactory(secure.databaseKey())).addMigrations(com.lifemate.database.MIGRATION_1_2).build()
+    var resetPerformed = false
+        private set
+    override fun onCreate() {
+        super.onCreate()
+        resetPerformed = FreshStartReset.run(this)
     }
-    val preferences by lazy { PreferenceStore(this) }
-    val scheduler by lazy { ReminderScheduler(this, db.dao(), preferences) }
-    val repository by lazy { LifeRepository(this, db, scheduler, preferences) }
-    override fun onCreate() { super.onCreate(); scheduler.enqueueMaintenance() }
 }

@@ -1,28 +1,46 @@
 package com.lifemate
 
+import android.Manifest
 import android.content.Intent
+import android.os.SystemClock
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
-import com.lifemate.database.Profile
-import kotlinx.coroutines.runBlocking
-import org.junit.*
 import org.junit.Assert.*
+import org.junit.Test
 
-/** Exercises the real embedded Flutter engine, not the legacy Compose test route. */
 class FlutterHostTest {
-    @Test fun flutterTabsLoadOverTheExistingEncryptedProfile() {
-        val context=InstrumentationRegistry.getInstrumentation().targetContext
-        val app=context.applicationContext as LifeMateApp
-        app.secure.removePin()
-        runBlocking { app.db.dao().saveProfile(Profile(fullName="FlutterProof")) }
-        ActivityScenario.launch<MainActivity>(Intent(context,MainActivity::class.java).putExtra("flutter",true)).use {
-            val device=UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-            assertTrue("Flutter home did not become accessible", device.wait(Until.hasObject(By.textContains("My Life")),30000) || device.wait(Until.hasObject(By.descContains("My Life")),5000))
-            val money=device.findObject(By.textContains("Money")) ?: device.findObject(By.descContains("Money"))
-            assertNotNull("Money tab missing",money);money!!.click()
-            assertTrue("Flutter money page did not open",device.wait(Until.hasObject(By.textContains("Money, made simple")),10000) || device.wait(Until.hasObject(By.descContains("Money, made simple")),3000))
-            assertEquals("FlutterProof",runBlocking {app.db.dao().getProfile()?.fullName})
+    @Test fun onlyFlutterTabsRenderAndNewProfileSurvivesActivityRecreation() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        java.io.File(context.noBackupFilesDir, com.lifemate.reset.FreshStartReset.MARKER).delete()
+        com.lifemate.reset.FreshStartReset.run(context)
+        val device = UiDevice.getInstance(instrumentation)
+        device.executeShellCommand("pm grant ${context.packageName} ${Manifest.permission.POST_NOTIFICATIONS}")
+        ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
+            fun locate(label: String): UiObject2 {
+                repeat(24) {
+                    (device.findObject(By.textContains(label)) ?: device.findObject(By.descContains(label)))?.let { return it }
+                    SystemClock.sleep(500)
+                }
+                error("Flutter did not expose $label")
+            }
+            locate("Continue").click()
+            val field = device.wait(Until.findObject(By.clazz("android.widget.EditText")),10000)
+            assertNotNull(field); field!!.text = "FreshStartProof"
+            device.executeShellCommand("input keyevent 111") // ESC hides the IME without navigating back.
+            for (attempt in 0..3) {
+                val button = device.findObject(By.textContains("Organize my day")) ?: device.findObject(By.descContains("Organize my day"))
+                if (button != null) { button.click(); break }
+                device.swipe(500,1200,500,400,20)
+            }
+            locate("FreshStartProof")
+            locate("Money").click()
+            locate("Income")
+            assertFalse(device.hasObject(By.textContains("All retained tools")))
+            scenario.recreate()
+            locate("FreshStartProof")
+            locate("My Life")
         }
     }
 }

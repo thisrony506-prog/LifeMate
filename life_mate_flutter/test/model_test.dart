@@ -31,6 +31,7 @@ void main() {
   test('demo data never enters persistence or outbox', () async {
     final s=LifeStore.memory();expect(s.all,isEmpty);
     s.setDemo(true);expect(s.all,isNotEmpty);expect(s.pending,isEmpty);
+    expect(s.all.map((e)=>e.kind).toSet(),EntryKind.values.toSet());
     await expectLater(s.save(Entry(kind:EntryKind.task,title:'x')),throwsStateError);
     s.setDemo(false);expect(s.all,isEmpty);
   });

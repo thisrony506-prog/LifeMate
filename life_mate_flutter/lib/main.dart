@@ -6,19 +6,18 @@ import 'services/native.dart';
 import 'ui/common.dart';
 import 'ui/shell.dart';
 import 'ui/entries.dart';
+import 'ui/device_lock.dart';
+import 'ui/updates.dart';
+import 'services/updates.dart';
 
 final lifeNavigator = GlobalKey<NavigatorState>();
 void openPending(LifeStore store) {
   final id = store.pendingEntry;
   if (id == null || store.demo) return;
-  store.pendingEntry = null;
   final entry = store.all.where((e) => e.id == id && !e.deleted).firstOrNull;
-  if (entry != null)
-    lifeNavigator.currentState?.push(
-      MaterialPageRoute<void>(
-        builder: (_) => EntryEditor(entry.kind, entry: entry),
-      ),
-    );
+  final context = lifeNavigator.currentContext;
+  if (entry != null && context != null) { store.pendingEntry = null; editEntry(context, entry.kind, entry); }
+
 }
 
 Future<void> main() async {
@@ -26,17 +25,11 @@ Future<void> main() async {
   try {
     final store = LifeStore(await Vault.open());
     NativeBridge.channel.setMethodCallHandler((call) async {
-      if (call.method == 'erase') {
-        await store.erase();
-        return true;
-      }
-      if (call.method == 'refresh') {
-        await store.refreshNative();
-        WidgetsBinding.instance.addPostFrameCallback((_) => openPending(store));
-        return true;
-      }
+      if (call.method == 'updates.progress') appUpdates.progress(Map<dynamic, dynamic>.from(call.arguments as Map));
       return null;
     });
+    await appUpdates.load();
+    store.addListener(() => WidgetsBinding.instance.addPostFrameCallback((_) => openPending(store)));
     await store.load();
     runApp(LifeMateApp(store: store));
     WidgetsBinding.instance.addPostFrameCallback((_) => openPending(store));
@@ -83,6 +76,7 @@ class LifeMateApp extends StatelessWidget {
         locale: Locale(store.language),
         supportedLocales: const [Locale('en'), Locale('bn')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        builder: (context, child) => DeviceLock(enabled: store.appLock, allowBack: false, child: UpdateGate(child: child ?? const SizedBox.shrink())),
         home: store.onboarded ? const LifeShell() : const WelcomeFlow(),
       ),
     ),
