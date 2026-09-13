@@ -12,6 +12,8 @@ concurrency:
 permissions:
   contents: read
 env:
+  # Build a verified signed APK, but do not force a public mandatory update yet.
+  LIFEMATE_PUBLISH_RELEASE: 'false'
   LIFEMATE_FIREBASE_CONFIG: ${{ vars.LIFEMATE_FIREBASE_CONFIG }}
 jobs:
   backend:
@@ -146,8 +148,8 @@ jobs:
   build:
     name: Signed APK and account continuity verification
     needs: [device-tests, verify, backend]
-    # Publication held until the revised non-destructive account upgrade has been verified.
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate' && false
+    # Trusted signed install tests can run; public rollout is separately held below.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate'
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -199,6 +201,7 @@ jobs:
           arch: x86_64
           script: bash -o pipefail -c 'python3 -u scripts/verify-release-install.py 2>&1 | tee -a compile.log'
       - name: Publish versioned APK for in-app updates
+        if: env.LIFEMATE_PUBLISH_RELEASE == 'true'
         run: |
           set -o pipefail
           bash scripts/publish-release.sh 2>&1 | tee -a compile.log

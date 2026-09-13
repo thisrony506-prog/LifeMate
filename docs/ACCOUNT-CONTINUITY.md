@@ -15,7 +15,7 @@ Retain the installed app identity, existing user, supplied logo and Life Mate na
 
 ## Honest migration boundary
 
-The compatibility bridge is **not** a return of the old native UI. Other original records/media are retained in their original storage but are **not yet converted** into the new modules. Keeping original bytes is not a claim that every old record/reminder works in the new UI. Publication stays held until the required continuity behavior is verified and any remaining migration scope is resolved.
+The compatibility bridge is **not** a return of the old native UI. Other original records/media are retained in their original storage but are **not yet converted** into the new modules. Keeping original bytes is not a claim that every old record/reminder works in the new UI. The verified signed APK may be offered for owner testing, but public mandatory rollout stays held until the required continuity behavior is verified and any remaining migration scope is resolved.
 
 ## MVP UI/data
 

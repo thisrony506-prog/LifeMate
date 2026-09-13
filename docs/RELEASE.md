@@ -11,7 +11,7 @@
 
 The latest owner decision supersedes fresh reset: **retain the existing user and original local storage**, while replacing the UI/features with Personal Life OS. See [account continuity](ACCOUNT-CONTINUITY.md). Never publish notes promising or instructing automatic deletion.
 
-Publication is explicitly held until revised account-continuity checks pass. Then the signed job must depend on Flutter/Android/backend/rules checks; compare the retained signer; verify native→Flutter profile retention and a subsequent higher Flutter update; and verify uploaded bytes before making a draft public. Only the signed APK is downloadable.
+Public mandatory rollout is explicitly held (`LIFEMATE_PUBLISH_RELEASE=false`). A signed APK can be produced for owner testing after revised account-continuity checks pass. The signed job depends on Flutter/Android/backend/rules checks and must compare the retained signer; verify native→Flutter profile retention and a subsequent higher Flutter update; and verify uploaded bytes before making a draft public. Only the signed APK is downloadable.
 
 Metadata stays `lifemate-update-v1`: code, version, canonical official URL, byte size, SHA-256, signer fingerprint and RSA/SHA-256 signature. The canonical signed payload starts `LifeMate-Update-V1\n`. Do not weaken it to support the UI rewrite.
 

@@ -33,6 +33,8 @@ class ReleasePipelineTest(unittest.TestCase):
         workflow=(ROOT/'.github/workflows/android.yml').read_text()
         self.assertEqual(workflow.count('uses: actions/upload-artifact@'),1)
         self.assertIn('path: release-download/*.apk',workflow)
+        self.assertIn("LIFEMATE_PUBLISH_RELEASE: 'false'",workflow)
+        self.assertIn("if: env.LIFEMATE_PUBLISH_RELEASE == 'true'",workflow)
         script=(ROOT/'scripts/publish-release.sh').read_text()
         self.assertLess(script.index('--draft '),script.index("verify-release-publication.py draft"))
         self.assertLess(script.index("verify-release-publication.py draft"),script.index('--draft=false'))
