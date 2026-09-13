@@ -53,6 +53,10 @@ android {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     implementation(project(":flutter"))
+    // Read-only compatibility with the existing user's encrypted profile.
+    implementation("net.zetetic:sqlcipher-android:4.9.0")
+    implementation("androidx.sqlite:sqlite-ktx:2.4.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.fragment:fragment-ktx:1.8.5")

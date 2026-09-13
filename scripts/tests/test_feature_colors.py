@@ -20,14 +20,16 @@ class FeatureColorTest(unittest.TestCase):
         for removed in ('ui', 'database', 'domain', 'data', 'navigation', 'notifications', 'flutter', 'utils'):
             self.assertFalse((ROOT/'app/src/main/java/com/lifemate'/removed).exists())
 
-    def test_reset_is_once_only_and_preserves_update_requirement_not_user_data(self):
-        source = (ROOT/'app/src/main/java/com/lifemate/reset/FreshStartReset.kt').read_text()
-        self.assertLess(source.index('if (marker.isFile) return false'), source.index('cancelAll()'))
-        self.assertIn('release_updates.xml', source)
-        self.assertIn('context.deleteDatabase(name)', source)
-        self.assertIn('keys.deleteEntry(it)', source)
-        self.assertIn('Files.isSymbolicLink', source)
-        self.assertLess(source.index('keys.deleteEntry(it)'), source.index('marker.outputStream()'))
+    def test_update_never_resets_existing_user_storage(self):
+        app = (ROOT/'app/src/main/java/com/lifemate/LifeMateApp.kt').read_text()
+        self.assertNotIn('FreshStartReset', app)
+        self.assertFalse((ROOT/'app/src/main/java/com/lifemate/reset/FreshStartReset.kt').exists())
+        reader = (ROOT/'app/src/main/java/com/lifemate/continuity/ExistingUser.kt').read_text()
+        self.assertIn('SQLiteDatabase.OPEN_READONLY', reader)
+        self.assertIn('recovery must not erase', reader)
+        for forbidden in ('deleteDatabase(', 'deleteEntry(', 'generateKey(', 'CREATE_IF_NECESSARY', 'deleteRecursively('):
+            self.assertNotIn(forbidden, reader)
         gradle = (ROOT/'app/build.gradle.kts').read_text()
-        for removed in ('room-runtime', 'sqlcipher', 'navigation-compose', 'work-runtime'):
+        self.assertIn('applicationId = "com.lifemate"', gradle)
+        for removed in ('room-runtime', 'navigation-compose', 'work-runtime'):
             self.assertNotIn(removed, gradle)

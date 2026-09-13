@@ -1,7 +1,7 @@
 name: life_mate_flutter
 description: Life Mate — a private, calm personal life OS.
 publish_to: none
-version: 1.3.0+1
+version: 1.2.0+100000
 environment:
   sdk: '>=3.9.0 <4.0.0'
 dependencies:

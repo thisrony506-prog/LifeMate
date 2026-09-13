@@ -3,6 +3,8 @@ import 'package:local_auth/local_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'common.dart';
+import '../services/device_auth.dart';
+import 'entries.dart';
 
 class PrivacySettings extends StatefulWidget {
   const PrivacySettings({super.key});
@@ -28,6 +30,21 @@ class _PrivacySettingsState extends State<PrivacySettings> {
               'এটি তোমার নতুন ব্যক্তিগত জীবন গোছানোর অ্যাপ।',
             ),
           ),
+          if (!s.demo && s.originalProfile.isNotEmpty) ...[
+            if ((s.originalProfile['photo'] as String? ?? '').isNotEmpty)
+              EntryPhoto(s.originalProfile['photo'] as String),
+            for (final field in <String, String>{
+              'fullName': s.t('Full name', 'পুরো নাম'),
+              'nickname': s.t('Nickname', 'ডাকনাম'),
+              'preferredName': s.t('Preferred name', 'পছন্দের নাম'),
+              'birthday': s.t('Birthday', 'জন্মদিন'),
+              'introduction': s.t('Introduction', 'পরিচয়'),
+              'information': s.t('Personal information', 'ব্যক্তিগত তথ্য'),
+            }.entries)
+              if ((s.originalProfile[field.key] as String? ?? '').isNotEmpty)
+                ListTile(title: Text(field.value), subtitle: Text(s.originalProfile[field.key] as String)),
+          ],
+          if (s.existingPin) Text(s.t('Your existing app PIN is still required.', 'আগের অ্যাপ পিন এখনও প্রয়োজন।')),
           OutlinedButton.icon(
             icon: const Icon(Icons.edit_outlined),
             label: Text(s.t('Edit your name', 'নাম সম্পাদনা')),
@@ -71,17 +88,17 @@ class _PrivacySettingsState extends State<PrivacySettings> {
             title: Text(s.t('App lock', 'অ্যাপ লক')),
             subtitle: Text(
               s.t(
-                'Device PIN/passcode or biometrics. Locks when you leave the app.',
-                'ডিভাইসের পিন/পাসকোড বা বায়োমেট্রিক। অ্যাপ ছাড়লে লক হবে।',
+                s.existingPin ? 'Your existing app PIN remains enabled. It is not replaced by this switch.' : 'Device PIN/passcode or biometrics. Locks when you leave the app.',
+                s.existingPin ? 'আগের অ্যাপ পিন চালু আছে। এই সুইচ সেটি বদলায় না।' : 'ডিভাইসের পিন/পাসকোড বা বায়োমেট্রিক। অ্যাপ ছাড়লে লক হবে।',
               ),
             ),
-            value: s.appLock,
-            onChanged: busy || s.demo
+            value: s.appLock || s.existingPin,
+            onChanged: busy || s.demo || s.existingPin
                 ? null
                 : (value) async {
                     setState(() => busy = true);
                     try {
-                      final ok = await LocalAuthentication().authenticate(
+                      final ok = await DeviceAuthentication.authenticate(
                         localizedReason: s.t(
                           'Confirm a change to Life Mate app lock',
                           'Life Mate অ্যাপ লক পরিবর্তন নিশ্চিত করো',
@@ -112,8 +129,8 @@ class _PrivacySettingsState extends State<PrivacySettings> {
           Heading(s.t('Your data, your choice', 'তোমার তথ্য, তোমার পছন্দ')),
           Text(
             s.t(
-              'Records and photos are encrypted on this device. There are no old organizer screens, posts, card studio or profile imports. This clean replacement removes the old app’s private local data once. Future launches keep your new data.',
-              'তথ্য ও ছবি এই ডিভাইসে এনক্রিপ্ট করা। পুরোনো অর্গানাইজার, পোস্ট, কার্ড স্টুডিও বা প্রোফাইল আমদানি নেই। এই নতুন সংস্করণ পুরোনো অ্যাপের নিজস্ব স্থানীয় তথ্য একবার মুছে শুরু করে। পরেরবার তোমার নতুন তথ্য থাকবে।',
+              'New records and photos are encrypted on this device. The update does not reset original storage or keys. Your original profile is retained; other old records remain in their original storage, not yet converted into the new modules.',
+              'নতুন তথ্য ও ছবি এই ডিভাইসে এনক্রিপ্ট করা। আপডেট পুরোনো স্টোরেজ বা চাবি reset করে না। আগের প্রোফাইল রাখা হয়; অন্য পুরোনো রেকর্ড আগের স্টোরেজে আছে, নতুন মডিউলে এখনও রূপান্তর করা হয়নি।',
             ),
           ),
           Text(
@@ -141,8 +158,8 @@ class _PrivacySettingsState extends State<PrivacySettings> {
                       context,
                       s.t('Delete your local vault?', 'স্থানীয় ভল্ট মুছবে?'),
                       s.t(
-                        'All new records and private photos will be removed and reminders cancelled. Export a backup first if needed. Cloud copies, exported backups and your gallery are not deleted.',
-                        'নতুন সব তথ্য ও ব্যক্তিগত ছবি মুছবে, রিমাইন্ডার বন্ধ হবে। প্রয়োজন হলে আগে ব্যাকআপ করো। ক্লাউডের কপি, রপ্তানি করা ব্যাকআপ ও গ্যালারি মুছবে না।',
+                        'All new records and private photos will be removed and reminders cancelled. Export a backup first if needed. Original app storage, cloud copies, exported backups and your gallery are not deleted.',
+                        'নতুন সব তথ্য ও ব্যক্তিগত ছবি মুছবে, রিমাইন্ডার বন্ধ হবে। প্রয়োজন হলে আগে ব্যাকআপ করো। পুরোনো অ্যাপের স্টোরেজ, ক্লাউডের কপি, রপ্তানি করা ব্যাকআপ ও গ্যালারি মুছবে না।',
                       ),
                     ))
                       return;

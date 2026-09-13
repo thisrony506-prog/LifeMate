@@ -1,4 +1,4 @@
-"""Exercise actual non-debuggable, signed APK installation and fresh replacement and subsequent persistence.
+"""Exercise actual non-debuggable, signed APK installation and existing-account retention and subsequent persistence.
 Uses Android's visible UI; no app backdoors, run-as access, or shipping test fixtures.
 """
 import os, re, subprocess, time, xml.etree.ElementTree as ET
@@ -112,13 +112,13 @@ def main():
     assert legacy is not None, 'Previous signed APK onboarding was not recognized'
     if legacy:
         find('Full name', scroll=True, tap=True)
-        adb('shell', 'input', 'text', 'OldResetProof')
+        adb('shell', 'input', 'text', 'ExistingUserProof')
         hide_keyboard_if_shown()
         find('Make yourself at home', scroll=True, tap=True)
-        find('OldResetProof')
+        find('ExistingUserProof')
         adb('shell', 'am', 'force-stop', 'com.lifemate')
         start()
-        find('OldResetProof')
+        find('ExistingUserProof')
         assert 'Make yourself at home' not in labels(), 'Old profile was not saved before reset'
     else:
         onboard_new('NewDataProof')
@@ -128,11 +128,10 @@ def main():
     adb('shell', 'pm', 'grant', 'com.lifemate', 'android.permission.POST_NOTIFICATIONS')
     start()
     if legacy:
-        find('Continue')
-        assert 'OldResetProof' not in labels(), 'Old profile leaked into the fresh app'
-        onboard_new('FreshStartProof')
-        expected = 'FreshStartProof'
-        print('PASS: requested clean replacement starts new onboarding, not the old profile')
+        find('Money')
+        find('ExistingUserProof')
+        expected = 'ExistingUserProof'
+        print('PASS: same-app redesign retains the existing native user without reset')
     else:
         expected = 'NewDataProof'
         find(expected)

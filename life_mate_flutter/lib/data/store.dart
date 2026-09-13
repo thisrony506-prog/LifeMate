@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'entry.dart';
 import 'vault.dart';
@@ -15,6 +16,17 @@ class LifeStore extends ChangeNotifier {
   @override void notifyListeners() { _invalidate(); super.notifyListeners(); }
   String language = 'en', appearance = 'System', name = '', wakeTime = '07:00';
   bool onboarded = false, demo = false, ready = false, appLock = false;
+  bool existingPin = false;
+  String _profileRaw = '';
+  Map<String, dynamic> _profile = const {};
+  Map<String, dynamic> get originalProfile {
+    final raw = vault?.settingValue('originalProfile') ?? '';
+    if (raw != _profileRaw) {
+      _profile = raw.isEmpty ? const {} : Map<String, dynamic>.unmodifiable(jsonDecode(raw) as Map);
+      _profileRaw = raw;
+    }
+    return _profile;
+  }
   String? reminderIssue;
   String? pendingEntry;
   LifeStore(this.vault);
@@ -180,7 +192,11 @@ class LifeStore extends ChangeNotifier {
     for (final e in _records) {
       if (e.text('photo').isNotEmpty) await vault?.deleteMedia(e.text('photo'));
     }
+    final profilePhoto = originalProfile['photo'] as String?;
+    if (profilePhoto != null) await vault?.deleteMedia(profilePhoto);
     await vault?.box.clear();
+    // An explicit new-vault erase must not silently re-import an old account.
+    await vault?.setting('existing-account-v1', 'done');
     _records.clear();
     name = '';
     onboarded = false;

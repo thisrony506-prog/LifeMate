@@ -1,3 +1,5 @@
+> **Revision note:** the retained-user redesign now includes a read-only SQLCipher compatibility library. The historical 28.9 MB result below does not measure this revised APK. Re-run the same-code size/startup pipeline before quoting a current size or speed result.
+
 # Size and responsiveness
 
 ## Implemented optimization, not an unmeasured speed promise
@@ -17,3 +19,7 @@ The verify job builds the same code twice, differing only in native-library comp
 A Flutter test records 100 indexed reads over 1,000 local records and asserts correctness/immutability without a flaky universal time threshold. Backend unit tests use injected provider responses; emulator rules tests do not measure internet latency.
 
 Actual numbers must come from a completed run. No percentage speedup, physical-phone result, live API latency or APK size is asserted until measured. Physical ARM devices, larger real photo libraries, frame-time traces and installed storage measurements remain required for production performance claims.
+
+## Observed preflight — source `7270654`
+
+Run `34736955778`, compile job `103669978182`, measured **59,321,451 → 28,854,839 bytes**, a **51.36%** download reduction, with all three ABIs retained. Both APKs contain 54,604,788 bytes of unpacked native libraries. This is an unsigned same-code comparison, not a comparison against native release 1.2.64 and not proof of physical-phone speed or installed-size reduction. Final signed startup/retention checks for source `f2c78dd` remain queued; see [verification status](VERIFICATION.md).

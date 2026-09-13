@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:local_auth/local_auth.dart';
 import 'common.dart';
+import '../services/device_auth.dart';
 
 /// Device PIN/passcode or biometrics on Android AND iOS. No legacy PIN store.
 class DeviceLock extends StatefulWidget {
@@ -46,7 +47,7 @@ class _DeviceLockState extends State<DeviceLock> with WidgetsBindingObserver {
     setState(() => authenticating = true);
     try {
       final s = LifeScope.of(context);
-      final ok = await LocalAuthentication().authenticate(
+      final ok = await DeviceAuthentication.authenticate(
         localizedReason: s.t(
           'Unlock your private Life Mate space',
           'Life Mate-এর ব্যক্তিগত জায়গা খোলো',

@@ -21,7 +21,7 @@ class MainActivity : FlutterFragmentActivity() {
     private lateinit var channel: MethodChannel
     private var transfer: Job? = null
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(if ((application as LifeMateApp).consumeResetFlag()) null else savedInstanceState)
+        super.onCreate(savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -29,6 +29,21 @@ class MainActivity : FlutterFragmentActivity() {
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.lifemate/personal_os")
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
+                "existing.status" -> scope.launch {
+                    try { result.success(withContext(Dispatchers.IO) { (application as LifeMateApp).existingUser.status() }) }
+                    catch (_: Exception) { result.error("existing", "Existing settings could not be read; no reset performed", null) }
+                }
+                "existing.profile" -> scope.launch {
+                    try { result.success(withContext(Dispatchers.IO) { (application as LifeMateApp).existingUser.profile() }) }
+                    catch (_: Exception) { result.error("existing", "Existing profile could not be read; no reset performed", null) }
+                }
+                "existing.verifyPin" -> {
+                    val pin = call.argument<String>("pin") ?: ""
+                    scope.launch {
+                        try { result.success(withContext(Dispatchers.IO) { (application as LifeMateApp).existingUser.verifyPin(pin) }) }
+                        catch (_: Exception) { result.error("existing", "Existing PIN could not be verified", null) }
+                    }
+                }
                 "performance.ready" -> {
                     if (!firstFrameReported) {
                         firstFrameReported = true

@@ -42,7 +42,7 @@ class SignReleaseMetadata {
             if (!signature.verify(proof)) throw new SecurityException("Metadata signature self-check failed");
             String json = "{\"code\":" + code + ",\"version\":\"" + version + "\",\"url\":\"" + url + "\",\"size\":" + size +
                 ",\"sha256\":\"" + sha + "\",\"signer\":\"" + signer + "\",\"signature\":\"" + Base64.getEncoder().encodeToString(proof) + "\"}";
-            Files.writeString(Path.of(args[4]), "Signed Life Mate " + version + " for Android 8.0+. Personal Life OS clean replacement: the FIRST launch removes old LifeMate private local data. No old features or profile import. Later launches and subsequent updates keep new Personal Life OS data. Exported backups, cloud copies and gallery originals are not deleted. পুরোনো অ্যাপের স্থানীয় তথ্য প্রথমবার মুছে নতুন শুরু হবে। Android asks before updating.\n\n<!-- lifemate-update-v1\n" + json + "\n-->\n");
+            Files.writeString(Path.of(args[4]), "Signed Life Mate " + version + " for Android 8.0+. Personal Life OS redesign in the same app, with the retained Life Mate name, logo and signing identity. No automatic data reset. Existing profile and app PIN are retained; other original records remain in their original storage, not yet converted to new modules. আগের অ্যাপের নাম, লোগো ও ইউজার রেখে নতুন ডিজাইন; স্থানীয় তথ্য স্বয়ংক্রিয়ভাবে মুছবে না। Android asks before updating.\n\n<!-- lifemate-update-v1\n" + json + "\n-->\n");
         } finally { Arrays.fill(storePassword, '\0'); Arrays.fill(keyPassword, '\0'); }
     }
 }

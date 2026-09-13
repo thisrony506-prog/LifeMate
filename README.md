@@ -1,3 +1,5 @@
+> **Current owner instruction:** keep the same app/user/name/logo/version series; replace only the inside UI/features. Automatic reset is removed. See [account continuity](docs/ACCOUNT-CONTINUITY.md).
+
 # Life Mate — Personal Life OS
 
 **Your Life, Organized in One App**
@@ -5,15 +7,15 @@
 
 A Flutter Android/iOS personal life companion: white `#FFFFFF`, sage `#A8C3B9`, ink `#1A1A1A`, dark mode and switchable বাংলা / English. The supplied `20260912_111618.png` logo is preserved.
 
-## Clean replacement — important
+## Same app, new design — important
 
-The owner explicitly chose **remove the previous features and start with no old data**. This supersedes the previous retention/migration design.
+The owner now requires **retaining the existing user, name, logo and version series** while replacing the inside UI/features with Personal Life OS. This supersedes fresh reset.
 
-- No legacy organizer screens, Missions, social posts, card studio, old profile editor, native calendar or old database models remain.
-- Android's first launch of this replacement deletes app-owned old databases, private media, preferences, caches and local data-encryption keys. A no-backup marker prevents repeating that reset on future launches/upgrades. New Personal Life OS records subsequently persist normally.
-- Exported backups, gallery originals and cloud copies are **not** deleted. Android signing identity and authenticated updater metadata are **not** personal records and are retained.
-- `com.lifemate`, Android 8+, the supplied logo and existing release key are unchanged. Do not create a new key.
-- **Release verification is running.** The last known public APK before this work is native 1.2.64, not this UI. The signed release job now runs only after app/device/backend checks pass, and publishes only after the real signed fresh-start test succeeds.
+- No old feature screens or matrimony features are restored.
+- No automatic deletion of original databases, private media, preferences, PIN or local encryption keys.
+- A read-only compatibility reader retains the original profile and supported private profile photo in encrypted Hive. Other original records stay in their original storage; conversion into the new modules is not yet implemented.
+- `com.lifemate`, Android 8+, the supplied logo and existing release key are unchanged. `1.2.N` / `100000 + run number` remains the update version scheme.
+- **Release is held for revised account-continuity verification.** Last inspected public APK is native 1.2.64, not this UI. No new signed APK is claimed.
 
 ## Current product scope
 
@@ -35,7 +37,7 @@ Demo mode is read-only and in-memory, with examples for every entry kind. It nev
 ## Architecture and boundaries
 
 - `life_mate_flutter/lib`: all product UI, typed entry models, encrypted Hive vault, private encrypted photos, notifications and optional service clients.
-- `app/`: a small `FlutterFragmentActivity` Android host, one-time fresh reset and verified native APK download/install plumbing. No Room, SQLCipher, Compose feature UI or legacy route bridge.
+- `app/`: a `FlutterFragmentActivity` Android host, read-only existing-account compatibility and verified native APK download/install plumbing. SQLCipher is used only to retain the prior profile; no Room/Compose feature UI or old routes.
 - `backend/`: optional Firebase Auth/Firestore/Storage rules and authenticated server-side Gemini callable. No provider key is embedded in the app. Services remain unavailable unless the owner configures/deploys them.
 - Offline CRUD works without an account. Cloud sync is manual, encrypted before upload and restricted to its owning account. AI and location require explicit choices. Live backend success is not claimed.
 - Both journal entry routes and editors require device PIN/passcode/biometrics outside demo. App-wide locking is optional; Android blocks screenshots. iOS needs independent device validation.
@@ -43,7 +45,7 @@ Demo mode is read-only and in-memory, with examples for every entry kind. It nev
 
 ## Build and verification
 
-Flutter **3.35.7**, JDK **17**, Android compile SDK **36**, Build Tools **35.0.0**, minimum Android **26**. Run `bash scripts/setup-flutter.sh` before Gradle; generated module hosts/caches are not source artifacts. See [verification status](docs/VERIFICATION.md), [fresh-start test plan](docs/FRESH-START.md), and [release maintenance](docs/RELEASE.md).
+Flutter **3.35.7**, JDK **17**, Android compile SDK **36**, Build Tools **35.0.0**, minimum Android **26**. Run `bash scripts/setup-flutter.sh` before Gradle; generated module hosts/caches are not source artifacts. See [verification status](docs/VERIFICATION.md), [account-continuity contract](docs/ACCOUNT-CONTINUITY.md), and [release maintenance](docs/RELEASE.md).
 
 Only a verified signed release APK may be uploaded to Actions. No debug APK, screenshot, report, logo or signing file is a downloadable artifact. iOS project generation is not an IPA build/distribution claim.
 

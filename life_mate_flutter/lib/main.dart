@@ -3,6 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'data/store.dart';
 import 'data/vault.dart';
 import 'services/native.dart';
+import 'services/existing_account.dart';
+import 'ui/existing_pin.dart';
 import 'ui/common.dart';
 import 'ui/shell.dart';
 import 'ui/entries.dart';
@@ -27,7 +29,9 @@ Future<void> main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 32 * 1024 * 1024;
   PaintingBinding.instance.imageCache.maximumSize = 40;
   try {
-    final store = LifeStore(await Vault.open());
+    final vault = await Vault.open();
+    final store = LifeStore(vault);
+    store.existingPin = await ExistingAccount.prepare(vault);
     NativeBridge.channel.setMethodCallHandler((call) async {
       if (call.method == 'updates.progress')
         appUpdates.progress(Map<dynamic, dynamic>.from(call.arguments as Map));
@@ -89,10 +93,13 @@ class LifeMateApp extends StatelessWidget {
         locale: Locale(store.language),
         supportedLocales: const [Locale('en'), Locale('bn')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        builder: (context, child) => DeviceLock(
-          enabled: store.appLock,
-          allowBack: false,
-          child: UpdateGate(child: child ?? const SizedBox.shrink()),
+        builder: (context, child) => ExistingPinGate(
+          enabled: store.existingPin,
+          child: DeviceLock(
+            enabled: store.appLock && !store.existingPin,
+            allowBack: false,
+            child: UpdateGate(child: child ?? const SizedBox.shrink()),
+          ),
         ),
         home: store.onboarded ? const LifeShell() : const WelcomeFlow(),
       ),

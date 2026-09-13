@@ -144,9 +144,9 @@ jobs:
         if: always()
         run: python3 scripts/report-ci.py compile.log
   build:
-    name: Signed APK and fresh-start verification
+    name: Signed APK and account continuity verification
     needs: [device-tests, verify, backend]
-    # Owner is revising replacement/reset scope. Never publish the destructive replacement.
+    # Publication held until the revised non-destructive account upgrade has been verified.
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate' && false
     permissions:
       contents: write
@@ -192,7 +192,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Verify signed fresh reset and subsequent persistence
+      - name: Verify signed account continuity and subsequent persistence
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35

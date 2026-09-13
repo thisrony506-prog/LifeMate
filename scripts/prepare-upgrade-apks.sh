@@ -31,8 +31,8 @@ else
   LIFEMATE_VERSION_CODE=$((LIFEMATE_VERSION_CODE - 1)) LIFEMATE_VERSION_NAME=1.2.0-upgrade-test ./gradlew :app:assembleRelease --no-configuration-cache --stacktrace
   cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/previous.apk"
 fi
-# An unpublished same-source lower-version Flutter APK proves that only the
-# native-to-Personal-OS transition resets data; the next Flutter update retains it.
+# An unpublished same-source lower-version Flutter APK proves native account
+# retention followed by another non-destructive Flutter update.
 LIFEMATE_VERSION_CODE=$((LIFEMATE_VERSION_CODE - 1)) LIFEMATE_VERSION_NAME=1.2.0-retention-test ./gradlew :app:assembleRelease --no-configuration-cache --stacktrace
 cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/flutter-retention.apk"
 ./gradlew :app:assembleRelease --no-configuration-cache --stacktrace

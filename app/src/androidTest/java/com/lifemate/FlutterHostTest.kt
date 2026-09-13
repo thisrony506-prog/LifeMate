@@ -13,8 +13,6 @@ class FlutterHostTest {
     @Test fun onlyFlutterTabsRenderAndNewProfileSurvivesActivityRecreation() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val context = instrumentation.targetContext
-        java.io.File(context.noBackupFilesDir, com.lifemate.reset.FreshStartReset.MARKER).delete()
-        com.lifemate.reset.FreshStartReset.run(context)
         val device = UiDevice.getInstance(instrumentation)
         device.executeShellCommand("pm grant ${context.packageName} ${Manifest.permission.POST_NOTIFICATIONS}")
         ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->

@@ -1,19 +1,11 @@
 package com.lifemate
 
 import android.app.Application
-import com.lifemate.reset.FreshStartReset
+import com.lifemate.continuity.ExistingUser
 
-/** No legacy database, profile, posts, workers or native feature screens. */
+/** Keep the same application identity and all existing private storage/keys.
+ * The new UI is Flutter; application startup never resets user data.
+ */
 class LifeMateApp : Application() {
-    var resetPerformed = false
-        private set
-    fun consumeResetFlag(): Boolean {
-        val value = resetPerformed
-        resetPerformed = false
-        return value
-    }
-    override fun onCreate() {
-        super.onCreate()
-        resetPerformed = FreshStartReset.run(this)
-    }
+    val existingUser by lazy { ExistingUser(this) }
 }
