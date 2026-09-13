@@ -1,58 +1,47 @@
-> Signed run `34739144232` (`8d4a263`) built a 35,741,076-byte APK and verified the same production signer as native 1.2.64. App/Flutter/backend/rules tests passed, but actual signed native→Flutter startup failed to open storage, so **no artifact was uploaded**. The native app's SQLCipher JNI/R8 keep rule has now been restored for the compatibility reader, with non-personal startup diagnostics. Another signed upgrade run is required; this is not a confirmed runtime fix yet.
+# Life Mate verification — same identity, non-destructive redesign
 
-# Current verification status — retention supersedes reset
+## Current result
 
-The owner clarified: same installed app, user, Life Mate name, supplied logo and version series; redesign the UI/features only. The destructive reset source and tests are removed. Signed publication is held pending non-destructive upgrade proof.
+Signed run [34741583429](https://github.com/thisrony506-prog/LifeMate/actions/runs/34741583429), source `8d16144074a7e63004bfaa61b2ed5fdf060f1fd7`, version **1.2.111 / 100111**, failed actual native→Flutter startup. **No verified replacement APK was uploaded or delivered.** Public mandatory rollout remains disabled (`LIFEMATE_PUBLISH_RELEASE=false`); live Firebase deployment remains deferred.
 
-**Executed locally after this change:** 21 Python regression tests passed; backend TypeScript build and 6 injected-provider tests passed; `git diff --check` passed. Run `34738800078` (`2af04d3`) passed Flutter analysis/tests and backend/rules checks, but Android compilation found the SQLCipher corruption callback requires two arguments. That callback has been corrected; its Android runtime checks and the follow-up backup/photo tests await the next run. Live Firebase deployment is still deferred.
-
-The historical results below predate this instruction. They must not be treated as proof of the new account-continuity implementation. In particular, earlier APK size numbers exclude the read-only SQLCipher compatibility library, and the earlier queued reset build has been cancelled.
-
----
-
-# Life Mate verification — clean replacement and optimization
-
-The owner approved removing the old native features/private local data and retaining only Personal Life OS. The existing package/signing identity and mandatory updater remain. Live Firebase deployment is explicitly deferred until the owner supplies the approved project/configuration/access.
-
-## Verified optimization preflight
-
-Run [34736955778](https://github.com/thisrony506-prog/LifeMate/actions/runs/34736955778), source `7270654`:
-
-| Job | Result |
+| Check | Observed result |
 | --- | --- |
-| Compile, lint, Flutter tests and release assembly (`103669978182`) | Success |
-| Android emulator feature/reset/update-security checks (`103669978221`) | Success |
-| Backend API and security rules (`103669978414`) | Success |
+| Backend TypeScript build, 6 unit tests, 5 rules-emulator tests (`103682073628`) | Passed |
+| Android feature/account tests (`103682073676`) | Passed |
+| Flutter analysis/tests, Android compile/lint/unit/release assembly (`103682073687`) | Passed |
+| Retained signed package/version verification (`103683075149`) | Passed |
+| Actual signed native→Flutter account continuity (`103683075149`) | **Failed**, startup code `vault_platform_unavailable` |
+| Subsequent higher Flutter update and cold-start measurements | Not reached |
+| APK artifact upload | Skipped after failed signed test |
 
-The backend result includes TypeScript compilation, **6 injected-provider unit tests** and **5 Firestore/Storage emulator tests** (ownership, revisions, immutable recovery marker, invite expiry, private quota counters and bounded binary storage). No live project/provider call was tested. Local Python regression checks also passed: **21 tests**.
+The failure is in opening the new encrypted vault, before the existing-account reader is invoked. That identifies a phase, **not** the underlying cause. SQLCipher keep restoration alone (run 34740536494 / version 1.2.109) did not solve startup. Additional Tink/protobuf preservation in 1.2.111 also did not solve it. These must not be described as confirmed runtime fixes.
 
-Same-source unsigned release comparison, preserving ARMv7/ARM64/x86_64:
+## Next diagnostic revision
 
-| Metric | Bytes |
-| --- | ---: |
-| Uncompressed-native baseline APK | 59,321,451 |
-| Optimized APK | 28,854,839 |
-| Download bytes saved | 30,466,612 |
-| Unpacked native libraries, identical in both builds | 54,604,788 |
+The next source revision distinguishes the vault's path, key read/write, box check/open operations and recognizes additional fixed platform error categories. The signed test also reduces secure-storage plugin logs to an allowlisted set of exception categories. Raw platform logs, paths, keys and profile data are not emitted by that reduction. The existing signed continuity assertions remain required; no reset, replacement key, encryption bypass or weakened acceptance check is introduced.
 
-Download reduction: **51.36%**. This compares two builds of the new Flutter app, **not** the old native APK. Native compression trades download size against extraction/installed storage; it does not establish a speedup on physical phones.
+Local Python regression checks for this diagnostic revision: **23 tests passed**. Flutter/Android execution of this revision awaits CI. Local backend build and six unit tests also passed in this work session; that is not a live deployment.
 
-That run was deliberately superseded before signing/publication to add stronger native→fresh Flutter→higher Flutter retention verification, explicit crypto compatibility/UI-loop tests, a demo-cache rollover correction, and truthful startup-error text. The green preflight is not proof that those later changes have passed.
+## Verified identity and size (failed runtime build, not a deliverable)
 
-## Current final build — pending, not a released APK
+- Package: `com.lifemate`; name/logo and existing version series retained.
+- Native **100064 / 1.2.64** → lower unpublished Flutter fixture **100110** → current **100111 / 1.2.111**.
+- All three APKs have one signer, with v2/v3 signatures and certificate SHA-256 `518aec44e1f3c230464381c6b539f411b2f317db0db80e6fa896688a3b4a97a8`.
+- Signed 1.2.111 APK: **36,196,392 bytes**; native libraries packed **30,913,797**, unpacked **69,134,500** bytes; ARMv7/ARM64/x86_64.
+- Native libraries are compressed for download and extracted on installation. Download size is not installed storage, memory usage or measured phone speed.
 
-- Source: `f2c78dd`.
-- Push run: [34737396003](https://github.com/thisrony506-prog/LifeMate/actions/runs/34737396003), version assignment would be `1.2.97` / `100097`.
-- Last observed at **2026-09-13 04:30 UTC**: all three prerequisite jobs remained **queued**, without an assigned runner. No current failure or success should be inferred from that queue.
-- The signed job is enabled only after app, device and backend checks succeed. It verifies retained signatures, installs the actual previous release without uninstalling, checks the approved reset using an unpublished lower Flutter fixture, verifies subsequent higher-version Flutter data retention, and records three process-cold startup samples. It publishes only after these checks and canonical uploaded-byte verification succeed.
-- These signed-install/startup checks have **not yet executed successfully**. No new signed APK/download link is claimed. Last inspected public release remains native **1.2.64**, not this replacement.
-- Only the signed release APK is downloadable as an Actions artifact; fixtures, measurements, reports and signing material are not uploaded as artifacts.
+## Scope and limitations
 
-## Still not verified
+The latest owner instruction supersedes the former destructive-reset plan: preserve existing user information, signing/package/name/logo and version continuity, while replacing the internal UI with Personal Life OS. The reset implementation is removed. Historical reset test successes are not evidence of account continuity.
 
-- Current final queued build, signed upgrade/reset/retention, startup measurements and publication.
-- Physical Android permission/notification/reboot/biometric/gallery/audio/installer flows and frame-time/installed-storage measurements.
-- iOS compilation/signing/device testing.
-- Live Firebase/Gemini/auth/cloud/location operation. Rules emulators passed, but that is not a live deployment.
+- Original encrypted native database, media and PIN/key storage are retained. The compatibility reader adopts profile/photo and retains the original PIN gate; other native records are not converted into the new modules.
+- Retained profile/photo can be included in encrypted backup; this is not a full original-database/PIN/key backup.
+- Existing native photo adoption currently accepts direct canonical files up to 20 MiB; larger old photos are an unresolved compatibility limitation.
+- New-vault erase does not erase original database/media/PIN/key storage.
+- Real signed native→Flutter→higher Flutter retention remains unproven. Debug fixtures and same-key verification alone do not prove it.
+- Physical phone permissions, notifications/reboot, biometric/gallery/audio/installer behavior, frame times, battery and installed-size measurements remain unverified.
+- iOS compilation/signing/device tests remain unverified.
+- Firebase/Gemini/auth/cloud/location live operation is not configured or deployed. Emulator and injected-provider checks do not establish live service availability.
+- Only a successful signed LifeMate Release APK may be uploaded as an Actions artifact; no debug APK, reports, screenshots, fixtures or signing material.
 
-Earlier source `5d61168` passed the Flutter/Android jobs in run `34735374318`; earlier host failures were corrected by typing into the real focused Flutter field and waiting for Home before asserting persistence. Those historical results do not replace current final release verification.
+GitHub access recovered in this session through ordinary `gh` calls, without changing or reading signing credentials. Earlier HTTP 401 is not the current failure.

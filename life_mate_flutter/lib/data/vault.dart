@@ -17,10 +17,13 @@ class Vault {
   static const secure = FlutterSecureStorage(
     aOptions: AndroidOptions(encryptedSharedPreferences: true, resetOnError: false),
   );
-  static Future<Vault> open() async {
+  static Future<Vault> open({void Function(String)? onPhase}) async {
+    onPhase?.call('vault_path');
     final directory = await getApplicationSupportDirectory();
     Hive.init('${directory.path}/life_mate_v1');
+    onPhase?.call('vault_key_read');
     final encoded = await secure.read(key: 'life-mate-vault-key-v1');
+    onPhase?.call('vault_box_check');
     final exists = await Hive.boxExists('vault');
     if (exists && encoded == null)
       throw StateError(
@@ -29,11 +32,14 @@ class Vault {
     final key = encoded == null
         ? Hive.generateSecureKey()
         : base64Decode(encoded);
-    if (encoded == null)
+    if (encoded == null) {
+      onPhase?.call('vault_key_write');
       await secure.write(
         key: 'life-mate-vault-key-v1',
         value: base64Encode(key),
       );
+    }
+    onPhase?.call('vault_box_open');
     final box = await Hive.openBox<String>(
       'vault',
       encryptionCipher: HiveAesCipher(key),

@@ -2,6 +2,7 @@
 Uses Android's visible UI; no app backdoors, run-as access, or shipping test fixtures.
 """
 import os, re, subprocess, time, xml.etree.ElementTree as ET
+from startup_diagnostics import storage_codes
 
 def adb(*args):
     try:
@@ -60,6 +61,9 @@ def find(label, scroll=False, tap=False):
     except Exception:
         pass
     print(adb('logcat', '-d', '-s', 'LifeMateStartup:W', 'AndroidRuntime:E', '*:S'), flush=True)
+    platform_log = adb('logcat', '-d', '-s', 'SecureStorageAndroid:E', 'FlutterSecureStoragePl:E', 'GeneratedPluginRegistrant:E', '*:S')
+    for code in storage_codes(platform_log):
+        print('LifeMateStartup platform:' + code, flush=True)
     raise AssertionError('Release UI did not show: ' + label)
 
 def start():

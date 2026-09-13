@@ -31,7 +31,7 @@ Future<void> main() async {
   PaintingBinding.instance.imageCache.maximumSize = 40;
   var startupPhase = 'vault';
   try {
-    final vault = await Vault.open();
+    final vault = await Vault.open(onPhase: (phase) => startupPhase = phase);
     startupPhase = 'existing_account';
     final store = LifeStore(vault);
     store.existingPin = await ExistingAccount.prepare(vault);
