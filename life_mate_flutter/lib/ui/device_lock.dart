@@ -38,6 +38,7 @@ class _DeviceLockState extends State<DeviceLock> with WidgetsBindingObserver {
     if (widget.enabled &&
         state != AppLifecycleState.resumed &&
         !authenticating &&
+        DeviceAuthentication.prompts.value == 0 &&
         mounted)
       setState(() => locked = true);
   }

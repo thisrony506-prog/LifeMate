@@ -42,9 +42,18 @@ class _PrivacySettingsState extends State<PrivacySettings> {
               'information': s.t('Personal information', 'ব্যক্তিগত তথ্য'),
             }.entries)
               if ((s.originalProfile[field.key] as String? ?? '').isNotEmpty)
-                ListTile(title: Text(field.value), subtitle: Text(s.originalProfile[field.key] as String)),
+                ListTile(
+                  title: Text(field.value),
+                  subtitle: Text(s.originalProfile[field.key] as String),
+                ),
           ],
-          if (s.existingPin) Text(s.t('Your existing app PIN is still required.', 'আগের অ্যাপ পিন এখনও প্রয়োজন।')),
+          if (s.existingPin)
+            Text(
+              s.t(
+                'Your existing app PIN is still required.',
+                'আগের অ্যাপ পিন এখনও প্রয়োজন।',
+              ),
+            ),
           OutlinedButton.icon(
             icon: const Icon(Icons.edit_outlined),
             label: Text(s.t('Edit your name', 'নাম সম্পাদনা')),
@@ -88,8 +97,12 @@ class _PrivacySettingsState extends State<PrivacySettings> {
             title: Text(s.t('App lock', 'অ্যাপ লক')),
             subtitle: Text(
               s.t(
-                s.existingPin ? 'Your existing app PIN remains enabled. It is not replaced by this switch.' : 'Device PIN/passcode or biometrics. Locks when you leave the app.',
-                s.existingPin ? 'আগের অ্যাপ পিন চালু আছে। এই সুইচ সেটি বদলায় না।' : 'ডিভাইসের পিন/পাসকোড বা বায়োমেট্রিক। অ্যাপ ছাড়লে লক হবে।',
+                s.existingPin
+                    ? 'Your existing app PIN remains enabled. It is not replaced by this switch.'
+                    : 'Device PIN/passcode or biometrics. Locks when you leave the app.',
+                s.existingPin
+                    ? 'আগের অ্যাপ পিন চালু আছে। এই সুইচ সেটি বদলায় না।'
+                    : 'ডিভাইসের পিন/পাসকোড বা বায়োমেট্রিক। অ্যাপ ছাড়লে লক হবে।',
               ),
             ),
             value: s.appLock || s.existingPin,

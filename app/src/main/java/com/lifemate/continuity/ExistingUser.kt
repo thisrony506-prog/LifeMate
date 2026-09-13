@@ -71,7 +71,7 @@ class ExistingUser(private val context: Context) {
         try {
             return SQLiteDatabase.openDatabase(file.path, password, null,
                 SQLiteDatabase.OPEN_READONLY or SQLiteDatabase.NO_LOCALIZED_COLLATORS,
-                { throw IllegalStateException("Existing database could not be read; recovery must not erase it") }, null).use { db ->
+                { _, _ -> throw IllegalStateException("Existing database could not be read; recovery must not erase it") }, null).use { db ->
                 db.rawQuery("SELECT fullName,nickname,preferredName,birthday,photo,introduction,information FROM profiles WHERE id=1 LIMIT 1", emptyArray<String>()).use cursorRead@ { cursor ->
                     if (!cursor.moveToFirst()) return@cursorRead emptyMap<String, Any>()
                     val data = cursor.columnNames.associateWith { cursor.getString(cursor.getColumnIndexOrThrow(it)) ?: "" }.toMutableMap<String, Any>()

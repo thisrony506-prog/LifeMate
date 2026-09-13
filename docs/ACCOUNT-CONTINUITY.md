@@ -10,6 +10,7 @@ Retain the installed app identity, existing user, supplied logo and Life Mate na
 - Original SQLCipher database, private media, preferences, app PIN and Android Keystore data key remain. The compatibility reader opens only the profile table **read-only**, never generates a replacement key, and installs a non-destructive corruption handler.
 - Full name, nickname, preferred name, birthday, introduction, personal information and a supported private profile photo are copied into the new encrypted Hive namespace. The prior display-name preference is respected. Existing Personal Life OS identities are not overwritten. The completion marker is written after the copied data is flushed.
 - The original app PIN still verifies against the same encrypted secret and keeps the original persisted retry cooldown. A PIN gate hides new routes/backup content before unlocking. Original biometric-only locking is carried into the device-authentication setting.
+- Portable backups include the retained profile/photo; additive restore places that identity in a Memory Box archive without overwriting the current account. Original non-migrated storage is not in this new-format backup.
 - New-vault deletion is explicit, authenticated and does not erase original storage. It prevents automatic re-import on the next launch.
 
 ## Honest migration boundary

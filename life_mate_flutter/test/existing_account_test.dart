@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:life_mate_flutter/data/vault.dart';
 import 'package:life_mate_flutter/data/store.dart';
+import 'package:life_mate_flutter/data/entry.dart';
+import 'package:life_mate_flutter/services/backup.dart';
 import 'package:life_mate_flutter/services/existing_account.dart';
 
 void main() {
@@ -23,6 +25,12 @@ void main() {
       final store = LifeStore(vault);
       expect(await vault.media(store.originalProfile['photo'] as String), [1,2,3]);
       expect(store.originalProfile['birthday'], '2000-01-02');
+      final backup = await VaultBackup.export(store, 'private fixture recovery phrase');
+      await VaultBackup.restore(store, backup, 'private fixture recovery phrase');
+      final archive = store.entries(EntryKind.memory).single;
+      expect(archive.text('body'), contains('private-profile-detail'));
+      expect(await vault.media(archive.text('photo')), [1,2,3]);
+      expect(vault.settingValue('name'), 'ExistingUserProof');
       await vault.setting('name', 'EditedName');
       await ExistingAccount.adopt(vault, {'fullName':'DoNotOverwrite'}, {'present':true});
       expect(vault.settingValue('name'), 'EditedName');

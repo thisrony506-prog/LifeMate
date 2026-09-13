@@ -2,7 +2,7 @@
 
 The owner clarified: same installed app, user, Life Mate name, supplied logo and version series; redesign the UI/features only. The destructive reset source and tests are removed. Signed publication is held pending non-destructive upgrade proof.
 
-**Executed locally after this change:** 21 Python regression tests passed; backend TypeScript build and 6 injected-provider tests passed; `git diff --check` passed. New Flutter/Android account-copy, key/PIN retention and encrypted-photo tests are added but not yet executed in the hosted toolchain. Live Firebase deployment is still deferred.
+**Executed locally after this change:** 21 Python regression tests passed; backend TypeScript build and 6 injected-provider tests passed; `git diff --check` passed. Run `34738800078` (`2af04d3`) passed Flutter analysis/tests and backend/rules checks, but Android compilation found the SQLCipher corruption callback requires two arguments. That callback has been corrected; its Android runtime checks and the follow-up backup/photo tests await the next run. Live Firebase deployment is still deferred.
 
 The historical results below predate this instruction. They must not be treated as proof of the new account-continuity implementation. In particular, earlier APK size numbers exclude the read-only SQLCipher compatibility library, and the earlier queued reset build has been cancelled.
 

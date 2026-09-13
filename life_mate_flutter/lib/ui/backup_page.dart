@@ -34,8 +34,8 @@ class _BackupState extends State<BackupPage> {
         children: [
           Text(
             s.t(
-              'Back up your Life Mate records and encrypted photos. Choose a private destination. A cloud document provider receives only encrypted backup bytes.',
-              'Life Mate-এর তথ্য ও এনক্রিপ্ট করা ছবি ব্যাকআপ করো। ব্যক্তিগত গন্তব্য বেছে নাও। ক্লাউড ডকুমেন্ট সেবা শুধু এনক্রিপ্ট করা ব্যাকআপ পাবে।',
+              'Back up new Life Mate records, the retained profile and encrypted photos. Restoring adds a profile archive to Memory Box without replacing the current user. Other original app storage is not included. Choose a private destination. A cloud document provider receives only encrypted backup bytes.',
+              'নতুন Life Mate তথ্য, রাখা প্রোফাইল ও এনক্রিপ্ট করা ছবি ব্যাকআপ করো। ফেরালে Memory Box-এ প্রোফাইল আর্কাইভ যোগ হয়, বর্তমান ইউজার বদলায় না। অন্য পুরোনো স্টোরেজ এতে নেই। ব্যক্তিগত গন্তব্য বেছে নাও। ক্লাউড ডকুমেন্ট সেবা শুধু এনক্রিপ্ট করা ব্যাকআপ পাবে।',
             ),
           ),
           TextField(

@@ -9,19 +9,28 @@ import 'native.dart';
 class ExistingAccount {
   static Future<bool> prepare(Vault vault) async {
     if (!NativeBridge.android) return false;
-    final status = await NativeBridge.channel.invokeMapMethod<String, dynamic>('existing.status');
+    final status = await NativeBridge.channel.invokeMapMethod<String, dynamic>(
+      'existing.status',
+    );
     if (status == null) throw StateError('Existing account status unavailable');
     if (vault.settingValue('existing-account-v1') != 'done') {
       final profile = status['present'] == true
-          ? await NativeBridge.channel.invokeMapMethod<String, dynamic>('existing.profile')
+          ? await NativeBridge.channel.invokeMapMethod<String, dynamic>(
+              'existing.profile',
+            )
           : <String, dynamic>{};
-      if (profile == null) throw StateError('Existing account could not be read');
+      if (profile == null)
+        throw StateError('Existing account could not be read');
       await adopt(vault, profile, status);
     }
     return status['pin'] == true;
   }
 
-  static Future<void> adopt(Vault vault, Map<String, dynamic> snapshot, Map<String, dynamic> status) async {
+  static Future<void> adopt(
+    Vault vault,
+    Map<String, dynamic> snapshot,
+    Map<String, dynamic> status,
+  ) async {
     if (vault.settingValue('existing-account-v1') == 'done') return;
     final profile = Map<String, dynamic>.from(snapshot);
     final photo = profile.remove('photoBytes');
@@ -37,7 +46,11 @@ class ExistingAccount {
         final full = (profile['fullName'] as String? ?? '').trim();
         final preferred = (profile['preferredName'] as String? ?? '').trim();
         final nick = (profile['nickname'] as String? ?? '').trim();
-        final name = preferred.isNotEmpty ? preferred : nick.isNotEmpty ? nick : full.split(' ').first;
+        final name = preferred.isNotEmpty
+            ? preferred
+            : nick.isNotEmpty
+            ? nick
+            : full.split(' ').first;
         if (name.isNotEmpty) {
           values['setting:name'] = name;
           values['setting:onboarded'] = 'true';
@@ -46,9 +59,13 @@ class ExistingAccount {
         await vault.setting('originalProfile', jsonEncode(profile));
         await vault.box.flush();
       }
-      if (status['biometric'] == true && vault.settingValue('appLock').isEmpty) values['setting:appLock'] = 'true';
-      if (vault.settingValue('appearance').isEmpty && ['System', 'Light', 'Dark'].contains(status['theme'])) values['setting:appearance'] = status['theme'] as String;
-      values['setting:originalStorageRetained'] = '${status['present'] == true}';
+      if (status['biometric'] == true && vault.settingValue('appLock').isEmpty)
+        values['setting:appLock'] = 'true';
+      if (vault.settingValue('appearance').isEmpty &&
+          ['System', 'Light', 'Dark'].contains(status['theme']))
+        values['setting:appearance'] = status['theme'] as String;
+      values['setting:originalStorageRetained'] =
+          '${status['present'] == true}';
       await vault.box.putAll(values);
       await vault.box.flush();
       await vault.setting('existing-account-v1', 'done');

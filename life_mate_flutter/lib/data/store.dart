@@ -12,8 +12,17 @@ class LifeStore extends ChangeNotifier {
   List<Entry>? _snapshot;
   String _demoDay = '';
   final Map<EntryKind, List<Entry>> _kindIndex = {};
-  void _invalidate() { _snapshot = null; _kindIndex.clear(); }
-  @override void notifyListeners() { _invalidate(); super.notifyListeners(); }
+  void _invalidate() {
+    _snapshot = null;
+    _kindIndex.clear();
+  }
+
+  @override
+  void notifyListeners() {
+    _invalidate();
+    super.notifyListeners();
+  }
+
   String language = 'en', appearance = 'System', name = '', wakeTime = '07:00';
   bool onboarded = false, demo = false, ready = false, appLock = false;
   bool existingPin = false;
@@ -22,11 +31,14 @@ class LifeStore extends ChangeNotifier {
   Map<String, dynamic> get originalProfile {
     final raw = vault?.settingValue('originalProfile') ?? '';
     if (raw != _profileRaw) {
-      _profile = raw.isEmpty ? const {} : Map<String, dynamic>.unmodifiable(jsonDecode(raw) as Map);
+      _profile = raw.isEmpty
+          ? const {}
+          : Map<String, dynamic>.unmodifiable(jsonDecode(raw) as Map);
       _profileRaw = raw;
     }
     return _profile;
   }
+
   String? reminderIssue;
   String? pendingEntry;
   LifeStore(this.vault);
@@ -37,13 +49,28 @@ class LifeStore extends ChangeNotifier {
   String t(String en, String bn) => language == 'bn' ? bn : en;
   List<Entry> get all {
     final today = dayKey(DateTime.now());
-    if (demo && _demoDay != today) { _invalidate(); _demoDay = today; }
-    return _snapshot ??= List.unmodifiable(demo ? demoEntries(DateTime.now(), language == 'bn') : _records);
+    if (demo && _demoDay != today) {
+      _invalidate();
+      _demoDay = today;
+    }
+    return _snapshot ??= List.unmodifiable(
+      demo ? demoEntries(DateTime.now(), language == 'bn') : _records,
+    );
   }
+
   List<Entry> entries(EntryKind kind) {
-    final records = all; // Check demo day rollover even when this kind is cached.
-    return List.of(_kindIndex.putIfAbsent(kind, () => records.where((e) => e.kind == kind && !e.deleted).toList()..sort((a,b) => b.date.compareTo(a.date))));
+    final records =
+        all; // Check demo day rollover even when this kind is cached.
+    return List.of(
+      _kindIndex.putIfAbsent(
+        kind,
+        () =>
+            records.where((e) => e.kind == kind && !e.deleted).toList()
+              ..sort((a, b) => b.date.compareTo(a.date)),
+      ),
+    );
   }
+
   List<Entry> get pending =>
       _records.where((e) => e.syncable && e.dirty).toList();
   Future<void> load() async {

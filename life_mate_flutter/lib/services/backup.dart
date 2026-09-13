@@ -17,7 +17,8 @@ class VaultBackup {
 
   static Future<Uint8List> export(LifeStore store, String phrase) async {
     if (store.demo) throw StateError('Demo cannot be exported');
-    var recordSize = 0;
+    var recordSize = utf8.encode(jsonEncode(store.originalProfile)).length;
+    if (recordSize > limit) throw const FormatException('Profile backup limit');
     for (final e in store.all) {
       recordSize += utf8.encode(jsonEncode(e.toJson())).length;
       if (recordSize > limit)
@@ -25,10 +26,10 @@ class VaultBackup {
     }
     final media = <String, String>{};
     var size = 0;
-    for (final e in store.all.where(
-      (v) => !v.deleted && v.text('photo').isNotEmpty,
-    )) {
-      final id = e.text('photo');
+    final photoIds = store.all.where((v) => !v.deleted && v.text('photo').isNotEmpty).map((e) => e.text('photo')).toSet();
+    final profilePhoto = store.originalProfile['photo'] as String? ?? '';
+    if (profilePhoto.isNotEmpty) photoIds.add(profilePhoto);
+    for (final id in photoIds) {
       if (media.containsKey(id)) continue;
       final bytes = await store.vault!.media(id);
       size += bytes.length;
@@ -41,6 +42,7 @@ class VaultBackup {
         'schema': 1,
         'name': store.name,
         'language': store.language,
+        'originalProfile': store.originalProfile,
         'entries': store.all.map((e) => e.toJson()).toList(),
         'media': media,
       }),
@@ -111,6 +113,10 @@ class VaultBackup {
           !media.containsKey(e.text('photo')))
         throw const FormatException('Missing photo');
     }
+    final profile = Map<String, dynamic>.from((payload['originalProfile'] ?? <String, dynamic>{}) as Map);
+    if (profile.values.any((v) => v is! String)) throw const FormatException('Invalid profile');
+    final profilePhoto = profile['photo'] as String? ?? '';
+    if (profilePhoto.isNotEmpty && !media.containsKey(profilePhoto)) throw const FormatException('Missing profile photo');
     // Import as additional records, never destructively replace local/offline work.
     final ids = <String, String>{};
     try {
@@ -132,6 +138,15 @@ class VaultBackup {
         );
         imported.add(copy);
         values['entry:${copy.id}'] = jsonEncode(copy.toJson());
+      }
+      // Keep imports additive: retain the backed-up identity as a Memory Box
+      // archive rather than silently replacing the current person's profile.
+      if (profile.isNotEmpty) {
+        final archive = Entry(kind: EntryKind.memory, title: store.t('Imported profile archive', 'আমদানি করা প্রোফাইল আর্কাইভ'), fields: {
+          'body': jsonEncode({...profile}..remove('photo')),
+          'photo': ids[profilePhoto] ?? '',
+        });
+        values['entry:${archive.id}'] = jsonEncode(archive.toJson());
       }
       await store.vault!.box.putAll(values);
       store.reloadVault();
