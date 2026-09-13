@@ -1,0 +1,103 @@
+package com.lifemate
+
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.provider.Settings
+import android.view.WindowManager
+import com.lifemate.updates.*
+import io.flutter.embedding.android.FlutterFragmentActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+import kotlinx.coroutines.*
+
+/** Flutter is the ONLY application UI. Kotlin is limited to Android update safety. */
+class MainActivity : FlutterFragmentActivity() {
+    private var firstFrameReported = false
+    private val activityStarted = android.os.SystemClock.elapsedRealtime()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val updates by lazy { UpdateRepository(this) }
+    private val downloader by lazy { ApkUpdateDownloader(this) }
+    private lateinit var channel: MethodChannel
+    private var transfer: Job? = null
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.lifemate/personal_os")
+        channel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "existing.status" -> scope.launch {
+                    try { result.success(withContext(Dispatchers.IO) { (application as LifeMateApp).existingUser.status() }) }
+                    catch (e: Exception) { android.util.Log.w("LifeMateStartup", "existing_status:${e.javaClass.simpleName}"); result.error("existing_status", "Existing settings could not be read; no reset performed", null) }
+                }
+                "existing.profile" -> scope.launch {
+                    try { result.success(withContext(Dispatchers.IO) { (application as LifeMateApp).existingUser.profile() }) }
+                    catch (e: Exception) { android.util.Log.w("LifeMateStartup", "existing_profile:${e.javaClass.simpleName}"); result.error("existing_profile", "Existing profile could not be read; no reset performed", null) }
+                }
+                "existing.verifyPin" -> {
+                    val pin = call.argument<String>("pin") ?: ""
+                    scope.launch {
+                        try { result.success(withContext(Dispatchers.IO) { (application as LifeMateApp).existingUser.verifyPin(pin) }) }
+                        catch (_: Exception) { result.error("existing", "Existing PIN could not be verified", null) }
+                    }
+                }
+                "startup.failure" -> {
+                    // Only allowlisted phase/type tokens, never personal data or exception messages.
+                    val phase = call.argument<String>("phase") ?: "unknown"
+                    val type = call.argument<String>("type") ?: "unknown"
+                    if (phase.matches(Regex("[a-z_]{1,40}")) && type.matches(Regex("[A-Za-z0-9_]{1,80}")))
+                        android.util.Log.w("LifeMateStartup", "$phase:$type")
+                    result.success(true)
+                }
+                "performance.ready" -> {
+                    if (!firstFrameReported) {
+                        firstFrameReported = true
+                        reportFullyDrawn()
+                        android.util.Log.i("LifeMatePerf", "activity_to_flutter_frame_ms=${android.os.SystemClock.elapsedRealtime()-activityStarted}")
+                    }
+                    result.success(true)
+                }
+                "updates.state" -> result.success(state())
+                "updates.check" -> scope.launch {
+                    try { if (call.argument<Boolean>("manual") == true || updates.due()) updates.fetch(); result.success(state()) }
+                    catch (e: CancellationException) { result.error("cancelled", "Check interrupted", null) }
+                    catch (_: Exception) { result.error("unavailable", "Update check failed; any known requirement remains active", state()) }
+                }
+                "updates.download" -> {
+                    if (transfer?.isActive == true) result.error("busy", "Already downloading", null)
+                    else transfer = scope.launch {
+                        try {
+                            val release = updates.cached()?.takeIf { it.newerThan(BuildConfig.VERSION_CODE) } ?: error("No newer signed update")
+                            downloader.download(release) { progress -> scope.launch {
+                                channel.invokeMethod("updates.progress", mapOf("phase" to progress.phase.name, "received" to progress.received, "total" to progress.total))
+                            } }
+                            result.success(true)
+                        } catch (e: CancellationException) { result.error("cancelled", "Download paused; retry in the foreground", null) }
+                        catch (_: Exception) { result.error("download", "Download or verification failed; retry", null) }
+                    }
+                }
+                "updates.install" -> scope.launch {
+                    try {
+                        val release = updates.cached()?.takeIf { it.newerThan(BuildConfig.VERSION_CODE) } ?: error("No required update")
+                        val file = downloader.verifyReady(release)
+                        if (!packageManager.canRequestPackageInstalls()) {
+                            startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+                            result.success("permission")
+                        } else { startActivity(nativeUpdateIntent(this@MainActivity, file)); result.success("installer") }
+                    } catch (_: Exception) { result.error("install", "Could not open the verified update", null) }
+                }
+                "close" -> { result.success(true); finishAffinity() }
+                else -> result.notImplemented()
+            }
+        }
+    }
+    private fun state(): Map<String, Any?> {
+        val release = updates.cached()
+        return mapOf("installed" to BuildConfig.VERSION_NAME, "required" to (release?.newerThan(BuildConfig.VERSION_CODE) == true), "version" to release?.version, "bytes" to release?.bytes)
+    }
+    override fun onStop() { transfer?.cancel(); super.onStop() }
+    override fun onDestroy() { if (::channel.isInitialized) channel.setMethodCallHandler(null); scope.cancel(); super.onDestroy() }
+}

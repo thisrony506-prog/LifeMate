@@ -1,0 +1,264 @@
+import 'package:flutter/material.dart';
+import 'services/startup_diagnostics.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'data/store.dart';
+import 'data/vault.dart';
+import 'services/native.dart';
+import 'services/existing_account.dart';
+import 'ui/existing_pin.dart';
+import 'ui/common.dart';
+import 'ui/shell.dart';
+import 'ui/entries.dart';
+import 'ui/device_lock.dart';
+import 'ui/updates.dart';
+import 'services/updates.dart';
+
+final lifeNavigator = GlobalKey<NavigatorState>();
+void openPending(LifeStore store) {
+  final id = store.pendingEntry;
+  if (id == null || store.demo) return;
+  final entry = store.all.where((e) => e.id == id && !e.deleted).firstOrNull;
+  final context = lifeNavigator.currentContext;
+  if (entry != null && context != null) {
+    store.pendingEntry = null;
+    editEntry(context, entry.kind, entry);
+  }
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 32 * 1024 * 1024;
+  PaintingBinding.instance.imageCache.maximumSize = 40;
+  var startupPhase = 'vault';
+  try {
+    final vault = await Vault.open(onPhase: (phase) => startupPhase = phase);
+    startupPhase = 'existing_account';
+    final store = LifeStore(vault);
+    store.existingPin = await ExistingAccount.prepare(vault);
+    NativeBridge.channel.setMethodCallHandler((call) async {
+      if (call.method == 'updates.progress')
+        appUpdates.progress(Map<dynamic, dynamic>.from(call.arguments as Map));
+      return null;
+    });
+    startupPhase = 'updates';
+    await appUpdates.load();
+    store.addListener(
+      () => WidgetsBinding.instance.addPostFrameCallback(
+        (_) => openPending(store),
+      ),
+    );
+    startupPhase = 'records';
+    await store.load();
+    runApp(LifeMateApp(store: store));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      openPending(store);
+      if (NativeBridge.android)
+        NativeBridge.channel.invokeMethod('performance.ready');
+    });
+  } catch (error) {
+    final code = startupCode(startupPhase, error);
+    if (NativeBridge.android) {
+      try {
+        await NativeBridge.channel.invokeMethod('startup.failure', {
+          'phase': startupPhase,
+          'type': code,
+        }).timeout(const Duration(seconds: 1));
+      } catch (_) { /* Preserve the safe error screen even if diagnostics fail. */ }
+    }
+    runApp(
+      MaterialApp(
+        theme: lifeTheme(false),
+        home: Scaffold(
+          body: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(28),
+                child: Text(
+                  'Encrypted storage could not be opened. Restart Life Mate. Keep any existing backups safe if the problem continues.\n\nএনক্রিপ্ট করা তথ্য খোলা যায়নি। Life Mate আবার খোলো। সমস্যা থাকলে বিদ্যমান ব্যাকআপ নিরাপদে রাখো।\n\nStartup code: $code',
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class LifeMateApp extends StatelessWidget {
+  final LifeStore store;
+  const LifeMateApp({super.key, required this.store});
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: store,
+    builder: (_, __) => LifeScope(
+      store: store,
+      child: MaterialApp(
+        navigatorKey: lifeNavigator,
+        title: 'Life Mate',
+        debugShowCheckedModeBanner: false,
+        theme: lifeTheme(false),
+        darkTheme: lifeTheme(true),
+        themeMode: store.appearance == 'Dark'
+            ? ThemeMode.dark
+            : store.appearance == 'Light'
+            ? ThemeMode.light
+            : ThemeMode.system,
+        locale: Locale(store.language),
+        supportedLocales: const [Locale('en'), Locale('bn')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        builder: (context, child) => ExistingPinGate(
+          enabled: store.existingPin,
+          child: DeviceLock(
+            enabled: store.appLock && !store.existingPin,
+            allowBack: false,
+            child: UpdateGate(child: child ?? const SizedBox.shrink()),
+          ),
+        ),
+        home: store.onboarded ? const LifeShell() : const WelcomeFlow(),
+      ),
+    ),
+  );
+}
+
+class WelcomeFlow extends StatefulWidget {
+  const WelcomeFlow({super.key});
+  @override
+  State<WelcomeFlow> createState() => _WelcomeFlowState();
+}
+
+class _WelcomeFlowState extends State<WelcomeFlow> {
+  final name = TextEditingController();
+  int step = 0;
+  TimeOfDay wake = const TimeOfDay(hour: 7, minute: 0);
+  bool busy = false;
+  @override
+  void dispose() {
+    name.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = LifeScope.of(context);
+    return Scaffold(
+      body: SafeArea(
+        child: PageBody(
+          children: [
+            const SizedBox(height: 36),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Image.asset('assets/logo.png', width: 64, height: 64),
+            ),
+            Text('Life Mate', style: Theme.of(context).textTheme.headlineLarge),
+            Text(
+              s.t(
+                'Your Life, Organized in One App',
+                'তোমার জীবন, এক অ্যাপে গোছানো',
+              ),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            Text(
+              s.t(
+                'A little less noise. A little more room for you.',
+                'একটু কম ব্যস্ততা। নিজের জন্য একটু বেশি সময়।',
+              ),
+            ),
+            if (step == 0) ...[
+              Heading(s.t('Make yourself at home', 'নিজের মতো করে শুরু করো')),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'en', label: Text('English')),
+                  ButtonSegment(value: 'bn', label: Text('বাংলা')),
+                ],
+                selected: {s.language},
+                onSelectionChanged: (v) => s.setLanguage(v.first),
+              ),
+              FilledButton(
+                onPressed: () => setState(() => step = 1),
+                child: Text(s.t('Continue', 'পরবর্তী')),
+              ),
+            ] else ...[
+              Heading(
+                s.t(
+                  'Start with one small routine',
+                  'ছোট্ট একটি রুটিন দিয়ে শুরু',
+                ),
+              ),
+              TextField(
+                controller: name,
+                maxLength: 60,
+                decoration: InputDecoration(
+                  labelText: s.t(
+                    'What should we call you?',
+                    'তোমাকে কী নামে ডাকব?',
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.wb_sunny_outlined),
+                title: Text(s.t('Wake-up time', 'ঘুম থেকে ওঠার সময়')),
+                trailing: Text(wake.format(context)),
+                onTap: () async {
+                  final v = await showTimePicker(
+                    context: context,
+                    initialTime: wake,
+                  );
+                  if (v != null && mounted) setState(() => wake = v);
+                },
+              ),
+              FilledButton(
+                onPressed: busy
+                    ? null
+                    : () async {
+                        setState(() => busy = true);
+                        try {
+                          await s.finishOnboarding(
+                            name.text,
+                            '${wake.hour.toString().padLeft(2, '0')}:${wake.minute.toString().padLeft(2, '0')}',
+                          );
+                        } catch (_) {
+                          if (context.mounted)
+                            message(
+                              context,
+                              s.t(
+                                'Could not save. Please retry.',
+                                'সংরক্ষণ হয়নি। আবার চেষ্টা করো।',
+                              ),
+                            );
+                        } finally {
+                          if (mounted) setState(() => busy = false);
+                        }
+                      },
+                child: Text(s.t('Organize my day', 'আমার দিন সাজাও')),
+              ),
+            ],
+            Panel(
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_outline, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      s.t(
+                        'Your data stays yours, encrypted. No account needed.',
+                        'তোমার তথ্য তোমারই, এনক্রিপ্ট করা। অ্যাকাউন্টের প্রয়োজন নেই।',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              s.t(
+                'Life Mate is a personal life companion. No matchmaking.',
+                'Life Mate ব্যক্তিগত জীবন গোছানোর সঙ্গী। বিয়ের সম্বন্ধ খোঁজার অ্যাপ নয়।',
+              ),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

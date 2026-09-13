@@ -1,0 +1,219 @@
+# PR checks never publish APKs. Push/manual runs on the release branch also verify private signing and upgrades.
+name: LifeMate Release APK
+on:
+  push:
+    branches: [main, 'arena/**']
+    paths-ignore: ['docs/**', '**/*.md']
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: lifemate-android-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+env:
+  # Build a verified signed APK, but do not force a public mandatory update yet.
+  LIFEMATE_PUBLISH_RELEASE: 'false'
+  LIFEMATE_FIREBASE_CONFIG: ${{ vars.LIFEMATE_FIREBASE_CONFIG }}
+jobs:
+  backend:
+    name: Backend API and security rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --ignore-scripts --no-audit --no-fund --prefix backend/functions && npm test --prefix backend/functions
+      - run: npm ci --ignore-scripts --no-audit --no-fund --prefix backend/rules-tests
+      - name: Test private database and storage rules without a live project
+        run: npm test --prefix backend/rules-tests
+  device-tests:
+    name: Verify app features
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+      - name: Validate public cloud client configuration
+        run: python3 scripts/configure-firebase.py
+      - name: Prepare Flutter module
+        run: |
+          set -o pipefail
+          bash scripts/setup-flutter.sh 2>&1 | tee compile.log device.log
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          script: bash scripts/run-device-tests.sh
+      - name: Test result messages
+        if: always()
+        run: python3 scripts/report-ci.py device.log
+  verify:
+    name: Compile, lint and unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+      - name: Validate public cloud client configuration
+        run: python3 scripts/configure-firebase.py
+      - name: Prepare Flutter module
+        run: |
+          set -o pipefail
+          bash scripts/setup-flutter.sh 2>&1 | tee compile.log device.log
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Type-check optional backend
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix backend/functions && npm test --prefix backend/functions
+      - name: Signing and release script tests
+        run: |
+          set -o pipefail
+          python3 -m unittest discover -s scripts/tests -v 2>&1 | tee compile.log
+          mkdir -p "$RUNNER_TEMP/lifemate-script-checks"
+          javac -d "$RUNNER_TEMP/lifemate-script-checks" scripts/SignReleaseMetadata.java 2>&1 | tee -a compile.log
+      - name: Flutter analysis and tests
+        if: ${{ github.job == 'verify' }}
+        working-directory: life_mate_flutter
+        run: |
+          set -o pipefail
+          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee "$GITHUB_WORKSPACE/compile.log"
+          flutter test 2>&1 | tee -a "$GITHUB_WORKSPACE/compile.log"
+      - name: Format Flutter data
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py data
+      - name: Format Flutter services
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py services
+      - name: Format Flutter ui_forms
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py ui_forms
+      - name: Format Flutter ui_pages
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py ui_pages
+      - name: Format Flutter ui_system
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py ui_system
+      - name: Format Flutter test
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py test
+      - name: Format Flutter main
+        if: ${{ github.job == 'verify' }}
+        run: python3 scripts/format-flutter.py main
+      - name: Assign version
+        run: python3 scripts/release-version.py
+      - name: Verify all code (no unsigned download)
+        run: |
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease -Plifemate.compressNative=false --stacktrace 2>&1 | tee compile.log
+          cp app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/uncompressed-baseline.apk"
+          ./gradlew :app:assembleRelease --stacktrace 2>&1 | tee -a compile.log
+          python3 scripts/apk-metrics.py app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/uncompressed-baseline.apk"
+          javac -cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" -d "$RUNNER_TEMP/lifemate-script-checks" scripts/VerifiedApkSigner.java 2>&1 | tee -a compile.log
+      - name: Verification messages
+        if: always()
+        run: python3 scripts/report-ci.py compile.log
+  build:
+    name: Signed APK and account continuity verification
+    needs: [device-tests, verify, backend]
+    # Trusted signed install tests can run; public rollout is separately held below.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      GH_TOKEN: ${{ github.token }}
+      LIFEMATE_KEYSTORE_BASE64: ${{ secrets.LIFEMATE_KEYSTORE_BASE64 }}
+      LIFEMATE_STORE_PASSWORD: ${{ secrets.LIFEMATE_STORE_PASSWORD }}
+      LIFEMATE_KEY_ALIAS: ${{ secrets.LIFEMATE_KEY_ALIAS }}
+      LIFEMATE_KEY_PASSWORD: ${{ secrets.LIFEMATE_KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Require retained release signing
+        run: bash scripts/prepare-signing.sh
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
+      - name: Validate public cloud client configuration
+        run: python3 scripts/configure-firebase.py
+      - name: Prepare Flutter module
+        run: |
+          set -o pipefail
+          bash scripts/setup-flutter.sh 2>&1 | tee compile.log device.log
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-disabled: true
+      - name: Assign version
+        run: python3 scripts/release-version.py
+      - name: Build and verify signing continuity
+        run: |
+          set -o pipefail
+          bash scripts/prepare-upgrade-apks.sh 2>&1 | tee compile.log
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify signed account continuity and subsequent persistence
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          script: bash -o pipefail -c 'python3 -u scripts/verify-release-install.py 2>&1 | tee -a compile.log'
+      - name: Publish versioned APK for in-app updates
+        if: env.LIFEMATE_PUBLISH_RELEASE == 'true'
+        run: |
+          set -o pipefail
+          bash scripts/publish-release.sh 2>&1 | tee -a compile.log
+      - name: Upload only installable LifeMate Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LifeMate-Release-APK
+          path: release-download/*.apk
+          if-no-files-found: error
+      - name: Build result messages
+        if: always()
+        run: python3 scripts/report-ci.py compile.log
+      - name: Remove temporary signing key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/lifemate-release.jks"
