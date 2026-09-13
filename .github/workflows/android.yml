@@ -11,7 +11,26 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: read
+env:
+  LIFEMATE_FIREBASE_CONFIG: ${{ vars.LIFEMATE_FIREBASE_CONFIG }}
 jobs:
+  backend:
+    name: Backend API and security rules
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --ignore-scripts --no-audit --no-fund --prefix backend/functions && npm test --prefix backend/functions
+      - run: npm ci --ignore-scripts --no-audit --no-fund --prefix backend/rules-tests
+      - name: Test private database and storage rules without a live project
+        run: npm test --prefix backend/rules-tests
   device-tests:
     name: Verify app features
     runs-on: ubuntu-latest
@@ -27,6 +46,8 @@ jobs:
           flutter-version: '3.35.7'
           channel: stable
           cache: true
+      - name: Validate public cloud client configuration
+        run: python3 scripts/configure-firebase.py
       - name: Prepare Flutter module
         run: |
           set -o pipefail
@@ -63,6 +84,8 @@ jobs:
           flutter-version: '3.35.7'
           channel: stable
           cache: true
+      - name: Validate public cloud client configuration
+        run: python3 scripts/configure-firebase.py
       - name: Prepare Flutter module
         run: |
           set -o pipefail
@@ -112,15 +135,18 @@ jobs:
       - name: Verify all code (no unsigned download)
         run: |
           set -o pipefail
-          ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease --stacktrace 2>&1 | tee compile.log
+          ./gradlew :app:testDebugUnitTest :app:lintDebug :app:assembleRelease -Plifemate.compressNative=false --stacktrace 2>&1 | tee compile.log
+          cp app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/uncompressed-baseline.apk"
+          ./gradlew :app:assembleRelease --stacktrace 2>&1 | tee -a compile.log
+          python3 scripts/apk-metrics.py app/build/outputs/apk/release/app-release-unsigned.apk "$RUNNER_TEMP/uncompressed-baseline.apk"
           javac -cp "$ANDROID_HOME/build-tools/35.0.0/lib/apksigner.jar" -d "$RUNNER_TEMP/lifemate-script-checks" scripts/VerifiedApkSigner.java 2>&1 | tee -a compile.log
       - name: Verification messages
         if: always()
         run: python3 scripts/report-ci.py compile.log
   build:
     name: Signed APK and fresh-start verification
-    needs: [device-tests, verify]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate' && false # Publication held until clean-replacement verification is complete
+    needs: [device-tests, verify, backend]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate'
     permissions:
       contents: write
     runs-on: ubuntu-latest
@@ -145,6 +171,8 @@ jobs:
           flutter-version: '3.35.7'
           channel: stable
           cache: true
+      - name: Validate public cloud client configuration
+        run: python3 scripts/configure-firebase.py
       - name: Prepare Flutter module
         run: |
           set -o pipefail
@@ -152,34 +180,6 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-disabled: true
-      - name: Flutter analysis and tests
-        if: ${{ github.job == 'verify' }}
-        working-directory: life_mate_flutter
-        run: |
-          set -o pipefail
-          flutter analyze --no-fatal-infos --no-fatal-warnings 2>&1 | tee "$GITHUB_WORKSPACE/compile.log"
-          flutter test 2>&1 | tee -a "$GITHUB_WORKSPACE/compile.log"
-      - name: Format Flutter data
-        if: ${{ github.job == 'verify' }}
-        run: python3 scripts/format-flutter.py data
-      - name: Format Flutter services
-        if: ${{ github.job == 'verify' }}
-        run: python3 scripts/format-flutter.py services
-      - name: Format Flutter ui_forms
-        if: ${{ github.job == 'verify' }}
-        run: python3 scripts/format-flutter.py ui_forms
-      - name: Format Flutter ui_pages
-        if: ${{ github.job == 'verify' }}
-        run: python3 scripts/format-flutter.py ui_pages
-      - name: Format Flutter ui_system
-        if: ${{ github.job == 'verify' }}
-        run: python3 scripts/format-flutter.py ui_system
-      - name: Format Flutter test
-        if: ${{ github.job == 'verify' }}
-        run: python3 scripts/format-flutter.py test
-      - name: Format Flutter main
-        if: ${{ github.job == 'verify' }}
-        run: python3 scripts/format-flutter.py main
       - name: Assign version
         run: python3 scripts/release-version.py
       - name: Build and verify signing continuity

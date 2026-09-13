@@ -8,6 +8,11 @@ class LifeStore extends ChangeNotifier {
   final Vault? vault;
   final ReminderService reminders = ReminderService();
   List<Entry> _records = [];
+  List<Entry>? _snapshot;
+  String _demoDay = '';
+  final Map<EntryKind, List<Entry>> _kindIndex = {};
+  void _invalidate() { _snapshot = null; _kindIndex.clear(); }
+  @override void notifyListeners() { _invalidate(); super.notifyListeners(); }
   String language = 'en', appearance = 'System', name = '', wakeTime = '07:00';
   bool onboarded = false, demo = false, ready = false, appLock = false;
   String? reminderIssue;
@@ -18,12 +23,13 @@ class LifeStore extends ChangeNotifier {
     onboarded = true;
   }
   String t(String en, String bn) => language == 'bn' ? bn : en;
-  List<Entry> get all => demo
-      ? demoEntries(DateTime.now(), language == 'bn')
-      : List.unmodifiable(_records);
-  List<Entry> entries(EntryKind kind) =>
-      all.where((e) => e.kind == kind && !e.deleted).toList()
-        ..sort((a, b) => b.date.compareTo(a.date));
+  List<Entry> get all {
+    final today = dayKey(DateTime.now());
+    if (demo && _demoDay != today) { _invalidate(); _demoDay = today; }
+    return _snapshot ??= List.unmodifiable(demo ? demoEntries(DateTime.now(), language == 'bn') : _records);
+  }
+  List<Entry> entries(EntryKind kind) => List.of(_kindIndex.putIfAbsent(kind, () =>
+      all.where((e) => e.kind == kind && !e.deleted).toList()..sort((a,b) => b.date.compareTo(a.date))));
   List<Entry> get pending =>
       _records.where((e) => e.syncable && e.dirty).toList();
   Future<void> load() async {
@@ -113,6 +119,7 @@ class LifeStore extends ChangeNotifier {
     await vault?.put(entry);
     _records.removeWhere((e) => e.id == entry.id);
     _records.add(entry);
+    _invalidate();
     reminderIssue = null;
     if (remind) {
       try {

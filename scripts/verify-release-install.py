@@ -74,6 +74,7 @@ def onboard_new(name):
     adb('shell', 'input', 'text', name)
     hide_keyboard_if_shown()
     find('Organize my day', scroll=True, tap=True)
+    find('Money')
     find(name)
 
 def main():
@@ -124,6 +125,20 @@ def main():
     package = adb('shell', 'dumpsys', 'package', 'com.lifemate')
     assert f"versionCode={os.environ['LIFEMATE_VERSION_CODE']} " in package
     print('PASS: retained-key higher-version install; new profile survives process restart')
+    measurements=[]
+    for _ in range(3):
+        adb('shell','am','force-stop','com.lifemate')
+        adb('logcat','-c')
+        launch=adb('shell','am','start','-W','-n','com.lifemate/.MainActivity')
+        find(expected)
+        frame=adb('logcat','-d','-s','LifeMatePerf:I','*:S')
+        total=re.search(r'TotalTime:\s*(\d+)',launch)
+        first=re.search(r'activity_to_flutter_frame_ms=(\d+)',frame)
+        assert total and first, 'Startup measurement was not captured'
+        measurements.append({'androidTotalTimeMs':int(total[1]),'activityToFlutterFrameMs':int(first[1])})
+    import json
+    print('::notice title=Release startup measurements::'+json.dumps({'environment':'Android 15 x86_64 hosted emulator; 3 process-cold launches; new profile', 'samples':measurements}))
+
 
 if __name__ == '__main__':
     main()

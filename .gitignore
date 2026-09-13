@@ -31,3 +31,8 @@ life_mate_flutter/.ios/
 **/GoogleService-Info.plist
 **/.env*
 backend/functions/lib/
+
+# Temporary keyless deployment credentials and emulator logs
+gha-creds-*.json
+**/*-debug.log
+**/.firebase/

@@ -32,6 +32,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             isDebuggable = false
             if (!releaseKeystore.isNullOrBlank()) signingConfig = signingConfigs.getByName("privateRelease")
@@ -41,7 +42,12 @@ android {
     buildFeatures { buildConfig = true }
     compileOptions { isCoreLibraryDesugaringEnabled = true; sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
-    packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    packaging {
+        resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        // Direct APK delivery: compress native libraries for a smaller download.
+        // Android extracts them once at install; normal launches use those files.
+        jniLibs.useLegacyPackaging = providers.gradleProperty("lifemate.compressNative").map { it.toBoolean() }.orElse(true).get()
+    }
     testOptions { unitTests.isIncludeAndroidResources = true }
 }
 dependencies {

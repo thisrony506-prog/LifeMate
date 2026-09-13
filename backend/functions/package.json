@@ -1,1 +1,20 @@
-{"name":"life-mate-private-backend","private":true,"main":"lib/index.js","engines":{"node":"22"},"scripts":{"build":"tsc","test":"npm run build"},"dependencies":{"firebase-admin":"^13.4.0","firebase-functions":"^6.4.0"},"devDependencies":{"typescript":"^5.8.3","@types/node":"^22.15.0"}}
+{
+  "name": "life-mate-private-backend",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test test/*.test.cjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.4.0",
+    "firebase-functions": "^6.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "@types/node": "^22.15.0"
+  }
+}

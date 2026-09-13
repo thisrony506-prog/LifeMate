@@ -9,7 +9,8 @@ service cloud.firestore {
     }
     match /users/{uid}/vault/{id} {
       allow read: if owner(uid);
-      allow create, update: if owner(uid) && request.resource.data.keys().hasOnly(['ciphertext','revision','updatedAt']) && request.resource.data.ciphertext is string && request.resource.data.ciphertext.size() < 100000 && request.resource.data.revision is int && request.resource.data.revision > 0 && request.resource.data.updatedAt == request.time;
+      allow create: if owner(uid) && request.resource.data.revision == 1 && request.resource.data.keys().hasOnly(['ciphertext','revision','updatedAt']) && request.resource.data.ciphertext is string && request.resource.data.ciphertext.size() < 100000 && request.resource.data.revision is int && request.resource.data.revision > 0 && request.resource.data.updatedAt == request.time;
+      allow update: if owner(uid) && request.resource.data.revision == resource.data.revision + 1 && request.resource.data.keys().hasOnly(['ciphertext','revision','updatedAt']) && request.resource.data.ciphertext is string && request.resource.data.ciphertext.size() < 100000 && request.resource.data.revision is int && request.resource.data.revision > 0 && request.resource.data.updatedAt == request.time;
       allow delete: if false; // Encrypted tombstones carry offline deletions.
     }
     match /live/{id} {

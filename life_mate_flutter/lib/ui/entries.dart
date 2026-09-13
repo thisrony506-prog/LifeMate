@@ -32,31 +32,32 @@ Future<void> editEntry(BuildContext context, EntryKind kind, [Entry? entry]) {
   );
 }
 
-class EntryPhoto extends StatelessWidget {
+class EntryPhoto extends StatefulWidget {
   final String id;
   final double height;
   const EntryPhoto(this.id, {super.key, this.height = 180});
-  @override
-  Widget build(BuildContext context) {
-    final vault = LifeScope.of(context).vault;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: FutureBuilder<Uint8List>(
-        future: vault?.media(id),
-        builder: (_, snap) => snap.hasData
-            ? Image.memory(
-                snap.data!,
-                height: height,
-                width: double.infinity,
-                fit: BoxFit.cover,
-              )
-            : SizedBox(
-                height: height,
-                child: const Center(child: Icon(Icons.lock_outline)),
-              ),
-      ),
-    );
+  @override State<EntryPhoto> createState() => _EntryPhotoState();
+}
+class _EntryPhotoState extends State<EntryPhoto> {
+  Future<Uint8List>? bytes;
+  Object? vault;
+  @override void didChangeDependencies() {
+    super.didChangeDependencies();
+    final next = LifeScope.of(context).vault;
+    if (!identical(next, vault)) { vault = next; bytes = next?.media(widget.id); }
   }
+  @override void didUpdateWidget(EntryPhoto old) {
+    super.didUpdateWidget(old);
+    if (old.id != widget.id) bytes = LifeScope.of(context).vault?.media(widget.id);
+  }
+  @override Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(14),
+    child: FutureBuilder<Uint8List>(future: bytes, builder: (_, snapshot) => snapshot.hasData
+      ? Image.memory(snapshot.data!, height: widget.height, width: double.infinity, fit: BoxFit.cover,
+          cacheWidth: (MediaQuery.sizeOf(context).width * MediaQuery.devicePixelRatioOf(context)).round().clamp(320, 1200).toInt(),
+          filterQuality: FilterQuality.low)
+      : SizedBox(height: widget.height, child: const Center(child: Icon(Icons.lock_outline)))),
+  );
 }
 
 class EntryList extends StatelessWidget {

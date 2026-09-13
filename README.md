@@ -13,7 +13,7 @@ The owner explicitly chose **remove the previous features and start with no old 
 - Android's first launch of this replacement deletes app-owned old databases, private media, preferences, caches and local data-encryption keys. A no-backup marker prevents repeating that reset on future launches/upgrades. New Personal Life OS records subsequently persist normally.
 - Exported backups, gallery originals and cloud copies are **not** deleted. Android signing identity and authenticated updater metadata are **not** personal records and are retained.
 - `com.lifemate`, Android 8+, the supplied logo and existing release key are unchanged. Do not create a new key.
-- **This replacement has not yet been released or fully device-verified.** Existing public APK 1.2.64 is the old product, not this UI. Publication is held until replacement tests pass.
+- **Release verification is running.** The last known public APK before this work is native 1.2.64, not this UI. The signed release job now runs only after app/device/backend checks pass, and publishes only after the real signed fresh-start test succeeds.
 
 ## Current product scope
 
@@ -46,3 +46,7 @@ Demo mode is read-only and in-memory, with examples for every entry kind. It nev
 Flutter **3.35.7**, JDK **17**, Android compile SDK **36**, Build Tools **35.0.0**, minimum Android **26**. Run `bash scripts/setup-flutter.sh` before Gradle; generated module hosts/caches are not source artifacts. See [verification status](docs/VERIFICATION.md), [fresh-start test plan](docs/FRESH-START.md), and [release maintenance](docs/RELEASE.md).
 
 Only a verified signed release APK may be uploaded to Actions. No debug APK, screenshot, report, logo or signing file is a downloadable artifact. iOS project generation is not an IPA build/distribution claim.
+
+## Performance and API readiness
+
+See [measured-size/startup methodology](docs/PERFORMANCE.md) and [backend setup and keyless deployment](backend/README.md). The owner chose to provide the Firebase Project ID later: live deployment remains deferred, not silently represented as working. Offline app builds are supported without client config.

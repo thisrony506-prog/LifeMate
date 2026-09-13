@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
 import '../data/store.dart';
 import '../data/entry.dart';
+import 'crypto_tasks.dart';
 
 /// Portable, authenticated backup. The device's Hive key is never exported.
 class VaultBackup {
@@ -11,11 +12,7 @@ class VaultBackup {
   static Future<SecretKey> derive(String phrase, List<int> salt) {
     if (phrase.length < 12)
       throw const FormatException('Use at least 12 characters');
-    return Pbkdf2(
-      macAlgorithm: Hmac.sha256(),
-      iterations: 210000,
-      bits: 256,
-    ).deriveKey(secretKey: SecretKey(utf8.encode(phrase)), nonce: salt);
+    return derivePhraseKey(phrase, salt);
   }
 
   static Future<Uint8List> export(LifeStore store, String phrase) async {

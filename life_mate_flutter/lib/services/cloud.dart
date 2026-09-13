@@ -8,10 +8,14 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../data/entry.dart';
 import '../data/store.dart';
+import 'crypto_tasks.dart';
 
 class CloudService {
   static const project = String.fromEnvironment('FIREBASE_PROJECT_ID');
-  static bool get configured => project.isNotEmpty;
+  static bool get configured => project.isNotEmpty &&
+      (const String.fromEnvironment('FIREBASE_API_KEY')).isNotEmpty &&
+      (const String.fromEnvironment('FIREBASE_SENDER_ID')).isNotEmpty &&
+      (Platform.isIOS ? const String.fromEnvironment('FIREBASE_IOS_APP_ID') : const String.fromEnvironment('FIREBASE_ANDROID_APP_ID')).isNotEmpty;
   static Future<void> init() async {
     if (!configured) throw StateError('Firebase is not configured');
     if (Firebase.apps.isEmpty)
@@ -64,14 +68,7 @@ class CloudService {
   static Future<SecretKey> key(String phrase, String uid) {
     if (phrase.trim().length < 12)
       throw const FormatException('Use at least 12 characters');
-    return Pbkdf2(
-      macAlgorithm: Hmac.sha256(),
-      iterations: 210000,
-      bits: 256,
-    ).deriveKey(
-      secretKey: SecretKey(utf8.encode(phrase)),
-      nonce: utf8.encode('LifeMate cloud v1:$uid'),
-    );
+    return derivePhraseKey(phrase, utf8.encode('LifeMate cloud v1:$uid'));
   }
 
   static Future<String> seal(String text, SecretKey key) async => base64Encode(
@@ -198,7 +195,7 @@ class CloudService {
 
   static Future<String> sathi(String text, String language) async {
     await session();
-    final result = await FirebaseFunctions.instance
+    final result = await FirebaseFunctions.instanceFor(region: const String.fromEnvironment('FIREBASE_FUNCTIONS_REGION', defaultValue: 'asia-south1'))
         .httpsCallable(
           'sathi',
           options: HttpsCallableOptions(timeout: const Duration(seconds: 30)),

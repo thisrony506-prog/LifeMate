@@ -7,6 +7,7 @@ import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'entry.dart';
+import '../services/crypto_tasks.dart';
 
 class Vault {
   final Box<String> box;
@@ -55,13 +56,10 @@ class Vault {
   Future<String> saveMedia(Uint8List bytes) async {
     if (bytes.length > 20 * 1024 * 1024)
       throw const FormatException('Photo exceeds 20 MB');
-    final encrypted = await AesGcm.with256bits().encrypt(
-      bytes,
-      secretKey: mediaKey,
-    );
+    final encrypted = await encryptMedia(bytes, await mediaKey.extractBytes());
     final id = const Uuid().v4();
     final file = File('${directory.path}/$id.encrypted');
-    await file.writeAsBytes(encrypted.concatenation(), flush: true);
+    await file.writeAsBytes(encrypted, flush: true);
     return id;
   }
 
@@ -69,12 +67,7 @@ class Vault {
     if (!RegExp(r'^[a-f0-9-]{36}$').hasMatch(id))
       throw const FormatException('Invalid photo ID');
     final bytes = await File('${directory.path}/$id.encrypted').readAsBytes();
-    return Uint8List.fromList(
-      await AesGcm.with256bits().decrypt(
-        SecretBox.fromConcatenation(bytes, nonceLength: 12, macLength: 16),
-        secretKey: mediaKey,
-      ),
-    );
+    return decryptMedia(bytes, await mediaKey.extractBytes());
   }
 
   Future<void> deleteMedia(String id) async {

@@ -24,6 +24,8 @@ void openPending(LifeStore store) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 32 * 1024 * 1024;
+  PaintingBinding.instance.imageCache.maximumSize = 40;
   try {
     final store = LifeStore(await Vault.open());
     NativeBridge.channel.setMethodCallHandler((call) async {
@@ -39,7 +41,10 @@ Future<void> main() async {
     );
     await store.load();
     runApp(LifeMateApp(store: store));
-    WidgetsBinding.instance.addPostFrameCallback((_) => openPending(store));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      openPending(store);
+      if (NativeBridge.android) NativeBridge.channel.invokeMethod('performance.ready');
+    });
   } catch (_) {
     runApp(
       MaterialApp(

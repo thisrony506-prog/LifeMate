@@ -13,6 +13,8 @@ import kotlinx.coroutines.*
 
 /** Flutter is the ONLY application UI. Kotlin is limited to Android update safety. */
 class MainActivity : FlutterFragmentActivity() {
+    private var firstFrameReported = false
+    private val activityStarted = android.os.SystemClock.elapsedRealtime()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val updates by lazy { UpdateRepository(this) }
     private val downloader by lazy { ApkUpdateDownloader(this) }
@@ -27,6 +29,14 @@ class MainActivity : FlutterFragmentActivity() {
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.lifemate/personal_os")
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
+                "performance.ready" -> {
+                    if (!firstFrameReported) {
+                        firstFrameReported = true
+                        reportFullyDrawn()
+                        android.util.Log.i("LifeMatePerf", "activity_to_flutter_frame_ms=${android.os.SystemClock.elapsedRealtime()-activityStarted}")
+                    }
+                    result.success(true)
+                }
                 "updates.state" -> result.success(state())
                 "updates.check" -> scope.launch {
                     try { if (call.argument<Boolean>("manual") == true || updates.due()) updates.fetch(); result.success(state()) }

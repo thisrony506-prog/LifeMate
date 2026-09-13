@@ -35,11 +35,12 @@ class Entry {
     required this.kind,
     required this.title,
     DateTime? date,
-    this.fields = const {},
+    Map<String, dynamic> fields = const {},
     this.revision = 0,
     this.dirty = true,
     this.deleted = false,
-  }) : id = id ?? const Uuid().v4(),
+  }) : fields = Map.unmodifiable(fields),
+       id = id ?? const Uuid().v4(),
        date = date ?? DateTime.now();
   Entry copy({
     String? title,

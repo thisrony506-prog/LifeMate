@@ -3,6 +3,11 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories { google(); mavenCentral(); maven { url = uri("https://storage.googleapis.com/download.flutter.io") } }
 }
+// Public client configuration only, validated before Gradle runs.
+gradle.beforeProject {
+    val defines = System.getenv("LIFEMATE_DART_DEFINES")
+    if (!defines.isNullOrBlank()) extensions.extraProperties.set("dart-defines", defines)
+}
 rootProject.name = "LifeMate"
 include(":app")
 
