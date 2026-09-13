@@ -15,7 +15,7 @@ class Vault {
   final Directory directory;
   Vault(this.box, this.mediaKey, this.directory);
   static const secure = FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    aOptions: AndroidOptions(encryptedSharedPreferences: true, resetOnError: false),
   );
   static Future<Vault> open() async {
     final directory = await getApplicationSupportDirectory();

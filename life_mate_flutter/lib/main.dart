@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'services/startup_diagnostics.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'data/store.dart';
 import 'data/vault.dart';
@@ -56,24 +56,25 @@ Future<void> main() async {
         NativeBridge.channel.invokeMethod('performance.ready');
     });
   } catch (error) {
+    final code = startupCode(startupPhase, error);
     if (NativeBridge.android) {
       try {
         await NativeBridge.channel.invokeMethod('startup.failure', {
           'phase': startupPhase,
-          'type': error is PlatformException ? error.code : error.runtimeType.toString(),
+          'type': code,
         }).timeout(const Duration(seconds: 1));
       } catch (_) { /* Preserve the safe error screen even if diagnostics fail. */ }
     }
     runApp(
       MaterialApp(
         theme: lifeTheme(false),
-        home: const Scaffold(
+        home: Scaffold(
           body: SafeArea(
             child: Center(
               child: Padding(
                 padding: EdgeInsets.all(28),
                 child: Text(
-                  'Encrypted storage could not be opened. Restart Life Mate. Keep any existing backups safe if the problem continues.\n\nএনক্রিপ্ট করা তথ্য খোলা যায়নি। Life Mate আবার খোলো। সমস্যা থাকলে বিদ্যমান ব্যাকআপ নিরাপদে রাখো।',
+                  'Encrypted storage could not be opened. Restart Life Mate. Keep any existing backups safe if the problem continues.\n\nএনক্রিপ্ট করা তথ্য খোলা যায়নি। Life Mate আবার খোলো। সমস্যা থাকলে বিদ্যমান ব্যাকআপ নিরাপদে রাখো।\n\nStartup code: $code',
                 ),
               ),
             ),

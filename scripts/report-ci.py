@@ -5,6 +5,11 @@ import re
 log = Path(sys.argv[1])
 text = log.read_text(errors="replace") if log.exists() else "No build log was produced."
 lines = text.splitlines()
+# Emit bounded startup evidence separately; large Gradle tails are truncated by GitHub.
+startup = [line for line in lines if 'Startup code:' in line or 'LifeMateStartup' in line]
+if startup:
+    detail = '\n'.join(startup[-12:])[:3000].replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+    print(f'::notice title=Startup diagnostics::{detail}')
 errors = []
 for index, line in enumerate(lines):
     if re.search(r"\berror\s+•", line) or line.startswith("e: ") or " error:" in line or " FAILED" in line or "What went wrong" in line or "failure message=" in line or "Exception" in line and not line.startswith("\tat "):

@@ -27,6 +27,8 @@ class FeatureColorTest(unittest.TestCase):
         reader = (ROOT/'app/src/main/java/com/lifemate/continuity/ExistingUser.kt').read_text()
         self.assertIn('SQLiteDatabase.OPEN_READONLY', reader)
         self.assertIn('-keep class net.zetetic.database.sqlcipher.** { *; }', (ROOT/'app/proguard-rules.pro').read_text())
+        self.assertIn('-keep class com.google.crypto.tink.** { *; }', (ROOT/'app/proguard-rules.pro').read_text())
+        self.assertIn('resetOnError: false', (ROOT/'life_mate_flutter/lib/data/vault.dart').read_text())
         self.assertIn('recovery must not erase', reader)
         for forbidden in ('deleteDatabase(', 'deleteEntry(', 'generateKey(', 'CREATE_IF_NECESSARY', 'deleteRecursively('):
             self.assertNotIn(forbidden, reader)
