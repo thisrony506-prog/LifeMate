@@ -32,13 +32,23 @@ class FlutterHostTest {
             }
             locate("Continue").click()
             val field = device.wait(Until.findObject(By.clazz("android.widget.EditText").pkg(context.packageName)),10000)
-            assertNotNull(field); field!!.text = "FreshStartProof"
-            device.executeShellCommand("input keyevent 111") // ESC hides the IME without navigating back.
+            assertNotNull(field)
+            field!!.click()
+            // Exercise the real Flutter text-input connection, not only an
+            // accessibility node's cached ACTION_SET_TEXT value.
+            device.executeShellCommand("input text FreshStartProof")
+            locate("FreshStartProof")
+            scenario.onActivity { activity ->
+                androidx.core.view.WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+                    .hide(androidx.core.view.WindowInsetsCompat.Type.ime())
+            }
+            SystemClock.sleep(300)
             for (attempt in 0..3) {
                 val button = device.findObject(By.textContains("Organize my day")) ?: device.findObject(By.descContains("Organize my day"))
                 if (button != null) { button.click(); break }
                 device.swipe(500,1200,500,400,20)
             }
+            locate("Money") // Wait for Home, not the outgoing onboarding text field.
             locate("FreshStartProof")
             locate("Money").click()
             locate("Income")

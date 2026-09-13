@@ -11,6 +11,10 @@ The latest instruction supersedes the retention-based migration: **remove old fe
 - The compile job failed on the third-party geolocator module's standalone lint, not a disabled application check. Gradle commands are now explicitly scoped to `:app:` so the application is compiled, linted and tested rather than invoking every plugin's upstream development suite. App lint is not disabled and no lint baseline was added.
 - All formatter groups and the current dependency lock were recovered from CI. Two further Flutter widget regression checks cover hidden locked content and absence of old feature links. The follow-up run is pending.
 
+## Latest hosted result
+
+Run `34734917030` (`f91035a`) reached successful app compile/lint/release-assembly and Flutter test steps (job final conclusion still needs confirmation). The device suite again completed 14 tests with only the Flutter host test failing. Its new diagnostics showed a functioning restored Home with the default name **Friend**, not missing data or a blank engine. The test had used accessibility `setText` and could match the outgoing input field before Home appeared. It now types through the real focused input connection and waits for Home before asserting the saved name. That stronger test has not yet been observed passing. The one-time reset and retained update-security tests were not among the reported failures.
+
 ## Not yet verified
 
 - Follow-up Flutter tests after the added regression cases, scoped app compile/lint/R8 and a fully green engine/reset/device suite.
