@@ -1,3 +1,5 @@
+> Signed run `34739144232` (`8d4a263`) built a 35,741,076-byte APK and verified the same production signer as native 1.2.64. App/Flutter/backend/rules tests passed, but actual signed native→Flutter startup failed to open storage, so **no artifact was uploaded**. The native app's SQLCipher JNI/R8 keep rule has now been restored for the compatibility reader, with non-personal startup diagnostics. Another signed upgrade run is required; this is not a confirmed runtime fix yet.
+
 # Current verification status — retention supersedes reset
 
 The owner clarified: same installed app, user, Life Mate name, supplied logo and version series; redesign the UI/features only. The destructive reset source and tests are removed. Signed publication is held pending non-destructive upgrade proof.
