@@ -56,7 +56,7 @@ Future<void> main() async {
               child: Padding(
                 padding: EdgeInsets.all(28),
                 child: Text(
-                  'Your encrypted data could not be opened. It has not been replaced. Restart Life Mate or restore a backup.\n\nএনক্রিপ্ট করা তথ্য খোলা যায়নি। কোনো তথ্য মুছে ফেলা হয়নি। Life Mate আবার খোলো বা ব্যাকআপ ফিরিয়ে আনো।',
+                  'Encrypted storage could not be opened. Restart Life Mate. Keep any existing backups safe if the problem continues.\n\nএনক্রিপ্ট করা তথ্য খোলা যায়নি। Life Mate আবার খোলো। সমস্যা থাকলে বিদ্যমান ব্যাকআপ নিরাপদে রাখো।',
                 ),
               ),
             ),
