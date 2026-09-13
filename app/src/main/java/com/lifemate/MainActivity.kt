@@ -19,7 +19,7 @@ class MainActivity : FlutterFragmentActivity() {
     private lateinit var channel: MethodChannel
     private var transfer: Job? = null
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(if ((application as LifeMateApp).resetPerformed) null else savedInstanceState)
+        super.onCreate(if ((application as LifeMateApp).consumeResetFlag()) null else savedInstanceState)
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
