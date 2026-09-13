@@ -40,7 +40,7 @@ class _DeviceLockState extends State<DeviceLock> with WidgetsBindingObserver {
         const SizedBox(height: 12), Text(s.t('Use your device PIN, passcode or biometrics. Configure a device screen lock first.', 'ডিভাইসের পিন, পাসকোড বা বায়োমেট্রিক ব্যবহার করো। আগে ডিভাইসে স্ক্রিন লক চালু করো।')),
         const SizedBox(height: 20), FilledButton(onPressed: authenticating ? null : unlock, child: Text(s.t('Unlock', 'আনলক'))),
         if (widget.allowBack) TextButton(onPressed: () => Navigator.maybePop(context), child: Text(s.t('Back', 'ফিরে যাও'))),
-      ]))))),
+      ])))))),
     ]);
   }
 }
