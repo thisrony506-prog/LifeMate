@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'data/store.dart';
 import 'data/vault.dart';
@@ -28,8 +29,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   PaintingBinding.instance.imageCache.maximumSizeBytes = 32 * 1024 * 1024;
   PaintingBinding.instance.imageCache.maximumSize = 40;
+  var startupPhase = 'vault';
   try {
     final vault = await Vault.open();
+    startupPhase = 'existing_account';
     final store = LifeStore(vault);
     store.existingPin = await ExistingAccount.prepare(vault);
     NativeBridge.channel.setMethodCallHandler((call) async {
@@ -37,12 +40,14 @@ Future<void> main() async {
         appUpdates.progress(Map<dynamic, dynamic>.from(call.arguments as Map));
       return null;
     });
+    startupPhase = 'updates';
     await appUpdates.load();
     store.addListener(
       () => WidgetsBinding.instance.addPostFrameCallback(
         (_) => openPending(store),
       ),
     );
+    startupPhase = 'records';
     await store.load();
     runApp(LifeMateApp(store: store));
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -50,7 +55,15 @@ Future<void> main() async {
       if (NativeBridge.android)
         NativeBridge.channel.invokeMethod('performance.ready');
     });
-  } catch (_) {
+  } catch (error) {
+    if (NativeBridge.android) {
+      try {
+        await NativeBridge.channel.invokeMethod('startup.failure', {
+          'phase': startupPhase,
+          'type': error is PlatformException ? error.code : error.runtimeType.toString(),
+        }).timeout(const Duration(seconds: 1));
+      } catch (_) { /* Preserve the safe error screen even if diagnostics fail. */ }
+    }
     runApp(
       MaterialApp(
         theme: lifeTheme(false),

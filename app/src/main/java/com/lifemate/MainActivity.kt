@@ -31,11 +31,11 @@ class MainActivity : FlutterFragmentActivity() {
             when (call.method) {
                 "existing.status" -> scope.launch {
                     try { result.success(withContext(Dispatchers.IO) { (application as LifeMateApp).existingUser.status() }) }
-                    catch (_: Exception) { result.error("existing", "Existing settings could not be read; no reset performed", null) }
+                    catch (e: Exception) { android.util.Log.w("LifeMateStartup", "existing_status:${e.javaClass.simpleName}"); result.error("existing_status", "Existing settings could not be read; no reset performed", null) }
                 }
                 "existing.profile" -> scope.launch {
                     try { result.success(withContext(Dispatchers.IO) { (application as LifeMateApp).existingUser.profile() }) }
-                    catch (_: Exception) { result.error("existing", "Existing profile could not be read; no reset performed", null) }
+                    catch (e: Exception) { android.util.Log.w("LifeMateStartup", "existing_profile:${e.javaClass.simpleName}"); result.error("existing_profile", "Existing profile could not be read; no reset performed", null) }
                 }
                 "existing.verifyPin" -> {
                     val pin = call.argument<String>("pin") ?: ""
@@ -43,6 +43,14 @@ class MainActivity : FlutterFragmentActivity() {
                         try { result.success(withContext(Dispatchers.IO) { (application as LifeMateApp).existingUser.verifyPin(pin) }) }
                         catch (_: Exception) { result.error("existing", "Existing PIN could not be verified", null) }
                     }
+                }
+                "startup.failure" -> {
+                    // Only allowlisted phase/type tokens, never personal data or exception messages.
+                    val phase = call.argument<String>("phase") ?: "unknown"
+                    val type = call.argument<String>("type") ?: "unknown"
+                    if (phase.matches(Regex("[a-z_]{1,40}")) && type.matches(Regex("[A-Za-z0-9_]{1,80}")))
+                        android.util.Log.w("LifeMateStartup", "$phase:$type")
+                    result.success(true)
                 }
                 "performance.ready" -> {
                     if (!firstFrameReported) {

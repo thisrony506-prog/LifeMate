@@ -59,7 +59,7 @@ def find(label, scroll=False, tap=False):
         print('Visible emulator test labels:', ' | '.join(x for x in labels if x)[:2000], flush=True)
     except Exception:
         pass
-    print(adb('logcat', '-d', '-t', '80', '-s', 'AndroidRuntime'), flush=True)
+    print(adb('logcat', '-d', '-s', 'LifeMateStartup:W', 'AndroidRuntime:E', '*:S'), flush=True)
     raise AssertionError('Release UI did not show: ' + label)
 
 def start():
