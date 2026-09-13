@@ -28,10 +28,10 @@ if [[ -n "$previous_tag" ]]; then
 else
   # First-ever signed publication: make a lower-version fixture with this retained key.
   # It stays on the runner and is never published or uploaded.
-  LIFEMATE_VERSION_CODE=$((LIFEMATE_VERSION_CODE - 1)) LIFEMATE_VERSION_NAME=1.2.0-upgrade-test ./gradlew assembleRelease --no-configuration-cache --stacktrace
+  LIFEMATE_VERSION_CODE=$((LIFEMATE_VERSION_CODE - 1)) LIFEMATE_VERSION_NAME=1.2.0-upgrade-test ./gradlew :app:assembleRelease --no-configuration-cache --stacktrace
   cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/previous.apk"
 fi
-./gradlew assembleRelease --no-configuration-cache --stacktrace
+./gradlew :app:assembleRelease --no-configuration-cache --stacktrace
 cp app/build/outputs/apk/release/app-release.apk "release-download/LifeMate-$LIFEMATE_VERSION_CODE.apk"
 # Match the pinned AGP toolchain, not whichever newer/preview tool happens to be on the runner.
 apksigner="$ANDROID_HOME/build-tools/35.0.0/apksigner"

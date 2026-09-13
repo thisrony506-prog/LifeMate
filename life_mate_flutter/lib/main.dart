@@ -16,8 +16,10 @@ void openPending(LifeStore store) {
   if (id == null || store.demo) return;
   final entry = store.all.where((e) => e.id == id && !e.deleted).firstOrNull;
   final context = lifeNavigator.currentContext;
-  if (entry != null && context != null) { store.pendingEntry = null; editEntry(context, entry.kind, entry); }
-
+  if (entry != null && context != null) {
+    store.pendingEntry = null;
+    editEntry(context, entry.kind, entry);
+  }
 }
 
 Future<void> main() async {
@@ -25,11 +27,16 @@ Future<void> main() async {
   try {
     final store = LifeStore(await Vault.open());
     NativeBridge.channel.setMethodCallHandler((call) async {
-      if (call.method == 'updates.progress') appUpdates.progress(Map<dynamic, dynamic>.from(call.arguments as Map));
+      if (call.method == 'updates.progress')
+        appUpdates.progress(Map<dynamic, dynamic>.from(call.arguments as Map));
       return null;
     });
     await appUpdates.load();
-    store.addListener(() => WidgetsBinding.instance.addPostFrameCallback((_) => openPending(store)));
+    store.addListener(
+      () => WidgetsBinding.instance.addPostFrameCallback(
+        (_) => openPending(store),
+      ),
+    );
     await store.load();
     runApp(LifeMateApp(store: store));
     WidgetsBinding.instance.addPostFrameCallback((_) => openPending(store));
@@ -76,7 +83,11 @@ class LifeMateApp extends StatelessWidget {
         locale: Locale(store.language),
         supportedLocales: const [Locale('en'), Locale('bn')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
-        builder: (context, child) => DeviceLock(enabled: store.appLock, allowBack: false, child: UpdateGate(child: child ?? const SizedBox.shrink())),
+        builder: (context, child) => DeviceLock(
+          enabled: store.appLock,
+          allowBack: false,
+          child: UpdateGate(child: child ?? const SizedBox.shrink()),
+        ),
         home: store.onboarded ? const LifeShell() : const WelcomeFlow(),
       ),
     ),

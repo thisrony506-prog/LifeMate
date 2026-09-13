@@ -61,11 +61,10 @@ class UpdateMetadataTest {
     }
     @Test fun apiErrorsAndInvalidAssetsNeverReturnSuccess() = runBlocking {
         val context=InstrumentationRegistry.getInstrumentation().targetContext
-        for (response in listOf(Response(403),Response(429),Response(500),Response(200,"{}"))) {
+        for (response in listOf(Response(404),Response(403),Response(429),Response(500),Response(200,"{}"))) {
             try { UpdateRepository(context) { response }.fetch(); fail("Must not treat an invalid response as up to date") }
             catch (_: IllegalStateException) { /* Expected error, not a successful result. */ }
         }
-        assertNull(UpdateRepository(context) { Response(404) }.fetch())
         try { UpdateRepository(context) { throw IOException("test offline") }.fetch(); fail("Offline must throw") }
         catch (_: IOException) { /* Expected. */ }
         context.getSharedPreferences("release_updates",0).edit().clear().commit()

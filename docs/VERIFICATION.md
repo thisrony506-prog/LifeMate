@@ -7,11 +7,13 @@ The latest instruction supersedes the retention-based migration: **remove old fe
 - Removed legacy native feature UI, models, repositories, Room/SQLCipher/Compose feature dependencies, old alarm/voice services and their obsolete feature fixtures.
 - Added one-time fresh-reset implementation, file-boundary tests, Android reset/Flutter-host tests, new Flutter-only privacy/update controls and cross-platform plugin notifications.
 - Local Python regression suite: **19 passed** after these changes. This includes source/transport/release-policy checks; it is not a Flutter or Android runtime result.
-- GitHub authentication works again. New clean-replacement hosted verification is pending.
+- GitHub authentication works again. In clean-replacement run `34734351337` (`5c89d06`), Flutter analysis and the Flutter test step passed. The Android device runner completed 14 tests with one failure: the host test looked for a Home greeting after recreation while the selected Money tab could be retained. It now explicitly enters Home before checking the persisted name, with visible-label diagnostics if it still fails.
+- The compile job failed on the third-party geolocator module's standalone lint, not a disabled application check. Gradle commands are now explicitly scoped to `:app:` so the application is compiled, linted and tested rather than invoking every plugin's upstream development suite. App lint is not disabled and no lint baseline was added.
+- All formatter groups and the current dependency lock were recovered from CI. Two further Flutter widget regression checks cover hidden locked content and absence of old feature links. The follow-up run is pending.
 
 ## Not yet verified
 
-- Flutter analysis/tests after the clean rewrite, dependency lock refresh including `flutter_timezone`, Android compilation/lint/R8, new engine/reset/device tests.
+- Follow-up Flutter tests after the added regression cases, scoped app compile/lint/R8 and a fully green engine/reset/device suite.
 - Actual signed old-to-new reset, future new-data persistence, APK publication and canonical byte checks.
 - Real permission/notification/reboot/biometric/gallery/audio/installer flows on physical Android; iOS compilation/signing/device testing.
 - Firebase/Gemini deployment, rules emulator and live cloud/location/AI requests. Backend availability must remain honestly labelled.

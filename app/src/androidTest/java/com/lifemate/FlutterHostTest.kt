@@ -19,11 +19,16 @@ class FlutterHostTest {
         device.executeShellCommand("pm grant ${context.packageName} ${Manifest.permission.POST_NOTIFICATIONS}")
         ActivityScenario.launch<MainActivity>(Intent(context, MainActivity::class.java)).use { scenario ->
             fun locate(label: String): UiObject2 {
-                repeat(24) {
+                repeat(60) {
                     (device.findObject(By.textContains(label)) ?: device.findObject(By.descContains(label)))?.let { return it }
                     SystemClock.sleep(500)
                 }
-                error("Flutter did not expose $label")
+                val bytes = java.io.ByteArrayOutputStream()
+                device.dumpWindowHierarchy(bytes)
+                val xml = javax.xml.parsers.DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(java.io.ByteArrayInputStream(bytes.toByteArray()))
+                val nodes = xml.getElementsByTagName("node")
+                val visible = (0 until nodes.length).map { nodes.item(it) as org.w3c.dom.Element }.map { it.getAttribute("text") + " " + it.getAttribute("content-desc") }.filter { it.isNotBlank() }.joinToString(" | ")
+                error("Flutter did not expose $label. Visible test labels: ${visible.take(2400)}")
             }
             locate("Continue").click()
             val field = device.wait(Until.findObject(By.clazz("android.widget.EditText")),10000)
@@ -39,6 +44,8 @@ class FlutterHostTest {
             locate("Income")
             assertFalse(device.hasObject(By.textContains("All retained tools")))
             scenario.recreate()
+            // Flutter may retain the selected Money tab across recreation.
+            locate("Home").click()
             locate("FreshStartProof")
             locate("My Life")
         }

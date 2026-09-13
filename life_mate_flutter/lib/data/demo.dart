@@ -58,15 +58,88 @@ List<Entry> demoEntries(DateTime now, bool bangla) => [
     date: DateTime(now.year + 1, now.month, now.day),
     fields: {'amount': 3, 'target': 12},
   ),
-  Entry(id: 'demo-journal', kind: EntryKind.journal, title: bangla ? 'ছোট্ট ভালো লাগা' : 'A small good thing', date: now, fields: {'body': bangla ? 'আজ নিজের জন্য একটু সময় রেখেছি। এটি শুধু নমুনা।' : 'Today I made a little time for myself. This is only a sample.'}),
-  Entry(id: 'demo-period', kind: EntryKind.period, title: bangla ? 'ব্যক্তিগত নমুনা' : 'Private sample', date: now, fields: {'amount': 28}),
-  Entry(id: 'demo-workout', kind: EntryKind.workout, title: bangla ? 'বিকেলের হাঁটা' : 'Evening walk', date: now, fields: {'amount': 20}),
-  Entry(id: 'demo-medicine', kind: EntryKind.medicine, title: bangla ? 'প্রেসক্রিপশনের নমুনা' : 'Prescription example', date: now, fields: {'body': bangla ? 'নিজের চিকিৎসকের নির্দেশনা এখানে রাখো। এটি চিকিৎসা পরামর্শ নয়।' : 'Keep your clinician’s instructions here. This sample is not medical advice.', 'time': '20:00'}),
-  Entry(id: 'demo-bill', kind: EntryKind.bill, title: bangla ? 'ওয়াইফাই বিল' : 'WiFi bill', date: now.add(const Duration(days: 7)), fields: {'amount': 800, 'time': '10:00'}),
-  Entry(id: 'demo-contact', kind: EntryKind.contact, title: bangla ? 'প্রিয়জন · নমুনা' : 'Family member · sample', date: now, fields: {'body': bangla ? 'নিজের যোগাযোগ যোগ করো। ডেমোতে কল বন্ধ।' : 'Add your own contact. Calls are disabled in demo.'}),
-  Entry(id: 'demo-birthday', kind: EntryKind.birthday, title: bangla ? 'বন্ধুর জন্মদিন · নমুনা' : 'Friend’s birthday · sample', date: now.add(const Duration(days: 14)), fields: {'time': '09:00'}),
-  Entry(id: 'demo-anniversary', kind: EntryKind.anniversary, title: bangla ? 'পরিবারের বিশেষ দিন · নমুনা' : 'Family anniversary · sample', date: now.add(const Duration(days: 30)), fields: {'time': '09:00'}),
-  Entry(id: 'demo-memory', kind: EntryKind.memory, title: bangla ? 'নদীর ধারে বিকেল' : 'An afternoon by the river', date: now, fields: {'body': bangla ? 'প্রিয়জনের সঙ্গে শান্ত সময়। এটি নমুনা স্মৃতি।' : 'Quiet time with the people I care about. A sample memory.'}),
+  Entry(
+    id: 'demo-journal',
+    kind: EntryKind.journal,
+    title: bangla ? 'ছোট্ট ভালো লাগা' : 'A small good thing',
+    date: now,
+    fields: {
+      'body': bangla
+          ? 'আজ নিজের জন্য একটু সময় রেখেছি। এটি শুধু নমুনা।'
+          : 'Today I made a little time for myself. This is only a sample.',
+    },
+  ),
+  Entry(
+    id: 'demo-period',
+    kind: EntryKind.period,
+    title: bangla ? 'ব্যক্তিগত নমুনা' : 'Private sample',
+    date: now,
+    fields: {'amount': 28},
+  ),
+  Entry(
+    id: 'demo-workout',
+    kind: EntryKind.workout,
+    title: bangla ? 'বিকেলের হাঁটা' : 'Evening walk',
+    date: now,
+    fields: {'amount': 20},
+  ),
+  Entry(
+    id: 'demo-medicine',
+    kind: EntryKind.medicine,
+    title: bangla ? 'প্রেসক্রিপশনের নমুনা' : 'Prescription example',
+    date: now,
+    fields: {
+      'body': bangla
+          ? 'নিজের চিকিৎসকের নির্দেশনা এখানে রাখো। এটি চিকিৎসা পরামর্শ নয়।'
+          : 'Keep your clinician’s instructions here. This sample is not medical advice.',
+      'time': '20:00',
+    },
+  ),
+  Entry(
+    id: 'demo-bill',
+    kind: EntryKind.bill,
+    title: bangla ? 'ওয়াইফাই বিল' : 'WiFi bill',
+    date: now.add(const Duration(days: 7)),
+    fields: {'amount': 800, 'time': '10:00'},
+  ),
+  Entry(
+    id: 'demo-contact',
+    kind: EntryKind.contact,
+    title: bangla ? 'প্রিয়জন · নমুনা' : 'Family member · sample',
+    date: now,
+    fields: {
+      'body': bangla
+          ? 'নিজের যোগাযোগ যোগ করো। ডেমোতে কল বন্ধ।'
+          : 'Add your own contact. Calls are disabled in demo.',
+    },
+  ),
+  Entry(
+    id: 'demo-birthday',
+    kind: EntryKind.birthday,
+    title: bangla ? 'বন্ধুর জন্মদিন · নমুনা' : 'Friend’s birthday · sample',
+    date: now.add(const Duration(days: 14)),
+    fields: {'time': '09:00'},
+  ),
+  Entry(
+    id: 'demo-anniversary',
+    kind: EntryKind.anniversary,
+    title: bangla
+        ? 'পরিবারের বিশেষ দিন · নমুনা'
+        : 'Family anniversary · sample',
+    date: now.add(const Duration(days: 30)),
+    fields: {'time': '09:00'},
+  ),
+  Entry(
+    id: 'demo-memory',
+    kind: EntryKind.memory,
+    title: bangla ? 'নদীর ধারে বিকেল' : 'An afternoon by the river',
+    date: now,
+    fields: {
+      'body': bangla
+          ? 'প্রিয়জনের সঙ্গে শান্ত সময়। এটি নমুনা স্মৃতি।'
+          : 'Quiet time with the people I care about. A sample memory.',
+    },
+  ),
   for (var i = 0; i < 7; i++)
     Entry(
       id: 'demo-mood-$i',

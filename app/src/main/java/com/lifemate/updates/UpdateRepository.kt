@@ -34,7 +34,7 @@ class UpdateRepository(
             connection.setRequestProperty("Accept", "application/vnd.github+json")
             connection.setRequestProperty("User-Agent", "LifeMate/${BuildConfig.VERSION_NAME}")
             when (connection.responseCode) {
-                404 -> return@withContext cached()
+                404 -> error("Release information is unavailable. Try again later.")
                 403, 429 -> error("Update service is busy. Try again later.")
                 200 -> Unit
                 else -> error("The update service is unavailable. Try again later.")

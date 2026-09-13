@@ -101,7 +101,9 @@ class CloudService {
       throw StateError('Sign in with your account first');
     final owner = store.vault?.settingValue('syncOwner') ?? '';
     if (owner.isNotEmpty && owner != user.uid) {
-      throw StateError('This vault is linked to another account. Export a backup before switching.');
+      throw StateError(
+        'This vault is linked to another account. Export a backup before switching.',
+      );
     }
     final secret = await key(phrase, user.uid);
     final db = FirebaseFirestore.instance;
