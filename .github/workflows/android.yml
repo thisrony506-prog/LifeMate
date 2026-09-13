@@ -146,7 +146,8 @@ jobs:
   build:
     name: Signed APK and fresh-start verification
     needs: [device-tests, verify, backend]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate'
+    # Owner is revising replacement/reset scope. Never publish the destructive replacement.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/arena/01a090c4-lifemate' && false
     permissions:
       contents: write
     runs-on: ubuntu-latest
